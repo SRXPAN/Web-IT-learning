@@ -1,0 +1,32 @@
+{
+  "name": "elearn-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "E-Learning Platform Monorepo",
+  "workspaces": [
+    "packages/*",
+    "elearn-backend",
+    "Web-e-learning"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:backend": "npm run dev -w elearn-backend",
+    "dev:frontend": "npm run dev -w Web-e-learning",
+    "build": "npm run build --workspaces --if-present",
+    "build:backend": "npm run build -w elearn-backend",
+    "build:frontend": "npm run build -w Web-e-learning",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "prisma:generate": "npm run prisma:generate -w elearn-backend",
+    "prisma:migrate": "npm run prisma:migrate -w elearn-backend",
+    "db:seed": "npm run db:seed -w elearn-backend",
+    "clean": "rimraf node_modules packages/*/node_modules elearn-backend/node_modules Web-e-learning/node_modules"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "typescript": "^5.6.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

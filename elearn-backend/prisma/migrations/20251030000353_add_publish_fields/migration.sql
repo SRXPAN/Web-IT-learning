@@ -1,0 +1,43 @@
+-- CreateEnum
+CREATE TYPE "Status" AS ENUM ('Draft', 'Published');
+
+-- DropForeignKey
+ALTER TABLE "Quiz" DROP CONSTRAINT "Quiz_topicId_fkey";
+
+-- AlterTable
+ALTER TABLE "Material" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "createdById" TEXT,
+ADD COLUMN     "publishedAt" TIMESTAMP(3),
+ADD COLUMN     "status" "Status" NOT NULL DEFAULT 'Draft',
+ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "views" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Quiz" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "createdById" TEXT,
+ADD COLUMN     "publishedAt" TIMESTAMP(3),
+ADD COLUMN     "status" "Status" NOT NULL DEFAULT 'Draft',
+ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ALTER COLUMN "durationSec" SET DEFAULT 60;
+
+-- AlterTable
+ALTER TABLE "Topic" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "createdById" TEXT,
+ADD COLUMN     "publishedAt" TIMESTAMP(3),
+ADD COLUMN     "status" "Status" NOT NULL DEFAULT 'Draft',
+ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "viewedMaterials" TEXT[] DEFAULT ARRAY[]::TEXT[];
+
+-- AddForeignKey
+ALTER TABLE "Topic" ADD CONSTRAINT "Topic_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Material" ADD CONSTRAINT "Material_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Quiz" ADD CONSTRAINT "Quiz_topicId_fkey" FOREIGN KEY ("topicId") REFERENCES "Topic"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Quiz" ADD CONSTRAINT "Quiz_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
