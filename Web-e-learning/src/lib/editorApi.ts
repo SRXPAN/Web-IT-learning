@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './http'
+import { apiGet, apiPost, apiPut, apiDelete } from './http'
 import type { 
   Category, 
   Lang, 
@@ -56,34 +56,36 @@ async function soft<T>(p: Promise<T>): Promise<T> {
   }
 }
 
-// TOPICS
+// TOPICS - RESTful API
 export const listRootTopics = () => soft(apiGet<Topic[]>('/editor/topics'))
-export const createTopic = (data: Partial<Topic>) => soft(apiPost<Topic, Partial<Topic>>('/editor/topics/create', data))
-export const updateTopic = (id:string, data: Partial<Topic>) => soft(apiPost<Topic, Partial<Topic>>(`/editor/topics/${id}/update`, data))
-export const deleteTopic = (id:string) => soft(apiPost<{ok:true}, {}>(`/editor/topics/${id}/delete`, {}))
-// MATERIALS
-export const listMaterials = (topicId:string) => soft(apiGet<Material[]>(`/editor/topics/${topicId}/materials`))
-export const createMaterial = (topicId:string, data: Partial<Material>) =>
-  soft(apiPost<Material, Partial<Material>>(`/editor/topics/${topicId}/materials/create`, data))
-export const updateMaterial = (topicId:string, id:string, data: Partial<Material>) =>
-  soft(apiPost<Material, Partial<Material>>(`/editor/topics/${topicId}/materials/${id}/update`, data))
-export const deleteMaterial = (topicId:string, id:string) =>
-  soft(apiPost<{ok:true}, {}>(`/editor/topics/${topicId}/materials/${id}/delete`, {}))
-// QUIZZES
-export const listQuizzes = (topicId:string) => soft(apiGet<QuizLite[]>(`/editor/topics/${topicId}/quizzes`))
-export const createQuiz = (topicId:string, data: Partial<QuizLite>) =>
-  soft(apiPost<QuizLite, Partial<QuizLite>>(`/editor/topics/${topicId}/quizzes/create`, data))
-export const updateQuiz = (topicId:string, id:string, data: Partial<QuizLite>) =>
-  soft(apiPost<QuizLite, Partial<QuizLite>>(`/editor/topics/${topicId}/quizzes/${id}/update`, data))
-export const deleteQuiz = (topicId:string, id:string) =>
-  soft(apiPost<{ok:true}, {}>(`/editor/topics/${topicId}/quizzes/${id}/delete`, {}))
+export const createTopic = (data: Partial<Topic>) => soft(apiPost<Topic, Partial<Topic>>('/editor/topics', data))
+export const updateTopic = (id: string, data: Partial<Topic>) => soft(apiPut<Topic, Partial<Topic>>(`/editor/topics/${id}`, data))
+export const deleteTopic = (id: string) => soft(apiDelete<{ok: true}>(`/editor/topics/${id}`))
 
-// QUESTIONS
+// MATERIALS - RESTful API
+export const listMaterials = (topicId: string) => soft(apiGet<Material[]>(`/editor/topics/${topicId}/materials`))
+export const createMaterial = (topicId: string, data: Partial<Material>) =>
+  soft(apiPost<Material, Partial<Material>>(`/editor/topics/${topicId}/materials`, data))
+export const updateMaterial = (topicId: string, id: string, data: Partial<Material>) =>
+  soft(apiPut<Material, Partial<Material>>(`/editor/topics/${topicId}/materials/${id}`, data))
+export const deleteMaterial = (topicId: string, id: string) =>
+  soft(apiDelete<{ok: true}>(`/editor/topics/${topicId}/materials/${id}`))
+
+// QUIZZES - RESTful API
+export const listQuizzes = (topicId: string) => soft(apiGet<QuizLite[]>(`/editor/topics/${topicId}/quizzes`))
+export const createQuiz = (topicId: string, data: Partial<QuizLite>) =>
+  soft(apiPost<QuizLite, Partial<QuizLite>>(`/editor/topics/${topicId}/quizzes`, data))
+export const updateQuiz = (topicId: string, id: string, data: Partial<QuizLite>) =>
+  soft(apiPut<QuizLite, Partial<QuizLite>>(`/editor/topics/${topicId}/quizzes/${id}`, data))
+export const deleteQuiz = (topicId: string, id: string) =>
+  soft(apiDelete<{ok: true}>(`/editor/topics/${topicId}/quizzes/${id}`))
+
+// QUESTIONS - RESTful API
 export const listQuestions = (quizId: string) =>
   soft(apiGet<QuestionWithOptions[]>(`/editor/quizzes/${quizId}/questions`))
 export const createQuestion = (quizId: string, data: CreateQuestionRequest) =>
-  soft(apiPost<QuestionWithOptions, CreateQuestionRequest>(`/editor/quizzes/${quizId}/questions/create`, data))
+  soft(apiPost<QuestionWithOptions, CreateQuestionRequest>(`/editor/quizzes/${quizId}/questions`, data))
 export const updateQuestion = (quizId: string, id: string, data: Partial<CreateQuestionRequest>) =>
-  soft(apiPost<QuestionWithOptions, Partial<CreateQuestionRequest>>(`/editor/quizzes/${quizId}/questions/${id}/update`, data))
+  soft(apiPut<QuestionWithOptions, Partial<CreateQuestionRequest>>(`/editor/quizzes/${quizId}/questions/${id}`, data))
 export const deleteQuestion = (quizId: string, id: string) =>
-  soft(apiPost<{ok:true}, {}>(`/editor/quizzes/${quizId}/questions/${id}/delete`, {}))
+  soft(apiDelete<{ok: true}>(`/editor/quizzes/${quizId}/questions/${id}`))

@@ -27,7 +27,7 @@ router.get('/topics', requireAuth, requireRole(['EDITOR','ADMIN']), async (_req,
   res.json(topics)
 })
 
-router.post('/topics/create', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
+router.post('/topics', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
   const schema = z.object({
     name: z.string().min(2),
     slug: z.string().min(2),
@@ -53,7 +53,7 @@ router.post('/topics/create', requireAuth, requireRole(['EDITOR','ADMIN']), asyn
   res.json(topic)
 })
 
-router.post('/topics/:id/update', requireAuth, requireRole(['EDITOR','ADMIN']), validateId, async (req, res) => {
+router.put('/topics/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateId, async (req, res) => {
   const { id } = req.params
   const schema = z.object({
     name: z.string().optional(),
@@ -81,7 +81,7 @@ router.post('/topics/:id/update', requireAuth, requireRole(['EDITOR','ADMIN']), 
   res.json(topic)
 })
 
-router.post('/topics/:id/delete', requireAuth, requireRole(['EDITOR','ADMIN']), validateId, async (req, res) => {
+router.delete('/topics/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateId, async (req, res) => {
   const { id } = req.params
   await prisma.topic.delete({ where: { id } })
   logger.audit(req.user?.id ?? 'unknown', 'topic.delete', { id })
@@ -103,7 +103,7 @@ router.get('/topics/:topicId/materials', requireAuth, requireRole(['EDITOR','ADM
   res.json(mats)
 })
 
-router.post('/topics/:topicId/materials/create', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
+router.post('/topics/:topicId/materials', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
   const { topicId } = req.params
   const schema = z.object({
     title: z.string().min(2),
@@ -133,7 +133,7 @@ router.post('/topics/:topicId/materials/create', requireAuth, requireRole(['EDIT
   res.json(mat)
 })
 
-router.post('/topics/:topicId/materials/:id/update', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
+router.put('/topics/:topicId/materials/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
   const { topicId, id } = req.params
   const schema = z.object({
     title: z.string().min(2).optional(),
@@ -159,7 +159,7 @@ router.post('/topics/:topicId/materials/:id/update', requireAuth, requireRole(['
   res.json(mat)
 })
 
-router.post('/topics/:topicId/materials/:id/delete', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
+router.delete('/topics/:topicId/materials/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
   const { topicId, id } = req.params
   await prisma.material.delete({ where: { id } })
   logger.audit(req.user?.id ?? 'unknown', 'material.delete', { id, topicId })
@@ -178,7 +178,7 @@ router.get('/topics/:topicId/quizzes', requireAuth, requireRole(['EDITOR','ADMIN
   res.json(quizzes)
 })
 
-router.post('/topics/:topicId/quizzes/create', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
+router.post('/topics/:topicId/quizzes', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
   const { topicId } = req.params
   const schema = z.object({
     title: z.string().min(2),
@@ -202,7 +202,7 @@ router.post('/topics/:topicId/quizzes/create', requireAuth, requireRole(['EDITOR
   res.json(quiz)
 })
 
-router.post('/topics/:topicId/quizzes/:id/update', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
+router.put('/topics/:topicId/quizzes/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
   const { topicId, id } = req.params
   const schema = z.object({
     title: z.string().min(2).optional(),
@@ -225,7 +225,7 @@ router.post('/topics/:topicId/quizzes/:id/update', requireAuth, requireRole(['ED
   res.json(quiz)
 })
 
-router.post('/topics/:topicId/quizzes/:id/delete', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
+router.delete('/topics/:topicId/quizzes/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
   const { topicId, id } = req.params
   await prisma.quiz.delete({ where: { id } })
   logger.audit(req.user?.id ?? 'unknown', 'quiz.delete', { id, topicId })
@@ -239,10 +239,10 @@ router.get('/quizzes/:quizId/questions', requireAuth, requireRole(['EDITOR','ADM
   const { quizId } = req.params
   const questions = await prisma.question.findMany({
     where: { quizId },
-    orderBy: { createdAt: 'asc' },
+    orderBy: { id: 'asc' },
     include: {
       options: {
-        orderBy: { createdAt: 'asc' },
+        orderBy: { id: 'asc' },
         select: { id: true, text: true, textJson: true, correct: true }
       }
     }
@@ -251,7 +251,7 @@ router.get('/quizzes/:quizId/questions', requireAuth, requireRole(['EDITOR','ADM
 })
 
 // Create question
-router.post('/quizzes/:quizId/questions/create', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
+router.post('/quizzes/:quizId/questions', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
   const { quizId } = req.params
   const schema = z.object({
     text: z.string().min(5),
@@ -311,7 +311,7 @@ router.post('/quizzes/:quizId/questions/create', requireAuth, requireRole(['EDIT
 })
 
 // Update question
-router.post('/quizzes/:quizId/questions/:id/update', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
+router.put('/quizzes/:quizId/questions/:id', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
   const { quizId, id } = req.params
   const schema = z.object({
     text: z.string().min(5).optional(),
@@ -380,7 +380,7 @@ router.post('/quizzes/:quizId/questions/:id/update', requireAuth, requireRole(['
 })
 
 // Delete question
-router.post('/quizzes/:quizId/questions/:id/delete', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
+router.delete('/quizzes/:quizId/questions/:id', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
   const { quizId, id } = req.params
   await prisma.question.delete({ where: { id } })
   logger.audit(req.user?.id ?? 'unknown', 'question.delete', { id, quizId })

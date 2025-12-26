@@ -2,16 +2,18 @@ import { useCallback, useState } from 'react'
 import RequireAuth from './components/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
 import Editor from './pages/editor/EditorLayout'
-import { Routes, Route, NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, BookOpen, Trophy, User, LogIn, LogOut, LucideIcon, Menu, X } from 'lucide-react'
+import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { LayoutDashboard, BookOpen, Trophy, User, LogIn, LogOut, LucideIcon, Menu, X, PenSquare } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Materials from './pages/Materials'
 import Leaderboard from './pages/Leaderboard'
 import Profile from './pages/Profile'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Quiz from './pages/Quiz'
 import NotFound from './pages/NotFound'
 import { useAuth } from './auth/AuthContext'
+import { useTranslation } from './i18n/useTranslation'
 import Toasts from '@/components/Toast'
 import LessonView from './pages/LessonView'
 
@@ -38,6 +40,7 @@ function NavItem({ to, icon: Icon, label, onClick }: NavItemProps) {
 
 export default function App(){
   const { user, logout } = useAuth()
+  const { t } = useTranslation()
   const nav = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   
@@ -49,6 +52,24 @@ export default function App(){
   const closeMobileMenu = useCallback(() => {
     setMobileMenuOpen(false)
   }, [])
+
+  const location = useLocation()
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register'
+
+  // For auth pages, render without header/main wrapper
+  if (isAuthPage) {
+    return (
+      <div className="h-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950">
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/login" element={<Login/>} />
+            <Route path="/register" element={<Register/>} />
+          </Routes>
+        </ErrorBoundary>
+        <Toasts />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
@@ -65,12 +86,12 @@ export default function App(){
 
             {/* Navigation - Desktop */}
             <nav className="hidden md:flex items-center gap-1">
-              <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
-              <NavItem to="/materials" icon={BookOpen} label="Materials" />
-              <NavItem to="/leaderboard" icon={Trophy} label="Leaderboard" />
-              <NavItem to="/profile" icon={User} label="Profile" />
+              <NavItem to="/" icon={LayoutDashboard} label={t('nav.dashboard')} />
+              <NavItem to="/materials" icon={BookOpen} label={t('nav.materials')} />
+              <NavItem to="/leaderboard" icon={Trophy} label={t('nav.leaderboard')} />
+              <NavItem to="/profile" icon={User} label={t('nav.profile')} />
               {user?.role && (user.role === 'ADMIN' || user.role === 'EDITOR') && (
-                <NavItem to="/editor" icon={LayoutDashboard} label="Editor" />
+                <NavItem to="/editor" icon={PenSquare} label={t('nav.editor')} />
               )}
             </nav>
 
@@ -89,9 +110,9 @@ export default function App(){
               {!user ? (
                 <>
                   <NavLink to="/login" className="btn-outline">
-                    <LogIn size={18} className="inline mr-2"/>Login
+                    <LogIn size={18} className="inline mr-2"/>{t('nav.login')}
                   </NavLink>
-                  <NavLink to="/register" className="btn">Register</NavLink>
+                  <NavLink to="/register" className="btn">{t('nav.register')}</NavLink>
                 </>
               ) : (
                 <>
@@ -105,7 +126,7 @@ export default function App(){
                     className="btn-outline" 
                     onClick={handleLogout}
                   >
-                    <LogOut size={18} className="inline mr-2"/>Logout
+                    <LogOut size={18} className="inline mr-2"/>{t('nav.logout')}
                   </button>
                 </>
               )}
@@ -117,12 +138,12 @@ export default function App(){
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
             <nav className="flex flex-col p-4 gap-1">
-              <NavItem to="/" icon={LayoutDashboard} label="Dashboard" onClick={closeMobileMenu} />
-              <NavItem to="/materials" icon={BookOpen} label="Materials" onClick={closeMobileMenu} />
-              <NavItem to="/leaderboard" icon={Trophy} label="Leaderboard" onClick={closeMobileMenu} />
-              <NavItem to="/profile" icon={User} label="Profile" onClick={closeMobileMenu} />
+              <NavItem to="/" icon={LayoutDashboard} label={t('nav.dashboard')} onClick={closeMobileMenu} />
+              <NavItem to="/materials" icon={BookOpen} label={t('nav.materials')} onClick={closeMobileMenu} />
+              <NavItem to="/leaderboard" icon={Trophy} label={t('nav.leaderboard')} onClick={closeMobileMenu} />
+              <NavItem to="/profile" icon={User} label={t('nav.profile')} onClick={closeMobileMenu} />
               {user?.role && (user.role === 'ADMIN' || user.role === 'EDITOR') && (
-                <NavItem to="/editor" icon={LayoutDashboard} label="Editor" onClick={closeMobileMenu} />
+                <NavItem to="/editor" icon={PenSquare} label={t('nav.editor')} onClick={closeMobileMenu} />
               )}
               
               {/* Mobile user info */}
@@ -150,6 +171,7 @@ export default function App(){
             <RequireAuth roles={['ADMIN','EDITOR']}><Editor /></RequireAuth>} />
             <Route path="/dashboard" element={<RequireAuth><Dashboard/></RequireAuth>} />
             <Route path="/materials" element={<RequireAuth><Materials/></RequireAuth>} />
+            <Route path="/quiz" element={<RequireAuth><Quiz/></RequireAuth>} />
             <Route path="/leaderboard" element={<RequireAuth><Leaderboard/></RequireAuth>} />
             <Route path="/profile" element={<RequireAuth><Profile/></RequireAuth>} />
             <Route path="/login" element={<Login/>} />

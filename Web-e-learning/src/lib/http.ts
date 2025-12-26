@@ -5,6 +5,15 @@ const API_URL = `${base}/api`
 const CSRF_COOKIE = 'csrf_token'
 const CSRF_HEADER = 'x-csrf-token'
 
+// Флаг для запобігання множинним refresh запитам
+let isRefreshing = false
+let refreshPromise: Promise<boolean> | null = null
+
+// Затримка для exponential backoff
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 /**
  * Отримує CSRF токен з cookie
  */
@@ -25,10 +34,62 @@ export async function fetchCsrfToken(): Promise<string> {
   return data.csrfToken
 }
 
-async function handle<T>(res: Response): Promise<T> {
+/**
+ * Оновлює токени через refresh endpoint
+ */
+async function refreshTokens(): Promise<boolean> {
+  // Якщо вже оновлюємо - чекаємо на результат
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise
+  }
+  
+  isRefreshing = true
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          [CSRF_HEADER]: getCsrfToken() || '',
+        },
+      })
+      return res.ok
+    } catch {
+      return false
+    } finally {
+      isRefreshing = false
+      refreshPromise = null
+    }
+  })()
+  
+  return refreshPromise
+}
+
+async function handle<T>(res: Response, retry?: () => Promise<T>): Promise<T> {
+  // Обробка Rate Limit - НЕ робимо retry, просто повертаємо помилку
+  if (res.status === 429) {
+    const retryAfter = res.headers.get('retry-after')
+    const waitTime = retryAfter ? parseInt(retryAfter, 10) : 60
+    throw new Error(`Too many requests. Please wait ${waitTime} seconds.`)
+  }
+
   if (res.status === 401) {
+    const data = await res.json().catch(() => ({}))
+    
+    // Якщо токен протермінований - спробуємо оновити (тільки один раз)
+    if (data?.code === 'TOKEN_EXPIRED' && retry) {
+      const refreshed = await refreshTokens()
+      if (refreshed) {
+        // Затримка перед retry щоб не забити rate limit
+        await delay(100)
+        return retry()
+      }
+    }
+    
     throw new Error('Unauthorized')
   }
+  
   if (res.status === 403) {
     const text = await res.text()
     const data = text ? JSON.parse(text) : null
@@ -39,6 +100,7 @@ async function handle<T>(res: Response): Promise<T> {
     }
     throw new Error(data?.error || 'Forbidden')
   }
+  
   const text = await res.text()
   const data = text ? JSON.parse(text) : null
   if (!res.ok) throw new Error(typeof data === 'object' && data?.error ? data.error : (text || 'Request failed'))
@@ -59,12 +121,16 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     }
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
-    credentials: 'include',
-    headers,
-    ...init,
-  })
-  return handle<T>(res)
+  const makeRequest = async (): Promise<T> => {
+    const res = await fetch(`${API_URL}${path}`, {
+      credentials: 'include',
+      headers,
+      ...init,
+    })
+    return handle<T>(res, makeRequest)
+  }
+  
+  return makeRequest()
 }
 
 export const apiGet = <T>(path: string): Promise<T> => api<T>(path)

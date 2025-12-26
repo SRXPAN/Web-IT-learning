@@ -8,22 +8,26 @@ generator client {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String
-  avatar    String?
-  role      Role     @default(STUDENT)
-  xp        Int      @default(0)
-  createdAt DateTime @default(now())
-  answers   Answer[]
-  viewedMaterials String[]   @default([])
-  topicsCreated   Topic[]    @relation("TopicCreator")
-  materialsCreated Material[] @relation("MaterialCreator")
-  quizzesCreated  Quiz[]     @relation("QuizCreator")
+  id               String         @id @default(cuid())
+  email            String         @unique
+  name             String
+  password         String
+  avatar           String?
+  role             Role           @default(STUDENT)
+  xp               Int            @default(0)
+  emailVerified    Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @default(now()) @updatedAt
+  answers          Answer[]
+  viewedMaterials  String[]       @default([])
+  topicsCreated    Topic[]        @relation("TopicCreator")
+  materialsCreated Material[]     @relation("MaterialCreator")
+  quizzesCreated   Quiz[]         @relation("QuizCreator")
+  refreshTokens    RefreshToken[]
 
-  @@index([role])       // Індекс для фільтрації по ролі
-  @@index([createdAt])  // Індекс для сортування по даті створення
+  @@index([role]) // Індекс для фільтрації по ролі
+  @@index([createdAt]) // Індекс для сортування по даті створення
+  @@index([email]) // Індекс для швидкого пошуку по email
 }
 
 enum Role {
@@ -53,10 +57,10 @@ enum Status {
 model Topic {
   id          String     @id @default(cuid())
   slug        String     @unique
-  name        String     // Fallback name (EN)
-  nameJson    Json?      // {"UA": "...", "PL": "...", "EN": "..."}
+  name        String // Fallback name (EN)
+  nameJson    Json? // {"UA": "...", "PL": "...", "EN": "..."}
   description String
-  descJson    Json?      // {"UA": "...", "PL": "...", "EN": "..."}
+  descJson    Json? // {"UA": "...", "PL": "...", "EN": "..."}
   category    Category   @default(Programming)
   parentId    String?
   parent      Topic?     @relation("TopicTree", fields: [parentId], references: [id])
@@ -75,23 +79,23 @@ model Topic {
 }
 
 model Material {
-  id        String       @id @default(cuid())
-  title     String       // Fallback title (EN)
-  titleJson Json?        // {"UA": "...", "PL": "...", "EN": "..."}
-  type      MaterialType
-  url       String?
-  content   String?
-  contentJson Json?      // {"UA": "...", "PL": "...", "EN": "..."} for text materials
-  lang      Lang         @default(EN) // Primary language of material
-  topic     Topic        @relation(fields: [topicId], references: [id])
-  topicId   String
-  views       Int        @default(0)
-  status      Status     @default(Draft)
+  id          String       @id @default(cuid())
+  title       String // Fallback title (EN)
+  titleJson   Json? // {"UA": "...", "PL": "...", "EN": "..."}
+  type        MaterialType
+  url         String?
+  content     String?
+  contentJson Json? // {"UA": "...", "PL": "...", "EN": "..."} for text materials
+  lang        Lang         @default(EN) // Primary language of material
+  topic       Topic        @relation(fields: [topicId], references: [id])
+  topicId     String
+  views       Int          @default(0)
+  status      Status       @default(Draft)
   publishedAt DateTime?
   createdById String?
-  createdBy   User?      @relation("MaterialCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @default(now()) @updatedAt
+  createdBy   User?        @relation("MaterialCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
 
   @@index([topicId])
 }
@@ -111,8 +115,8 @@ enum MaterialType {
 
 model Quiz {
   id          String     @id @default(cuid())
-  title       String     // Fallback title (EN)
-  titleJson   Json?      // {"UA": "...", "PL": "...", "EN": "..."}
+  title       String // Fallback title (EN)
+  titleJson   Json? // {"UA": "...", "PL": "...", "EN": "..."}
   durationSec Int        @default(60)
   topicId     String
   topic       Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
@@ -128,25 +132,25 @@ model Quiz {
 }
 
 model Question {
-  id            String     @id @default(cuid())
-  text          String     // Fallback text (EN)
-  textJson      Json?      // {"UA": "...", "PL": "...", "EN": "..."}
-  explanation   String?
-  explanationJson Json?    // {"UA": "...", "PL": "...", "EN": "..."}
-  tags          String[]
-  difficulty    Difficulty
-  quizId     String
-  quiz       Quiz       @relation(fields: [quizId], references: [id])
-  options    Option[]
-  answers    Answer[]
+  id              String     @id @default(cuid())
+  text            String // Fallback text (EN)
+  textJson        Json? // {"UA": "...", "PL": "...", "EN": "..."}
+  explanation     String?
+  explanationJson Json? // {"UA": "...", "PL": "...", "EN": "..."}
+  tags            String[]
+  difficulty      Difficulty
+  quizId          String
+  quiz            Quiz       @relation(fields: [quizId], references: [id])
+  options         Option[]
+  answers         Answer[]
 
   @@index([quizId])
 }
 
 model Option {
   id         String   @id @default(cuid())
-  text       String   // Fallback text (EN)
-  textJson   Json?    // {"UA": "...", "PL": "...", "EN": "..."}
+  text       String // Fallback text (EN)
+  textJson   Json? // {"UA": "...", "PL": "...", "EN": "..."}
   correct    Boolean  @default(false)
   questionId String
   question   Question @relation(fields: [questionId], references: [id])
@@ -168,8 +172,8 @@ model Answer {
 
   @@index([userId])
   @@index([questionId])
-  @@index([userId, questionId])  // Композитний індекс для швидкого пошуку відповідей користувача
-  @@index([createdAt])           // Індекс для сортування за датою
+  @@index([userId, questionId]) // Композитний індекс для швидкого пошуку відповідей користувача
+  @@index([createdAt]) // Індекс для сортування за датою
 }
 
 enum Difficulty {
@@ -199,6 +203,87 @@ model InviteToken {
 }
 
 // ============================================
+// SESSION & AUTH MODELS
+// ============================================
+
+// Refresh токени для безпечної автентифікації
+model RefreshToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+// Токени для скидання паролю
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+}
+
+// Токени для верифікації email
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+}
+
+// ============================================
+// ACTIVITY & PROGRESS MODELS
+// ============================================
+
+// Переглянуті матеріали (замість масиву в User)
+model MaterialView {
+  id         String   @id @default(cuid())
+  userId     String
+  materialId String
+  viewedAt   DateTime @default(now())
+  timeSpent  Int? // Час перегляду в секундах
+
+  @@unique([userId, materialId])
+  @@index([userId])
+  @@index([materialId])
+  @@index([viewedAt])
+}
+
+// Активність користувача (для аналітики)
+model UserActivity {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime @db.Date // Тільки дата без часу
+  timeSpent       Int      @default(0) // Час в секундах
+  quizAttempts    Int      @default(0)
+  materialsViewed Int      @default(0)
+  goalsCompleted  Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+// ============================================
 // TRANSLATION MODELS
 // ============================================
 
@@ -206,7 +291,7 @@ model InviteToken {
 model UiTranslation {
   id           String   @id @default(cuid())
   key          String   @unique // "nav.dashboard", "quiz.title", etc.
-  translations Json     // {"UA": "...", "PL": "...", "EN": "..."}
+  translations Json // {"UA": "...", "PL": "...", "EN": "..."}
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
 
@@ -216,9 +301,9 @@ model UiTranslation {
 // Щоденні цілі з перекладами
 model DailyGoalTemplate {
   id           String   @id @default(cuid())
-  category     String   // quiz, materials, learning, practice, review
+  category     String // quiz, materials, learning, practice, review
   weight       Int      @default(1)
-  translations Json     // {"UA": "...", "PL": "...", "EN": "..."}
+  translations Json // {"UA": "...", "PL": "...", "EN": "..."}
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
@@ -227,9 +312,9 @@ model DailyGoalTemplate {
 // Слабкі місця / рекомендації
 model WeakSpotTemplate {
   id           String   @id @default(cuid())
-  category     String   // algorithms, sql, oop, etc.
+  category     String // algorithms, sql, oop, etc.
   weight       Int      @default(1)
-  translations Json     // {topic: {UA,PL,EN}, advice: {UA,PL,EN}}
+  translations Json // {topic: {UA,PL,EN}, advice: {UA,PL,EN}}
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
@@ -239,8 +324,8 @@ model WeakSpotTemplate {
 model AchievementTemplate {
   id           String   @id @default(cuid())
   code         String   @unique // "first_quiz", "week_streak", etc.
-  icon         String   // emoji or icon name
-  translations Json     // {name: {UA,PL,EN}, description: {UA,PL,EN}}
+  icon         String // emoji or icon name
+  translations Json // {name: {UA,PL,EN}, description: {UA,PL,EN}}
   xpReward     Int      @default(0)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -249,7 +334,7 @@ model AchievementTemplate {
 
 // Категорії з перекладами
 model CategoryTranslation {
-  id        String   @id @default(cuid())
-  category  Category @unique
-  translations Json  // {"UA": "Програмування", "PL": "...", "EN": "..."}
+  id           String   @id @default(cuid())
+  category     Category @unique
+  translations Json // {"UA": "Програмування", "PL": "...", "EN": "..."}
 }

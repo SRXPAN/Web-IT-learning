@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { http } from '@/lib/http'
 import { Trophy, Clock, CheckCircle, XCircle, Loader2, History } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from '@/i18n/useTranslation'
 
 interface QuizAttempt {
   quizId: string
@@ -22,6 +23,7 @@ interface QuizHistoryResponse {
 }
 
 export default function QuizHistory() {
+  const { t, lang } = useTranslation()
   const [history, setHistory] = useState<QuizAttempt[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,18 +35,19 @@ export default function QuizHistory() {
         const data = await http.get<QuizHistoryResponse>('/quiz/user/history?limit=5')
         setHistory(data.data)
       } catch (e) {
-        setError('Не вдалося завантажити історію')
+        setError('Failed to load history')
         console.error(e)
       } finally {
         setLoading(false)
       }
     }
     fetchHistory()
-  }, [])
+  }, []) // Тільки при маунті
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('uk-UA', {
+    const locale = lang === 'UA' ? 'uk-UA' : lang === 'PL' ? 'pl-PL' : 'en-US'
+    return date.toLocaleDateString(locale, {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
@@ -64,7 +67,7 @@ export default function QuizHistory() {
       <div className="card">
         <div className="flex items-center gap-2 mb-4">
           <History size={20} className="text-primary-600 dark:text-primary-400" />
-          <h3 className="text-lg font-display font-semibold">Остання активність</h3>
+          <h3 className="text-lg font-display font-semibold">{t('dashboard.recentActivity')}</h3>
         </div>
         <div className="flex justify-center py-8">
           <Loader2 size={24} className="animate-spin text-primary-500" />
@@ -78,7 +81,7 @@ export default function QuizHistory() {
       <div className="card">
         <div className="flex items-center gap-2 mb-4">
           <History size={20} className="text-primary-600 dark:text-primary-400" />
-          <h3 className="text-lg font-display font-semibold">Остання активність</h3>
+          <h3 className="text-lg font-display font-semibold">{t('dashboard.recentActivity')}</h3>
         </div>
         <p className="text-neutral-500 text-sm">{error}</p>
       </div>
@@ -90,13 +93,13 @@ export default function QuizHistory() {
       <div className="card">
         <div className="flex items-center gap-2 mb-4">
           <History size={20} className="text-primary-600 dark:text-primary-400" />
-          <h3 className="text-lg font-display font-semibold">Остання активність</h3>
+          <h3 className="text-lg font-display font-semibold">{t('dashboard.recentActivity')}</h3>
         </div>
         <div className="text-center py-8">
           <Trophy size={40} className="mx-auto mb-3 text-neutral-300" />
-          <p className="text-neutral-500">Ви ще не проходили квізи</p>
-          <Link to="/quiz" className="btn mt-4 inline-flex">
-            Почати навчання
+          <p className="text-neutral-500">{t('quiz.noHistory')}</p>
+          <Link to="/materials" className="btn mt-4 inline-flex">
+            {t('dashboard.startLearning')}
           </Link>
         </div>
       </div>
@@ -108,10 +111,10 @@ export default function QuizHistory() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <History size={20} className="text-primary-600 dark:text-primary-400" />
-          <h3 className="text-lg font-display font-semibold">Остання активність</h3>
+          <h3 className="text-lg font-display font-semibold">{t('dashboard.recentActivity')}</h3>
         </div>
         <Link to="/quiz" className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400">
-          Всі квізи →
+          {t('dashboard.allQuizzes')} →
         </Link>
       </div>
 

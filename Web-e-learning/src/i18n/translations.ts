@@ -9,6 +9,8 @@ export type TranslationKey =
   // Common
   | 'app.name'
   | 'common.loading'
+  | 'common.error'
+  | 'common.loadFailed'
   | 'common.save'
   | 'common.cancel'
   | 'common.delete'
@@ -51,6 +53,9 @@ export type TranslationKey =
   | 'dashboard.keepStreak'
   | 'dashboard.goToCourseChat'
   | 'dashboard.last7days'
+  | 'dashboard.recentActivity'
+  | 'dashboard.allQuizzes'
+  | 'dashboard.startLearning'
   
   // Materials
   | 'materials.title'
@@ -87,6 +92,8 @@ export type TranslationKey =
   | 'materials.viewTime'
   | 'materials.viewAllMaterials'
   | 'materials.remaining'
+  | 'materials.materialsViewed'
+  | 'materials.noSections'
   
   // Categories
   | 'category.programming'
@@ -182,6 +189,12 @@ export type TranslationKey =
   | 'auth.password'
   | 'auth.signIn'
   | 'auth.createAccount'
+  | 'auth.noAccount'
+  | 'auth.hasAccount'
+  | 'auth.confirmPassword'
+  | 'auth.passwordsNotMatch'
+  | 'auth.passwordMinLength'
+  | 'auth.namePlaceholder'
   
   // Editor
   | 'editor.topics'
@@ -228,6 +241,8 @@ export const translations: Translations = {
     // Common
     'app.name': 'E-Learn',
     'common.loading': 'Завантаження...',
+    'common.error': 'Помилка',
+    'common.loadFailed': 'Не вдалося завантажити дані',
     'common.save': 'Зберегти',
     'common.cancel': 'Скасувати',
     'common.delete': 'Видалити',
@@ -270,6 +285,10 @@ export const translations: Translations = {
     'dashboard.pending': 'В процесі',
     'dashboard.keepStreak': 'Продовжуй навчатися щодня, щоб зберегти стрік!',
     'dashboard.goToCourseChat': 'Перейти до чату курсу',
+    'dashboard.last7days': 'за 7 днів',
+    'dashboard.recentActivity': 'Остання активність',
+    'dashboard.allQuizzes': 'Всі квізи',
+    'dashboard.startLearning': 'Почати навчання',
     
     // Materials
     'materials.title': 'Матеріали',
@@ -306,6 +325,8 @@ export const translations: Translations = {
     'materials.viewTime': 'Час перегляду',
     'materials.viewAllMaterials': 'Перегляньте всі матеріали, щоб розблокувати тест',
     'materials.remaining': 'Залишилось',
+    'materials.materialsViewed': 'матеріалів переглянуто',
+    'materials.noSections': 'Розділи ще не додані',
     
     // Categories
     'category.programming': 'Програмування',
@@ -401,6 +422,12 @@ export const translations: Translations = {
     'auth.password': 'Пароль',
     'auth.signIn': 'Увійти',
     'auth.createAccount': 'Створити акаунт',
+    'auth.noAccount': 'Немає акаунту?',
+    'auth.hasAccount': 'Вже маєте акаунт?',
+    'auth.confirmPassword': 'Підтвердіть пароль',
+    'auth.passwordsNotMatch': 'Паролі не співпадають',
+    'auth.passwordMinLength': 'Пароль повинен містити мінімум 8 символів',
+    'auth.namePlaceholder': 'Ваше імʼя',
     
     // Editor
     'editor.topics': 'Теми',
@@ -435,13 +462,14 @@ export const translations: Translations = {
     'dashboard.weekday.fri': 'Пт',
     'dashboard.weekday.sat': 'Сб',
     'dashboard.weekday.sun': 'Нд',
-    'dashboard.last7days': '7 днів',
   },
   
   PL: {
     // Common
     'app.name': 'E-Learn',
     'common.loading': 'Ładowanie...',
+    'common.error': 'Błąd',
+    'common.loadFailed': 'Nie udało się załadować danych',
     'common.save': 'Zapisz',
     'common.cancel': 'Anuluj',
     'common.delete': 'Usuń',
@@ -484,6 +512,10 @@ export const translations: Translations = {
     'dashboard.pending': 'W toku',
     'dashboard.keepStreak': 'Ucz się codziennie, aby utrzymać serię!',
     'dashboard.goToCourseChat': 'Przejdź do czatu kursu',
+    'dashboard.last7days': 'ostatnie 7 dni',
+    'dashboard.recentActivity': 'Ostatnia aktywność',
+    'dashboard.allQuizzes': 'Wszystkie quizy',
+    'dashboard.startLearning': 'Zacznij naukę',
     
     // Materials
     'materials.title': 'Materiały',
@@ -520,6 +552,8 @@ export const translations: Translations = {
     'materials.viewTime': 'Czas oglądania',
     'materials.viewAllMaterials': 'Obejrzyj wszystkie materiały, aby odblokować test',
     'materials.remaining': 'Pozostało',
+    'materials.materialsViewed': 'materiałów obejrzanych',
+    'materials.noSections': 'Sekcje nie zostały jeszcze dodane',
     
     // Categories
     'category.programming': 'Programowanie',
@@ -615,6 +649,12 @@ export const translations: Translations = {
     'auth.password': 'Hasło',
     'auth.signIn': 'Zaloguj się',
     'auth.createAccount': 'Utwórz konto',
+    'auth.noAccount': 'Nie masz konta?',
+    'auth.hasAccount': 'Masz już konto?',
+    'auth.confirmPassword': 'Potwierdź hasło',
+    'auth.passwordsNotMatch': 'Hasła nie pasują',
+    'auth.passwordMinLength': 'Hasło musi mieć minimum 8 znaków',
+    'auth.namePlaceholder': 'Twoje imię',
     
     // Editor
     'editor.topics': 'Tematy',
@@ -649,13 +689,14 @@ export const translations: Translations = {
     'dashboard.weekday.fri': 'Pt',
     'dashboard.weekday.sat': 'So',
     'dashboard.weekday.sun': 'Nd',
-    'dashboard.last7days': '7 dni',
   },
   
   EN: {
     // Common
     'app.name': 'E-Learn',
     'common.loading': 'Loading...',
+    'common.error': 'Error',
+    'common.loadFailed': 'Failed to load data',
     'common.save': 'Save',
     'common.cancel': 'Cancel',
     'common.delete': 'Delete',
@@ -698,6 +739,10 @@ export const translations: Translations = {
     'dashboard.pending': 'Pending',
     'dashboard.keepStreak': 'Keep learning daily to maintain your streak!',
     'dashboard.goToCourseChat': 'Go to course chat',
+    'dashboard.last7days': 'last 7 days',
+    'dashboard.recentActivity': 'Recent Activity',
+    'dashboard.allQuizzes': 'All quizzes',
+    'dashboard.startLearning': 'Start learning',
     
     // Materials
     'materials.title': 'Materials',
@@ -734,6 +779,8 @@ export const translations: Translations = {
     'materials.viewTime': 'View time',
     'materials.viewAllMaterials': 'View all materials to unlock the test',
     'materials.remaining': 'Remaining',
+    'materials.materialsViewed': 'materials viewed',
+    'materials.noSections': 'Sections not yet added',
     
     // Categories
     'category.programming': 'Programming',
@@ -827,8 +874,12 @@ export const translations: Translations = {
     'auth.register': 'Register',
     'auth.password': 'Password',
     'auth.signIn': 'Sign in',
-    'auth.createAccount': 'Create account',
-    
+    'auth.createAccount': 'Create account',    'auth.noAccount': 'Don\'t have an account?',
+    'auth.hasAccount': 'Already have an account?',
+    'auth.confirmPassword': 'Confirm password',
+    'auth.passwordsNotMatch': 'Passwords do not match',
+    'auth.passwordMinLength': 'Password must be at least 8 characters',
+    'auth.namePlaceholder': 'Your name',    
     // Editor
     'editor.topics': 'Topics',
     'editor.materials': 'Materials',
@@ -862,7 +913,6 @@ export const translations: Translations = {
     'dashboard.weekday.fri': 'Fri',
     'dashboard.weekday.sat': 'Sat',
     'dashboard.weekday.sun': 'Sun',
-    'dashboard.last7days': '7 days',
   },
 }
 

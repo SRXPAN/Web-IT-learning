@@ -4,9 +4,11 @@ import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from '@/i18n/useTranslation'
 import { getTodayGoals, saveDailyGoals, getGoalText, DailyGoal } from '@/utils/dailyGoals'
 import { getTodayWeakSpots, getTodayTip, getWeakSpotText, getTipText } from '@/utils/weakSpots'
-import { calculateStreak, getLast7DaysStats, logGoalComplete } from '@/utils/activity'
+import { logGoalComplete } from '@/utils/activity'
 import { useActivityTracker } from '@/hooks/useActivityTracker'
 import QuizHistory from '@/components/QuizHistory'
+import { http } from '@/lib/http'
+import { Link } from 'react-router-dom'
 
 function ProgressBar({value}:{value:number}){
   const v = Math.max(0, Math.min(100, Math.round(value)))
@@ -42,6 +44,7 @@ function StatCard({ icon: Icon, label, value, sub }: StatCardProps) {
 }
 
 function CourseCard({ name, step, progress }: { name: string; step: string; progress: number }) {
+  const { t } = useTranslation()
   return (
     <div className="card hover:shadow-neo-lg">
       <div className="space-y-3">
@@ -52,7 +55,7 @@ function CourseCard({ name, step, progress }: { name: string; step: string; prog
         
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
-            <span>Progress</span>
+            <span>{t('materials.progress')}</span>
             <span className="font-semibold">{progress}%</span>
           </div>
           <ProgressBar value={progress} />
@@ -60,10 +63,10 @@ function CourseCard({ name, step, progress }: { name: string; step: string; prog
 
         <div className="flex gap-2">
           <button className="btn flex-1">
-            <Play size={16} className="inline mr-1"/>Продовжити
+            <Play size={16} className="inline mr-1"/>{t('common.continue')}
           </button>
           <button className="btn-outline">
-            <FileText size={16} className="inline mr-1"/>Матеріали
+            <FileText size={16} className="inline mr-1"/>{t('nav.materials')}
           </button>
         </div>
       </div>
@@ -108,16 +111,27 @@ export default function Dashboard(){
   const nextLevelAt = level * 100
   const progressToNext = Math.min(100, Math.round(((xp % 100) / 100) * 100))
 
-  // Mock data
-  const streak = 7
-  const attemptsLast7Days = 12
-  const studyTimeLast7Days = 4.5
+  // Continue Learning - дані з API
+  interface RecentTopic {
+    id: string
+    name: string
+    nameJson: Record<string, string> | null
+    slug: string
+    progress: number
+    totalMaterials: number
+    viewedMaterials: number
+  }
+  const [recentTopics, setRecentTopics] = useState<RecentTopic[]>([])
+  const [loadingTopics, setLoadingTopics] = useState(true)
 
-  // Mock data with translations
-  const courses = [
-    { id: 1, name: t('dashboard.course.algorithms'), step: t('dashboard.lesson.quicksort'), progress: 65 },
-    { id: 2, name: t('dashboard.course.sql'), step: t('dashboard.lesson.joins'), progress: 42 },
-  ]
+  // Streak та активність з API
+  const [streakData, setStreakData] = useState<{ 
+    current: number
+    longest: number
+    lastActiveDate: string | null
+    weekDays: boolean[]
+  }>({ current: 0, longest: 0, lastActiveDate: null, weekDays: [false, false, false, false, false, false, false] })
+  const [last7DaysStats, setLast7DaysStats] = useState({ timeHours: '0.0', attempts: 0 })
 
   const streakDays = [
     t('dashboard.weekday.mon'),
@@ -128,7 +142,6 @@ export default function Dashboard(){
     t('dashboard.weekday.sat'),
     t('dashboard.weekday.sun'),
   ]
-  const activeStreak = [true, true, true, true, true, true, true]
 
   const achievements = [
     { id: 1, name: t('dashboard.achievement.firstQuiz'), earned: true },
@@ -140,19 +153,67 @@ export default function Dashboard(){
   const [goals, setGoals] = useState<DailyGoal[]>([])
   const [weakSpots, setWeakSpots] = useState<{ topic: string; advice: string }[]>([])
   const [dailyTip, setDailyTip] = useState<string>('')
-  const [streakData, setStreakData] = useState({ current: 0, weekDays: [false, false, false, false, false, false, false] })
-  const [last7DaysStats, setLast7DaysStats] = useState({ timeHours: '0.0', attempts: 0 })
 
-  // Ініціалізація goals один раз
+  // Завантаження даних з API
+  useEffect(() => {
+    async function loadData() {
+      try {
+        // Спочатку записуємо візит (для streak)
+        await http.post('/progress/visit', {})
+        
+        // Завантаження останніх тем паралельно зі streak
+        const [topicsRes, streakRes, activityRes] = await Promise.all([
+          http.get<{ topics: RecentTopic[] }>('/progress/recent-topics?limit=2'),
+          http.get<{ current: number; longest: number; lastActiveDate: string | null }>('/progress/streak'),
+          http.get<Array<{ date: string; timeSpent: number; quizAttempts: number }>>('/progress/activity?days=7'),
+        ])
+        
+        setRecentTopics(topicsRes.topics)
+        
+        // Обробка streak та weekDays
+        const today = new Date()
+        const weekDays: boolean[] = []
+        const activityDates = new Set(activityRes.map(a => a.date.split('T')[0]))
+        
+        // Визначаємо день тижня (0 = неділя, потрібно пн = 0)
+        const todayDayOfWeek = (today.getDay() + 6) % 7 // Пн=0, Вт=1, ..., Нд=6
+        
+        // Заповнюємо масив активності для кожного дня тижня
+        for (let i = 0; i < 7; i++) {
+          const dayDate = new Date(today)
+          dayDate.setDate(today.getDate() - todayDayOfWeek + i)
+          const dateStr = dayDate.toISOString().split('T')[0]
+          weekDays.push(activityDates.has(dateStr))
+        }
+        
+        setStreakData({
+          current: streakRes.current,
+          longest: streakRes.longest,
+          lastActiveDate: streakRes.lastActiveDate,
+          weekDays,
+        })
+        
+        // Статистика за 7 днів
+        const totalTime = activityRes.reduce((sum, a) => sum + a.timeSpent, 0)
+        const totalAttempts = activityRes.reduce((sum, a) => sum + a.quizAttempts, 0)
+        setLast7DaysStats({
+          timeHours: (totalTime / 3600).toFixed(1),
+          attempts: totalAttempts,
+        })
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err)
+      } finally {
+        setLoadingTopics(false)
+      }
+    }
+    
+    loadData()
+  }, [])
+
+  // Ініціалізація goals
   useEffect(() => {
     const todayGoals = getTodayGoals()
     setGoals(todayGoals)
-    
-    // Статистика стріку та 7 днів
-    const streak = calculateStreak()
-    setStreakData(streak)
-    const stats = getLast7DaysStats()
-    setLast7DaysStats(stats)
   }, [])
 
   // Зберігання goals при зміні
@@ -223,41 +284,48 @@ export default function Dashboard(){
       <div className="grid lg:grid-cols-[1fr_400px] gap-6">
         {/* Left: Main Content */}
         <div className="space-y-6">
-          {/* Continue Learning */}
-          <div className="card">
-            <h2 className="text-xl font-display font-bold text-neutral-900 dark:text-white mb-4">
-              {t('dashboard.continueLearning')}
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {courses.map(course => (
-                <div key={course.id} className="card hover:shadow-neo-lg">
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="font-display font-semibold text-neutral-900 dark:text-white">{course.name}</h4>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">{course.step}</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
-                        <span>{t('materials.progress')}</span>
-                        <span className="font-semibold">{course.progress}%</span>
-                      </div>
-                      <ProgressBar value={course.progress} />
-                    </div>
+          {/* Continue Learning - показуємо тільки якщо є переглянуті теми */}
+          {!loadingTopics && recentTopics.length > 0 && (
+            <div className="card">
+              <h2 className="text-xl font-display font-bold text-neutral-900 dark:text-white mb-4">
+                {t('dashboard.continueLearning')}
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                {recentTopics.map(topic => {
+                  const topicName = topic.nameJson?.[lang] || topic.name
+                  return (
+                    <div key={topic.id} className="card hover:shadow-neo-lg">
+                      <div className="space-y-3">
+                        <div>
+                          <h4 className="font-display font-semibold text-neutral-900 dark:text-white">{topicName}</h4>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            {topic.viewedMaterials}/{topic.totalMaterials} {t('materials.materialsViewed')}
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
+                            <span>{t('materials.progress')}</span>
+                            <span className="font-semibold">{topic.progress}%</span>
+                          </div>
+                          <ProgressBar value={topic.progress} />
+                        </div>
 
-                    <div className="flex gap-2">
-                      <button className="btn flex-1">
-                        <Play size={16} className="inline mr-1"/>{t('common.continue')}
-                      </button>
-                      <button className="btn-outline">
-                        <FileText size={16} className="inline mr-1"/>{t('nav.materials')}
-                      </button>
+                        <div className="flex gap-2">
+                          <Link to={`/materials?topic=${topic.slug}`} className="btn flex-1">
+                            <Play size={16} className="inline mr-1"/>{t('common.continue')}
+                          </Link>
+                          <Link to="/materials" className="btn-outline">
+                            <FileText size={16} className="inline mr-1"/>{t('nav.materials')}
+                          </Link>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Weak Spots */}
           <div className="card">

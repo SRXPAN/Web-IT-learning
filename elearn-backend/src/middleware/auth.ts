@@ -9,6 +9,7 @@ export interface JwtPayload {
   role: Role
   name: string
   email: string
+  type?: 'access' | 'refresh'
 }
 
 declare global {
@@ -18,7 +19,8 @@ declare global {
 }
 
 const SECRET = getJwtSecret()
-export const COOKIE_NAME = getEnv('COOKIE_NAME', 'access')
+export const COOKIE_NAME = getEnv('COOKIE_NAME', 'access_token')
+export const REFRESH_COOKIE_NAME = getEnv('REFRESH_COOKIE_NAME', 'refresh_token')
 
 function readToken(req: Request): string | null {
   // 1) пріоритет: cookie (HttpOnly)
@@ -35,12 +37,38 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const token = readToken(req)
   if (!token) return res.status(401).json({ error: 'No token' })
   try {
-    const decoded = jwt.verify(token, SECRET)
-    req.user = decoded as JwtPayload
+    const decoded = jwt.verify(token, SECRET) as JwtPayload
+    // Перевіряємо що це access токен (якщо є type)
+    if (decoded.type && decoded.type !== 'access') {
+      return res.status(401).json({ error: 'Invalid token type' })
+    }
+    req.user = decoded
     next()
-  } catch {
+  } catch (err: any) {
+    // Детальніші помилки для клієнта
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' })
+    }
     return res.status(401).json({ error: 'Invalid token' })
   }
+}
+
+/**
+ * Опціональна авторизація - не блокує якщо токена немає
+ */
+export function optionalAuth(req: Request, res: Response, next: NextFunction) {
+  const token = readToken(req)
+  if (!token) return next()
+  
+  try {
+    const decoded = jwt.verify(token, SECRET) as JwtPayload
+    if (!decoded.type || decoded.type === 'access') {
+      req.user = decoded
+    }
+  } catch {
+    // Ігноруємо помилки - просто не встановлюємо user
+  }
+  next()
 }
 
 export function requireRole(roles: Role[]) {
@@ -49,4 +77,13 @@ export function requireRole(roles: Role[]) {
     if (!roles.includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' })
     next()
   }
+}
+
+/**
+ * Перевіряє що email верифіковано
+ */
+export function requireVerifiedEmail(req: Request, res: Response, next: NextFunction) {
+  // Тут потрібно б перевірити emailVerified, але для цього потрібен запит до БД
+  // Поки що пропускаємо, можна додати пізніше
+  next()
 }

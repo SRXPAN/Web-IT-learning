@@ -70,12 +70,18 @@ router.post(
         }
       })
 
-      if (rows.length) await prisma.answer.createMany({ data: rows, skipDuplicates: true })
-
       const xpEarned = correctCount * 10
-      await prisma.user.update({
-        where: { id: req.user!.id },
-        data: { xp: { increment: xpEarned } },
+
+      // Використовуємо транзакцію для атомарності операцій
+      await prisma.$transaction(async (tx) => {
+        if (rows.length) {
+          await tx.answer.createMany({ data: rows, skipDuplicates: true })
+        }
+        
+        await tx.user.update({
+          where: { id: req.user!.id },
+          data: { xp: { increment: xpEarned } },
+        })
       })
 
       res.json({ correct: correctCount, total: quiz.questions.length, xpEarned })
