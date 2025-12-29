@@ -150,3 +150,8 @@ export function PageLoader({ text = 'Завантаження...' }: { text?: st
     </div>
   )
 }
+
+/** Default Loading component */
+export function Loading({ text }: { text?: string }) {
+  return <PageLoader text={text} />
+}

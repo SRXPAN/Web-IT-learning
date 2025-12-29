@@ -20,14 +20,6 @@ type TestCase = {
   passed: boolean
 }
 
-const mockQuestion: Question = {
-  id: 'q1',
-  text: 'Яка часова складність бінарного пошуку в відсортованому масиві?',
-  options: ['O(n)', 'O(log n)', 'O(n log n)', 'O(1)'],
-  correct: 1,
-  explanation: 'Бінарний пошук ділить масив навпіл на кожному кроці, тому складність O(log n).'
-}
-
 const mockTests: TestCase[] = [
   { input: '[1,2,3,4,5], target=3', expected: '2', passed: true },
   { input: '[1,3,5,7,9], target=5', expected: '2', passed: true },
@@ -36,6 +28,14 @@ const mockTests: TestCase[] = [
 
 export default function LessonView() {
   const { t } = useTranslation()
+
+  const mockQuestion: Question = {
+    id: 'q1',
+    text: t('lesson.mock.questionText'),
+    options: ['O(n)', 'O(log n)', 'O(n log n)', 'O(1)'],
+    correct: 1,
+    explanation: t('lesson.mock.explanation')
+  }
   const { topicId, lessonId } = useParams()
   const nav = useNavigate()
   const [mode, setMode] = useState<Mode>('practice')
@@ -74,7 +74,7 @@ export default function LessonView() {
     t('lesson.hint.complexity'),
   ]
 
-  const achievements = ['🏆 Перший квіз', '⚡ Швидка відповідь', '🎯 Точність 90%']
+  const achievements = [t('lesson.achievement.firstQuiz'), t('lesson.achievement.fastAnswer'), t('lesson.achievement.accuracy90')]
 
   const checklistSteps = [
     { done: true, label: t('quiz.checklist.reviewMaterials') },
@@ -342,7 +342,7 @@ export default function LessonView() {
                         </span>
                       </div>
                       <p className="text-xs text-neutral-600 dark:text-neutral-400">{test.input}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-500">Expected: {test.expected}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-500">{t('lesson.test.expected')}: {test.expected}</p>
                     </div>
                   ))}
                 </div>

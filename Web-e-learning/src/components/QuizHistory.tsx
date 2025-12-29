@@ -35,7 +35,7 @@ export default function QuizHistory() {
         const data = await http.get<QuizHistoryResponse>('/quiz/user/history?limit=5')
         setHistory(data.data)
       } catch (e) {
-        setError('Failed to load history')
+        setError(t('quiz.error.historyLoadFailed'))
         console.error(e)
       } finally {
         setLoading(false)

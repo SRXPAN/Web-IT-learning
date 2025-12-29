@@ -12,7 +12,8 @@ model User {
   email            String         @unique
   name             String
   password         String
-  avatar           String?
+  avatarId         String?        // Reference to File
+  avatarFile       File?          @relation("UserAvatar", fields: [avatarId], references: [id])
   role             Role           @default(STUDENT)
   xp               Int            @default(0)
   emailVerified    Boolean        @default(false)
@@ -24,10 +25,12 @@ model User {
   materialsCreated Material[]     @relation("MaterialCreator")
   quizzesCreated   Quiz[]         @relation("QuizCreator")
   refreshTokens    RefreshToken[]
+  filesUploaded    File[]         @relation("FileUploader")
+  auditLogs        AuditLog[]
 
-  @@index([role]) // Індекс для фільтрації по ролі
-  @@index([createdAt]) // Індекс для сортування по даті створення
-  @@index([email]) // Індекс для швидкого пошуку по email
+  @@index([role])
+  @@index([createdAt])
+  @@index([email])
 }
 
 enum Role {
@@ -84,6 +87,8 @@ model Material {
   titleJson   Json? // {"UA": "...", "PL": "...", "EN": "..."}
   type        MaterialType
   url         String?
+  fileId      String?      // Reference to File for pdf/video/image
+  file        File?        @relation(fields: [fileId], references: [id])
   content     String?
   contentJson Json? // {"UA": "...", "PL": "...", "EN": "..."} for text materials
   lang        Lang         @default(EN) // Primary language of material
@@ -287,15 +292,26 @@ model UserActivity {
 // TRANSLATION MODELS
 // ============================================
 
+// Версіонування перекладів для кешування (ETag)
+model TranslationVersion {
+  id        String   @id @default(cuid())
+  namespace String   @unique // "common", "auth", "quiz", etc.
+  version   Int      @default(1)
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
 // UI переклади (кнопки, меню, повідомлення)
 model UiTranslation {
   id           String   @id @default(cuid())
   key          String   @unique // "nav.dashboard", "quiz.title", etc.
-  translations Json // {"UA": "...", "PL": "...", "EN": "..."}
+  namespace    String   @default("common") // common, auth, quiz, materials, editor, dashboard
+  translations Json     // {"UA": "...", "PL": "...", "EN": "..."}
+  description  String?  // Опис для редактора перекладів
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
 
   @@index([key])
+  @@index([namespace])
 }
 
 // Щоденні цілі з перекладами
@@ -337,4 +353,58 @@ model CategoryTranslation {
   id           String   @id @default(cuid())
   category     Category @unique
   translations Json // {"UA": "Програмування", "PL": "...", "EN": "..."}
+}
+
+// ============================================
+// FILE STORAGE MODELS
+// ============================================
+
+// Файли (S3/R2 storage metadata)
+model File {
+  id           String       @id @default(cuid())
+  key          String       @unique // S3 key: "files/abc123.pdf"
+  bucket       String       @default("elearn-files")
+  originalName String       // Original filename
+  mimeType     String       // "application/pdf", "image/jpeg", etc.
+  size         Int          // Size in bytes
+  visibility   Visibility   @default(PRIVATE)
+  uploadedById String?
+  uploadedBy   User?        @relation("FileUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  materials    Material[]
+  userAvatars  User[]       @relation("UserAvatar")
+  confirmed    Boolean      @default(false) // True after upload confirmed
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @default(now()) @updatedAt
+
+  @@index([uploadedById])
+  @@index([visibility])
+  @@index([mimeType])
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+  SIGNED // Requires signed URL
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String   // "CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT"
+  resource   String   // "topic", "material", "quiz", "user", "file"
+  resourceId String?
+  metadata   Json?    // Additional context
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
 }

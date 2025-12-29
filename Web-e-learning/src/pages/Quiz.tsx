@@ -224,7 +224,7 @@ export default function QuizPage() {
                   {mode === 'exam' ? t('quiz.time') : t('quiz.mode')}
                 </span>
                 <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
-                  {mode === 'exam' ? formatTime(left) : 'Практика'}
+                  {mode === 'exam' ? formatTime(left) : t('quiz.mode.practice')}
                 </span>
               </div>
               {mode === 'exam' && lowTime && <span className="text-xs text-red-600 dark:text-red-400 font-semibold">{t('quiz.time')} ↓</span>}
@@ -250,26 +250,26 @@ export default function QuizPage() {
               className="w-full p-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors flex items-center justify-center gap-2"
             >
               <Keyboard size={14} />
-              {showShortcuts ? 'Сховати' : 'Гарячі клавіші'}
+              {showShortcuts ? t('quiz.shortcuts.hide') : t('quiz.shortcuts.show')}
             </button>
             
             {showShortcuts && (
               <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900 text-xs space-y-2">
                 <div className="flex justify-between">
                   <span className="text-neutral-500">1-4</span>
-                  <span className="text-neutral-700 dark:text-neutral-300">Вибрати відповідь</span>
+                  <span className="text-neutral-700 dark:text-neutral-300">{t('quiz.shortcuts.selectAnswer')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-neutral-500">Enter</span>
-                  <span className="text-neutral-700 dark:text-neutral-300">Підтвердити</span>
+                  <span className="text-neutral-700 dark:text-neutral-300">{t('quiz.shortcuts.confirm')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-neutral-500">N</span>
-                  <span className="text-neutral-700 dark:text-neutral-300">Наступне питання</span>
+                  <span className="text-neutral-700 dark:text-neutral-300">{t('quiz.shortcuts.nextQuestion')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-neutral-500">S</span>
-                  <span className="text-neutral-700 dark:text-neutral-300">Пропустити</span>
+                  <span className="text-neutral-700 dark:text-neutral-300">{t('quiz.shortcuts.skip')}</span>
                 </div>
               </div>
             )}
@@ -549,7 +549,7 @@ export default function QuizPage() {
               </h3>
             </div>
             <div className="flex flex-wrap gap-2">
-              {['🏆 Перший квіз', '⚡ 10/10', '🎯 Точність 90%'].map((ach, idx) => (
+              {[t('quiz.achievement.firstQuiz'), t('quiz.achievement.perfectScore'), t('quiz.achievement.accuracy90')].map((ach, idx) => (
                 <span key={idx} className="badge">
                   {ach}
                 </span>

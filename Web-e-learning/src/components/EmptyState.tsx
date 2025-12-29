@@ -1,5 +1,6 @@
 // src/components/EmptyState.tsx
 import React from 'react'
+import { useTranslation } from '@/i18n/useTranslation'
 import { 
   BookOpen, 
   Trophy, 
@@ -105,12 +106,13 @@ export function EmptyMaterials({
   onAction?: () => void
   className?: string 
 }) {
+  const { t } = useTranslation()
   return (
     <EmptyState
       icon={BookOpen}
-      title="Матеріалів поки немає"
-      description="Тут з'являться навчальні матеріали, коли вони будуть додані"
-      action={onAction ? { label: 'Переглянути категорії', onClick: onAction } : undefined}
+      title={t('empty.materials.title')}
+      description={t('empty.materials.description')}
+      action={onAction ? { label: t('empty.materials.action'), onClick: onAction } : undefined}
       className={className}
     />
   )
@@ -128,15 +130,16 @@ export function EmptySearch({
   onClear?: () => void
   className?: string 
 }) {
+  const { t } = useTranslation()
   return (
     <EmptyState
       icon={Search}
-      title="Нічого не знайдено"
+      title={t('empty.search.title')}
       description={query 
-        ? `За запитом "${query}" нічого не знайдено. Спробуйте інший пошуковий запит.`
-        : 'Спробуйте змінити параметри пошуку'
+        ? `${query} ${t('empty.search.descriptionWithQuery')}`
+        : t('empty.search.descriptionNoQuery')
       }
-      action={onClear ? { label: 'Очистити пошук', onClick: onClear } : undefined}
+      action={onClear ? { label: t('empty.search.action'), onClick: onClear } : undefined}
       className={className}
     />
   )
@@ -146,11 +149,12 @@ export function EmptySearch({
  * Порожній стан для рейтингу
  */
 export function EmptyLeaderboard({ className = '' }: { className?: string }) {
+  const { t } = useTranslation()
   return (
     <EmptyState
       icon={Trophy}
-      title="Рейтинг порожній"
-      description="Поки що ніхто не набрав балів. Станьте першим!"
+      title={t('empty.leaderboard.title')}
+      description={t('empty.leaderboard.description')}
       className={className}
     />
   )
@@ -166,12 +170,13 @@ export function EmptyQuizHistory({
   onStartQuiz?: () => void
   className?: string 
 }) {
+  const { t } = useTranslation()
   return (
     <EmptyState
       icon={ClipboardList}
-      title="Історія порожня"
-      description="Ви ще не проходили жодного квізу. Почніть навчання зараз!"
-      action={onStartQuiz ? { label: 'Пройти квіз', onClick: onStartQuiz } : undefined}
+      title={t('empty.quizHistory.title')}
+      description={t('empty.quizHistory.description')}
+      action={onStartQuiz ? { label: t('empty.quizHistory.action'), onClick: onStartQuiz } : undefined}
       className={className}
     />
   )
@@ -187,12 +192,13 @@ export function EmptyProgress({
   onStartLearning?: () => void
   className?: string 
 }) {
+  const { t } = useTranslation()
   return (
     <EmptyState
       icon={TrendingUp}
-      title="Прогресу поки немає"
-      description="Почніть вивчати матеріали, щоб відстежувати свій прогрес"
-      action={onStartLearning ? { label: 'Почати навчання', onClick: onStartLearning } : undefined}
+      title={t('empty.progress.title')}
+      description={t('empty.progress.description')}
+      action={onStartLearning ? { label: t('empty.progress.action'), onClick: onStartLearning } : undefined}
       className={className}
     />
   )
@@ -208,12 +214,13 @@ export function EmptyTopics({
   onCreateTopic?: () => void
   className?: string 
 }) {
+  const { t } = useTranslation()
   return (
     <EmptyState
       icon={FileText}
-      title="Топіків поки немає"
-      description="Створіть перший топік для початку роботи"
-      action={onCreateTopic ? { label: 'Створити топік', onClick: onCreateTopic } : undefined}
+      title={t('empty.topics.title')}
+      description={t('empty.topics.description')}
+      action={onCreateTopic ? { label: t('empty.topics.action'), onClick: onCreateTopic } : undefined}
       className={className}
     />
   )
@@ -223,11 +230,12 @@ export function EmptyTopics({
  * Порожній стан для підказок/рекомендацій
  */
 export function EmptyRecommendations({ className = '' }: { className?: string }) {
+  const { t } = useTranslation()
   return (
     <EmptyState
       icon={Lightbulb}
-      title="Рекомендацій поки немає"
-      description="Продовжуйте навчання, і система почне пропонувати персоналізовані рекомендації"
+      title={t('empty.recommendations.title')}
+      description={t('empty.recommendations.description')}
       className={className}
       size="sm"
     />

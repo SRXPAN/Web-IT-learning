@@ -15,8 +15,8 @@ import {
   TopicSidebar,
   DashboardView,
 } from './materialsComponents'
-import { MaterialsHeader } from './materialsComponents/MaterialsHeaderNew'
-import { TopicViewNew } from './materialsComponents/TopicViewNew'
+import { MaterialsHeader } from './materialsComponents/MaterialsHeader'
+import { TopicView } from './materialsComponents/TopicView'
 import { MaterialModal } from './materialsComponents/MaterialModal'
 
 export default function Materials() {
@@ -185,7 +185,7 @@ export default function Materials() {
               ) : isDashboardView ? (
                 <DashboardView catTopics={catTopics} />
               ) : (
-                <TopicViewNew
+                <TopicView
                   key={progressVersion} // Ключ для примусового оновлення
                   activeTopic={activeTopic}
                   activeSub={activeSub}

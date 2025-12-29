@@ -1,5 +1,5 @@
 // fix-publish.ts - Опублікувати всі Draft дані
-import { prisma } from './src/db.js'
+import { prisma } from '../src/db.js'
 
 async function main() {
   console.log('🚀 Publishing all Draft content...\n')

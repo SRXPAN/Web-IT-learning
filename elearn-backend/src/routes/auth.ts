@@ -121,8 +121,9 @@ router.get('/me', requireAuth, async (req, res, next) => {
         email: true, 
         role: true, 
         xp: true, 
-        avatar: true,
+        avatarId: true,
         emailVerified: true,
+        avatarFile: { select: { id: true, key: true, mimeType: true } },
       },
     })
     if (!user) return res.status(401).json({ error: 'User not found' })
@@ -376,7 +377,11 @@ router.put('/email', requireAuth, async (req, res, next) => {
         email: newEmail.toLowerCase(),
         emailVerified: false, // Потрібна повторна верифікація
       },
-      select: { id: true, name: true, email: true, role: true, xp: true, avatar: true, emailVerified: true },
+      select: { 
+        id: true, name: true, email: true, role: true, xp: true, 
+        avatarId: true, emailVerified: true,
+        avatarFile: { select: { id: true, key: true, mimeType: true } }
+      },
     })
     
     // Відправляємо новий verification email
@@ -392,26 +397,32 @@ router.put('/email', requireAuth, async (req, res, next) => {
   } catch (e) { next(e) }
 })
 
-// POST /api/auth/avatar — завантажити аватар
+// POST /api/auth/avatar — завантажити аватар (deprecated - use /files API instead)
 router.post('/avatar', requireAuth, async (req, res, next) => {
   try {
-    const parsed = avatarSchema.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0].message })
+    const { fileId } = req.body
+    
+    if (!fileId) {
+      return res.status(400).json({ error: 'fileId is required. Use /files/presign-upload first.' })
     }
     
-    const { avatar } = parsed.data
+    // Verify file exists and is owned by user
+    const file = await prisma.file.findUnique({
+      where: { id: fileId },
+    })
     
-    // Валідація що це дійсно зображення
-    const validation = validateImageBase64(avatar)
-    if (!validation.valid) {
-      return res.status(400).json({ error: validation.error })
+    if (!file || file.uploadedById !== req.user!.id) {
+      return res.status(400).json({ error: 'Invalid file' })
     }
     
     const updatedUser = await prisma.user.update({
       where: { id: req.user!.id },
-      data: { avatar },
-      select: { id: true, name: true, email: true, role: true, xp: true, avatar: true, emailVerified: true },
+      data: { avatarId: fileId },
+      select: { 
+        id: true, name: true, email: true, role: true, xp: true, 
+        avatarId: true, emailVerified: true,
+        avatarFile: { select: { id: true, key: true, mimeType: true } }
+      },
     })
     
     res.json({ ok: true, user: updatedUser })
@@ -423,8 +434,12 @@ router.delete('/avatar', requireAuth, async (req, res, next) => {
   try {
     const updatedUser = await prisma.user.update({
       where: { id: req.user!.id },
-      data: { avatar: null },
-      select: { id: true, name: true, email: true, role: true, xp: true, avatar: true, emailVerified: true },
+      data: { avatarId: null },
+      select: { 
+        id: true, name: true, email: true, role: true, xp: true, 
+        avatarId: true, emailVerified: true,
+        avatarFile: { select: { id: true, key: true, mimeType: true } }
+      },
     })
     
     res.json({ ok: true, user: updatedUser })
@@ -447,7 +462,8 @@ router.get('/leaderboard', async (req, res, next) => {
         id: true,
         name: true,
         xp: true,
-        avatar: true,
+        avatarId: true,
+        avatarFile: { select: { id: true, key: true, mimeType: true } },
         createdAt: true,
       },
     })

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/auth/AuthContext'
 import { http } from '@/lib/http'
+import { useTranslation } from '@/i18n/useTranslation'
 import { Trophy, Medal, Award, Crown, Star, Flame, Loader2 } from 'lucide-react'
 
 interface LeaderboardUser {
@@ -13,16 +14,17 @@ interface LeaderboardUser {
   createdAt: string
 }
 
-const BADGE_INFO: Record<string, { icon: typeof Trophy, label: string, color: string }> = {
-  first_steps: { icon: Star, label: 'Перші кроки', color: 'text-yellow-500' },
-  rising_star: { icon: Flame, label: 'Висхідна зірка', color: 'text-orange-500' },
-  dedicated_learner: { icon: Medal, label: 'Відданий учень', color: 'text-blue-500' },
-  quiz_master: { icon: Award, label: 'Майстер квізів', color: 'text-purple-500' },
-  expert: { icon: Trophy, label: 'Експерт', color: 'text-green-500' },
-  legend: { icon: Crown, label: 'Легенда', color: 'text-amber-500' },
+const BADGE_INFO: Record<string, { icon: typeof Trophy, labelKey: 'badge.firstSteps' | 'badge.risingStar' | 'badge.dedicatedLearner' | 'badge.quizMaster' | 'badge.expert' | 'badge.legend', color: string }> = {
+  first_steps: { icon: Star, labelKey: 'badge.firstSteps', color: 'text-yellow-500' },
+  rising_star: { icon: Flame, labelKey: 'badge.risingStar', color: 'text-orange-500' },
+  dedicated_learner: { icon: Medal, labelKey: 'badge.dedicatedLearner', color: 'text-blue-500' },
+  quiz_master: { icon: Award, labelKey: 'badge.quizMaster', color: 'text-purple-500' },
+  expert: { icon: Trophy, labelKey: 'badge.expert', color: 'text-green-500' },
+  legend: { icon: Crown, labelKey: 'badge.legend', color: 'text-amber-500' },
 }
 
 export default function Leaderboard() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,7 +37,7 @@ export default function Leaderboard() {
         const data = await http.get<LeaderboardUser[]>('/auth/leaderboard?limit=50')
         setLeaderboard(data)
       } catch (e) {
-        setError('Не вдалося завантажити рейтинг')
+        setError(t('leaderboard.error.loadFailed'))
         console.error(e)
       } finally {
         setLoading(false)
@@ -55,7 +57,7 @@ export default function Leaderboard() {
     return (
       <div className="card flex flex-col items-center justify-center py-16">
         <Loader2 size={48} className="animate-spin text-primary-500 mb-4" />
-        <p className="text-neutral-500">Завантаження рейтингу...</p>
+        <p className="text-neutral-500">{t('leaderboard.loading')}</p>
       </div>
     )
   }
@@ -73,10 +75,10 @@ export default function Leaderboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-display font-bold text-neutral-900 dark:text-white">
-          🏆 Рейтинг
+          {t('leaderboard.title')}
         </h1>
         <span className="text-sm text-neutral-500">
-          {leaderboard.length} учасників
+          {leaderboard.length} {t('leaderboard.participants')}
         </span>
       </div>
 
@@ -92,7 +94,7 @@ export default function Leaderboard() {
               {leaderboard[1].name}
             </h3>
             <p className="text-sm text-neutral-500">{leaderboard[1].xp} XP</p>
-            <p className="text-xs text-neutral-400 mt-1">Рівень {leaderboard[1].level}</p>
+            <p className="text-xs text-neutral-400 mt-1">{t('leaderboard.level')} {leaderboard[1].level}</p>
           </div>
           
           {/* First place */}
@@ -105,7 +107,7 @@ export default function Leaderboard() {
               {leaderboard[0].name}
             </h3>
             <p className="text-primary-600 dark:text-primary-400 font-semibold">{leaderboard[0].xp} XP</p>
-            <p className="text-xs text-neutral-400 mt-1">Рівень {leaderboard[0].level}</p>
+            <p className="text-xs text-neutral-400 mt-1">{t('leaderboard.level')} {leaderboard[0].level}</p>
           </div>
           
           {/* Third place */}
@@ -117,7 +119,7 @@ export default function Leaderboard() {
               {leaderboard[2].name}
             </h3>
             <p className="text-sm text-neutral-500">{leaderboard[2].xp} XP</p>
-            <p className="text-xs text-neutral-400 mt-1">Рівень {leaderboard[2].level}</p>
+            <p className="text-xs text-neutral-400 mt-1">{t('leaderboard.level')} {leaderboard[2].level}</p>
           </div>
         </div>
       )}
@@ -128,10 +130,10 @@ export default function Leaderboard() {
           <thead>
             <tr className="text-left border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
               <th className="py-3 px-4 font-semibold text-neutral-600 dark:text-neutral-400">#</th>
-              <th className="py-3 px-4 font-semibold text-neutral-600 dark:text-neutral-400">Користувач</th>
-              <th className="py-3 px-4 font-semibold text-neutral-600 dark:text-neutral-400 text-center">Рівень</th>
+              <th className="py-3 px-4 font-semibold text-neutral-600 dark:text-neutral-400">{t('leaderboard.user')}</th>
+              <th className="py-3 px-4 font-semibold text-neutral-600 dark:text-neutral-400 text-center">{t('leaderboard.level')}</th>
               <th className="py-3 px-4 font-semibold text-neutral-600 dark:text-neutral-400 text-right">XP</th>
-              <th className="py-3 px-4 font-semibold text-neutral-600 dark:text-neutral-400 hidden md:table-cell">Бейджі</th>
+              <th className="py-3 px-4 font-semibold text-neutral-600 dark:text-neutral-400 hidden md:table-cell">{t('leaderboard.badges')}</th>
             </tr>
           </thead>
           <tbody>
@@ -156,7 +158,7 @@ export default function Leaderboard() {
                       </span>
                       {isCurrentUser && (
                         <span className="px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 text-xs font-medium">
-                          Ви
+                          {t('leaderboard.you')}
                         </span>
                       )}
                     </div>
@@ -179,7 +181,7 @@ export default function Leaderboard() {
                           <span 
                             key={badge} 
                             className={`${info.color}`}
-                            title={info.label}
+                            title={t(info.labelKey)}
                           >
                             <Icon size={18} />
                           </span>

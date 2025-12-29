@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, X, BookOpen, Trophy, FileText, Loader2 } from 'lucide-react'
 import useCatalogStore from '@/store/catalog'
+import { useTranslation } from '@/i18n/useTranslation'
 
 interface SearchResult {
   id: string
@@ -12,6 +13,7 @@ interface SearchResult {
 }
 
 export default function GlobalSearch() {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -39,7 +41,7 @@ export default function GlobalSearch() {
           id: topic.id,
           type: 'topic',
           title: topic.name,
-          description: `Тема з ${topic.quizzes.length} квізами`,
+          description: `${t('search.topicWith')} ${topic.quizzes.length} ${t('search.quizzes')}`,
           url: `/materials`
         })
       }
@@ -51,7 +53,7 @@ export default function GlobalSearch() {
             id: quiz.id,
             type: 'quiz',
             title: quiz.title,
-            description: `${quiz.durationSec} секунд`,
+            description: `${quiz.durationSec} ${t('common.seconds')}`,
             url: `/quiz`
           })
         }
@@ -130,7 +132,7 @@ export default function GlobalSearch() {
         className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm"
       >
         <Search size={16} />
-        <span className="hidden lg:inline">Пошук...</span>
+        <span className="hidden lg:inline">{t('search.placeholder')}</span>
         <kbd className="hidden lg:inline px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 text-xs">⌘K</kbd>
       </button>
 
@@ -162,7 +164,7 @@ export default function GlobalSearch() {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Шукати теми, квізи, матеріали..."
+                placeholder={t('search.fullPlaceholder')}
                 className="flex-1 bg-transparent outline-none text-neutral-900 dark:text-white placeholder-neutral-400"
               />
               {loading && <Loader2 size={18} className="animate-spin text-neutral-400" />}
@@ -206,7 +208,7 @@ export default function GlobalSearch() {
                           )}
                         </div>
                         <span className="text-xs text-neutral-400 capitalize">
-                          {result.type === 'quiz' ? 'Квіз' : result.type === 'topic' ? 'Тема' : 'Урок'}
+                          {result.type === 'quiz' ? t('search.type.quiz') : result.type === 'topic' ? t('search.type.topic') : t('search.type.lesson')}
                         </span>
                       </button>
                     </li>
@@ -215,16 +217,16 @@ export default function GlobalSearch() {
               ) : query.trim() ? (
                 <div className="py-12 text-center text-neutral-500">
                   <Search size={32} className="mx-auto mb-3 opacity-50" />
-                  <p>Нічого не знайдено</p>
-                  <p className="text-sm mt-1">Спробуйте інший запит</p>
+                  <p>{t('search.noResults')}</p>
+                  <p className="text-sm mt-1">{t('search.tryAnother')}</p>
                 </div>
               ) : (
                 <div className="py-8 px-4 text-center text-neutral-500">
-                  <p className="text-sm">Почніть вводити для пошуку</p>
+                  <p className="text-sm">{t('search.startTyping')}</p>
                   <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                    <span className="px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-xs">↑↓ навігація</span>
-                    <span className="px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-xs">Enter вибрати</span>
-                    <span className="px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-xs">Esc закрити</span>
+                    <span className="px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-xs">{t('search.hint.navigation')}</span>
+                    <span className="px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-xs">{t('search.hint.select')}</span>
+                    <span className="px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-xs">{t('search.hint.close')}</span>
                   </div>
                 </div>
               )}

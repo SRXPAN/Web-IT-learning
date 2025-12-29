@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { prisma } from '../db'
 import crypto from 'node:crypto'
 import nodemailer from 'nodemailer'
+import { logger } from '../utils/logger.js'
 
 const router = Router()
 
@@ -49,7 +50,7 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (err) {
-    console.error('Webhook signature verification failed', err)
+    logger.error('Webhook signature verification failed', err as Error)
     return res.sendStatus(400)
   }
 

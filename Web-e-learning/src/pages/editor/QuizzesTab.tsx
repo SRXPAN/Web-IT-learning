@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslation } from '@/i18n/useTranslation'
 import {
   createQuiz,
   listQuizzes,
@@ -36,6 +37,7 @@ interface QuizWithQuestions extends QuizLite {
 }
 
 export default function QuizzesTab({ topicId }: { topicId?: string }) {
+  const { t } = useTranslation()
   const [quizzes, setQuizzes] = useState<QuizWithQuestions[]>([])
   const [loading, setLoading] = useState(false)
   
@@ -124,11 +126,11 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
   // Save quiz
   const saveQuiz = useCallback(async () => {
     if (!topicId) {
-      push({ type: 'error', msg: 'Select a topic first' })
+      push({ type: 'error', msg: t('editor.error.selectTopicFirst') })
       return
     }
     if (!quizTitle.trim()) {
-      push({ type: 'error', msg: 'Title required' })
+      push({ type: 'error', msg: t('editor.error.titleRequired') })
       return
     }
 
@@ -141,14 +143,14 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
         setQuizzes((prev) =>
           prev.map((q) => (q.id === editingQuizId ? { ...q, ...updated } : q))
         )
-        push({ type: 'success', msg: 'Quiz updated' })
+        push({ type: 'success', msg: t('editor.success.quizUpdated') })
       } else {
         const created = await createQuiz(topicId, {
           title: quizTitle,
           durationSec: quizDuration,
         })
         setQuizzes((prev) => [{ ...created, expanded: false }, ...prev])
-        push({ type: 'success', msg: 'Quiz created' })
+        push({ type: 'success', msg: t('editor.success.quizCreated') })
       }
       resetQuizForm()
     } catch (e: any) {
@@ -159,12 +161,12 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
   // Delete quiz
   const removeQuiz = useCallback(async (id: string) => {
     if (!topicId) return
-    if (!confirm('Delete quiz and all questions?')) return
+    if (!confirm(t('editor.confirm.deleteQuiz'))) return
 
     try {
       await deleteQuiz(topicId, id)
       setQuizzes((prev) => prev.filter((q) => q.id !== id))
-      push({ type: 'success', msg: 'Quiz deleted' })
+      push({ type: 'success', msg: t('editor.success.quizDeleted') })
     } catch (e: any) {
       push({ type: 'error', msg: e.message })
     }
@@ -187,19 +189,19 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
   // Save question
   const saveQuestion = useCallback(async () => {
     if (!activeQuizId) {
-      push({ type: 'error', msg: 'Select a quiz first' })
+      push({ type: 'error', msg: t('editor.error.selectQuizFirst') })
       return
     }
     if (!questionText.trim()) {
-      push({ type: 'error', msg: 'Question text required' })
+      push({ type: 'error', msg: t('editor.error.questionTextRequired') })
       return
     }
     if (options.filter((o) => o.text.trim()).length < 2) {
-      push({ type: 'error', msg: 'At least 2 options required' })
+      push({ type: 'error', msg: t('editor.error.minOptionsRequired') })
       return
     }
     if (!options.some((o) => o.correct)) {
-      push({ type: 'error', msg: 'At least one correct answer required' })
+      push({ type: 'error', msg: t('editor.error.correctAnswerRequired') })
       return
     }
 
@@ -228,7 +230,7 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
               : q
           )
         )
-        push({ type: 'success', msg: 'Question updated' })
+        push({ type: 'success', msg: t('editor.success.questionUpdated') })
       } else {
         const created = await createQuestion(activeQuizId, questionData)
         setQuizzes((prev) =>
@@ -238,7 +240,7 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
               : q
           )
         )
-        push({ type: 'success', msg: 'Question created' })
+        push({ type: 'success', msg: t('editor.success.questionCreated') })
       }
       resetQuestionForm()
     } catch (e: any) {
@@ -248,7 +250,7 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
 
   // Delete question
   const removeQuestion = useCallback(async (quizId: string, questionId: string) => {
-    if (!confirm('Delete this question?')) return
+    if (!confirm(t('editor.confirm.deleteQuestion'))) return
 
     try {
       await deleteQuestion(quizId, questionId)
@@ -259,7 +261,7 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
             : q
         )
       )
-      push({ type: 'success', msg: 'Question deleted' })
+      push({ type: 'success', msg: t('editor.success.questionDeleted') })
     } catch (e: any) {
       push({ type: 'error', msg: e.message })
     }
@@ -345,7 +347,7 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
       <div className="card">
         <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">
           <AlertCircle className="w-5 h-5" />
-          <p>Select a topic in the left sidebar to manage quizzes.</p>
+          <p>{t('editor.hint.selectTopicForQuizzes')}</p>
         </div>
       </div>
     )
@@ -357,20 +359,20 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
       <div className="card">
         <h2 className="text-xl font-display font-bold mb-4 gradient-text flex items-center gap-2">
           <ListChecks className="w-5 h-5" />
-          {editingQuizId ? 'Edit Quiz' : 'Create Quiz'}
+          {editingQuizId ? t('editor.title.editQuiz') : t('editor.title.createQuiz')}
         </h2>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Quiz Title</label>
+            <label className="block text-sm font-medium mb-1.5">{t('editor.label.quizTitle')}</label>
             <input
               value={quizTitle}
               onChange={(e) => setQuizTitle(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="e.g., Sorting Algorithms Quiz"
+              placeholder={t('editor.placeholder.quizTitle')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Duration (seconds)</label>
+            <label className="block text-sm font-medium mb-1.5">{t('editor.label.duration')}</label>
             <div className="relative">
               <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -387,11 +389,11 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
         <div className="flex gap-2 mt-4">
           <button onClick={saveQuiz} className="btn flex items-center gap-2">
             <Save className="w-4 h-4" />
-            {editingQuizId ? 'Update' : 'Create'}
+            {editingQuizId ? t('common.update') : t('common.create')}
           </button>
           {editingQuizId && (
             <button onClick={resetQuizForm} className="btn-outline">
-              Cancel
+              {t('common.cancel')}
             </button>
           )}
         </div>
@@ -404,10 +406,10 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
         </h2>
 
         {loading ? (
-          <div className="text-center py-8 text-gray-500">Loading...</div>
+          <div className="text-center py-8 text-gray-500">{t('common.loading')}</div>
         ) : quizzes.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            No quizzes yet. Create one above.
+            {t('editor.empty.noQuizzes')}
           </div>
         ) : (
           <div className="space-y-3">
@@ -435,7 +437,7 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
                         <Clock className="w-3 h-3" /> {quiz.durationSec}s
                         {quiz.questions && (
                           <span className="ml-2">
-                            • {quiz.questions.length} questions
+                            • {quiz.questions.length} {t('editor.label.questions')}
                           </span>
                         )}
                       </p>
@@ -445,21 +447,21 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
                     <button
                       onClick={() => startAddQuestion(quiz.id)}
                       className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                      title="Add question"
+                      title={t('editor.action.addQuestion')}
                     >
                       <Plus className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => startEditQuiz(quiz)}
                       className="p-2 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                      title="Edit quiz"
+                      title={t('editor.action.editQuiz')}
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => removeQuiz(quiz.id)}
                       className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                      title="Delete quiz"
+                      title={t('editor.action.deleteQuiz')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -471,7 +473,7 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
                   <div className="border-t border-gray-200 dark:border-gray-700">
                     {quiz.loadingQuestions ? (
                       <div className="p-4 text-center text-gray-500">
-                        Loading questions...
+                        {t('editor.loading.questions')}
                       </div>
                     ) : quiz.questions && quiz.questions.length > 0 ? (
                       <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -533,7 +535,7 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
                       </div>
                     ) : (
                       <div className="p-4 text-center text-gray-500 text-sm">
-                        No questions yet. Click + to add one.
+                        {t('editor.empty.noQuestions')}
                       </div>
                     )}
                   </div>
@@ -551,7 +553,7 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
             <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
               <h3 className="text-lg font-bold flex items-center gap-2">
                 <HelpCircle className="w-5 h-5 text-blue-500" />
-                {editingQuestionId ? 'Edit Question' : 'Add Question'}
+                {editingQuestionId ? t('editor.title.editQuestion') : t('editor.title.addQuestion')}
               </h3>
               <button
                 onClick={resetQuestionForm}
@@ -565,32 +567,32 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
               {/* Question Text */}
               <div>
                 <label className="block text-sm font-medium mb-1.5">
-                  Question Text *
+                  {t('editor.label.questionText')}
                 </label>
                 <textarea
                   value={questionText}
                   onChange={(e) => setQuestionText(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px]"
-                  placeholder="Enter your question..."
+                  placeholder={t('editor.placeholder.questionText')}
                 />
               </div>
 
               {/* Explanation */}
               <div>
                 <label className="block text-sm font-medium mb-1.5">
-                  Explanation (shown after answer)
+                  {t('editor.label.explanation')}
                 </label>
                 <textarea
                   value={questionExplanation}
                   onChange={(e) => setQuestionExplanation(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none min-h-[60px]"
-                  placeholder="Explain the correct answer..."
+                  placeholder={t('editor.placeholder.explanation')}
                 />
               </div>
 
               {/* Difficulty */}
               <div>
-                <label className="block text-sm font-medium mb-1.5">Difficulty</label>
+                <label className="block text-sm font-medium mb-1.5">{t('editor.label.difficulty')}</label>
                 <div className="flex gap-2">
                   {(['Easy', 'Medium', 'Hard'] as Difficulty[]).map((d) => (
                     <button
@@ -612,14 +614,14 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-medium">
-                    Answer Options *
+                    {t('editor.label.answerOptions')}
                   </label>
                   <button
                     onClick={addOption}
                     disabled={options.length >= 6}
                     className="text-xs text-blue-600 hover:text-blue-700 disabled:text-gray-400 flex items-center gap-1"
                   >
-                    <Plus className="w-3 h-3" /> Add option
+                    <Plus className="w-3 h-3" /> {t('editor.action.addOption')}
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -632,7 +634,7 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
                             ? 'border-green-500 bg-green-500 text-white'
                             : 'border-gray-300 dark:border-gray-600 hover:border-green-400'
                         }`}
-                        title={opt.correct ? 'Correct answer' : 'Mark as correct'}
+                        title={opt.correct ? t('editor.hint.correctAnswer') : t('editor.hint.markCorrect')}
                       >
                         {opt.correct && <Check className="w-3.5 h-3.5" />}
                       </button>
@@ -654,18 +656,18 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  Click the circle to mark the correct answer. At least 2 options required.
+                  {t('editor.hint.optionsGuide')}
                 </p>
               </div>
             </div>
 
             <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end gap-2">
               <button onClick={resetQuestionForm} className="btn-outline">
-                Cancel
+                {t('common.cancel')}
               </button>
               <button onClick={saveQuestion} className="btn flex items-center gap-2">
                 <Save className="w-4 h-4" />
-                {editingQuestionId ? 'Update' : 'Create'}
+                {editingQuestionId ? t('common.update') : t('common.create')}
               </button>
             </div>
           </div>

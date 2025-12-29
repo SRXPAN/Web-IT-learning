@@ -45,8 +45,8 @@ export default function Profile(){
 
   const badges = [
     { id:'b1', title: t('profile.badges'), cond: user.xp >= 10 },
-    { id:'b2', title: 'Rising Star', cond: user.xp >= 50 },
-    { id:'b3', title: 'Algorithm Master', cond: user.xp >= 100 },
+    { id:'b2', title: t('profile.badge.risingStar'), cond: user.xp >= 50 },
+    { id:'b3', title: t('profile.badge.algorithmMaster'), cond: user.xp >= 100 },
   ]
 
   // Avatar upload handler
@@ -56,13 +56,13 @@ export default function Profile(){
     
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setAvatarError('Будь ласка, виберіть зображення')
+      setAvatarError(t('profile.error.selectImage'))
       return
     }
     
     // Validate file size (max 300KB for base64 storage)
     if (file.size > 300 * 1024) {
-      setAvatarError('Зображення не повинно перевищувати 300KB')
+      setAvatarError(t('profile.error.imageTooLarge'))
       return
     }
     
@@ -78,18 +78,18 @@ export default function Profile(){
           await http.post('/auth/avatar', { avatar: base64 })
           await refresh()
         } catch (err: any) {
-          setAvatarError(err.message || 'Не вдалося завантажити аватар')
+          setAvatarError(err.message || t('profile.error.avatarUploadFailed'))
         } finally {
           setAvatarLoading(false)
         }
       }
       reader.onerror = () => {
-        setAvatarError('Не вдалося прочитати файл')
+        setAvatarError(t('profile.error.fileReadFailed'))
         setAvatarLoading(false)
       }
       reader.readAsDataURL(file)
     } catch (err: any) {
-      setAvatarError(err.message || 'Не вдалося завантажити аватар')
+      setAvatarError(err.message || t('profile.error.avatarUploadFailed'))
       setAvatarLoading(false)
     }
   }
@@ -103,7 +103,7 @@ export default function Profile(){
       await http.delete('/auth/avatar')
       await refresh()
     } catch (err: any) {
-      setAvatarError(err.message || 'Не вдалося видалити аватар')
+      setAvatarError(err.message || t('profile.error.avatarDeleteFailed'))
     } finally {
       setAvatarLoading(false)
     }
@@ -116,7 +116,7 @@ export default function Profile(){
     setEmailSuccess(false)
     
     if (!newEmail.includes('@')) {
-      setEmailError('Введіть коректну email адресу')
+      setEmailError(t('profile.error.invalidEmail'))
       return
     }
     
@@ -129,7 +129,7 @@ export default function Profile(){
       await refresh()
       setTimeout(() => setEmailSuccess(false), 3000)
     } catch (err: any) {
-      setEmailError(err.message || 'Не вдалося змінити email')
+      setEmailError(err.message || t('profile.error.emailChangeFailed'))
     } finally {
       setEmailLoading(false)
     }
@@ -141,12 +141,12 @@ export default function Profile(){
     setPasswordSuccess(false)
     
     if (newPassword !== confirmPassword) {
-      setPasswordError('Паролі не співпадають')
+      setPasswordError(t('profile.error.passwordsNotMatch'))
       return
     }
     
     if (newPassword.length < 8) {
-      setPasswordError('Пароль повинен містити мінімум 8 символів')
+      setPasswordError(t('profile.error.passwordTooShort'))
       return
     }
     
@@ -159,7 +159,7 @@ export default function Profile(){
       setConfirmPassword('')
       setTimeout(() => setPasswordSuccess(false), 3000)
     } catch (err: any) {
-      setPasswordError(err.message || 'Не вдалося змінити пароль')
+      setPasswordError(err.message || t('profile.error.passwordChangeFailed'))
     } finally {
       setPasswordLoading(false)
     }
@@ -217,7 +217,7 @@ export default function Profile(){
                 onClick={handleRemoveAvatar}
                 disabled={avatarLoading}
                 className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-colors shadow-lg"
-                title="Видалити аватар"
+                title={t('profile.action.removeAvatar')}
               >
                 <Trash2 size={12} className="text-white" />
               </button>
@@ -349,18 +349,18 @@ export default function Profile(){
             <div className="flex items-center gap-2 mb-4">
               <Mail size={18} className="text-neutral-600 dark:text-neutral-400"/>
               <label className="font-semibold text-neutral-900 dark:text-white">
-                Змінити email
+                {t('profile.action.changeEmail')}
               </label>
             </div>
             
             <form onSubmit={handleEmailChange} className="space-y-4 max-w-md">
               <div>
-                <label className="block text-sm font-medium mb-2">Новий email</label>
+                <label className="block text-sm font-medium mb-2">{t('profile.label.newEmail')}</label>
                 <input
                   type="email"
                   value={newEmail}
                   onChange={e => setNewEmail(e.target.value)}
-                  placeholder="new@example.com"
+                  placeholder={t('profile.placeholder.newEmail')}
                   required
                   disabled={emailLoading}
                   className="input w-full"
@@ -368,7 +368,7 @@ export default function Profile(){
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">Поточний пароль</label>
+                <label className="block text-sm font-medium mb-2">{t('profile.label.currentPassword')}</label>
                 <PasswordInput
                   value={emailPassword}
                   onChange={e => setEmailPassword(e.target.value)}
@@ -387,7 +387,7 @@ export default function Profile(){
               {emailSuccess && (
                 <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 flex items-center gap-2">
                   <CheckCircle size={18} className="text-green-600 dark:text-green-400" />
-                  <p className="text-green-600 dark:text-green-400 text-sm">Email успішно змінено!</p>
+                  <p className="text-green-600 dark:text-green-400 text-sm">{t('profile.success.emailChanged')}</p>
                 </div>
               )}
               
@@ -399,12 +399,12 @@ export default function Profile(){
                 {emailLoading ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    Збереження...
+                    {t('common.saving')}
                   </>
                 ) : (
                   <>
                     <Mail size={18} />
-                    Змінити email
+                    {t('profile.action.changeEmail')}
                   </>
                 )}
               </button>
@@ -416,13 +416,13 @@ export default function Profile(){
             <div className="flex items-center gap-2 mb-4">
               <Lock size={18} className="text-neutral-600 dark:text-neutral-400"/>
               <label className="font-semibold text-neutral-900 dark:text-white">
-                Змінити пароль
+                {t('profile.action.changePassword')}
               </label>
             </div>
             
             <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
               <div>
-                <label className="block text-sm font-medium mb-2">Поточний пароль</label>
+                <label className="block text-sm font-medium mb-2">{t('profile.label.currentPassword')}</label>
                 <PasswordInput
                   value={currentPassword}
                   onChange={e => setCurrentPassword(e.target.value)}
@@ -433,7 +433,7 @@ export default function Profile(){
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">Новий пароль</label>
+                <label className="block text-sm font-medium mb-2">{t('profile.label.newPassword')}</label>
                 <PasswordInput
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
@@ -445,7 +445,7 @@ export default function Profile(){
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">Підтвердіть новий пароль</label>
+                <label className="block text-sm font-medium mb-2">{t('profile.label.confirmNewPassword')}</label>
                 <PasswordInput
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
@@ -464,7 +464,7 @@ export default function Profile(){
               {passwordSuccess && (
                 <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 flex items-center gap-2">
                   <CheckCircle size={18} className="text-green-600 dark:text-green-400" />
-                  <p className="text-green-600 dark:text-green-400 text-sm">Пароль успішно змінено!</p>
+                  <p className="text-green-600 dark:text-green-400 text-sm">{t('profile.success.passwordChanged')}</p>
                 </div>
               )}
               
@@ -476,12 +476,12 @@ export default function Profile(){
                 {passwordLoading ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    Збереження...
+                    {t('common.saving')}
                   </>
                 ) : (
                   <>
                     <Lock size={18} />
-                    Змінити пароль
+                    {t('profile.action.changePassword')}
                   </>
                 )}
               </button>

@@ -1,6 +1,6 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import {
-  ExternalLink,
+  Search,
   BookOpen,
   FolderTree,
   PlayCircle,
@@ -8,9 +8,13 @@ import {
   Link as LinkIcon,
   CheckCircle2,
   Circle,
+  Sparkles,
+  ArrowRight,
+  Filter,
 } from 'lucide-react'
-import { isMaterialSeen } from '@/utils/progress'
+import { isMaterialSeen, countSeen } from '@/utils/progress'
 import { ProgressBar } from './ProgressBar'
+import { TopicQuizSection } from './TopicQuizSection'
 import type { TopicNode, Material, Tab } from './types'
 import { useTranslation } from '@/i18n/useTranslation'
 import { localize } from '@/utils/localize'
@@ -25,6 +29,7 @@ interface TopicViewProps {
   setQuery: (v: string) => void
   filteredMaterials: (list: Material[]) => Material[]
   openMaterial: (m: Material) => void
+  progressVersion: number
 }
 
 export function TopicView({
@@ -36,73 +41,85 @@ export function TopicView({
   setQuery,
   filteredMaterials,
   openMaterial,
+  progressVersion,
 }: TopicViewProps) {
   const { t, lang } = useTranslation()
-  
+
   if (!activeTopic) return null
 
-  // Локалізовані назви фільтрів
-  const filterLabels: Record<Tab, string> = {
-    ALL: t('materials.all'),
-    pdf: 'PDF',
-    video: t('materials.video'),
-    text: t('materials.text'),
-    link: t('materials.link'),
-  }
+  const filterTabs: { value: Tab; label: string; icon: React.ReactNode }[] = [
+    { value: 'ALL', label: t('materials.all'), icon: <Filter size={14} /> },
+    { value: 'video', label: t('materials.video'), icon: <PlayCircle size={14} /> },
+    { value: 'pdf', label: 'PDF', icon: <BookOpen size={14} /> },
+    { value: 'text', label: t('materials.text'), icon: <FileText size={14} /> },
+    { value: 'link', label: t('materials.link'), icon: <LinkIcon size={14} /> },
+  ]
 
   return (
-    <div className="space-y-4 sm:space-y-5">
-      {/* фільтри + пошук */}
-      <div className="rounded-2xl md:rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 md:px-5 py-3.5 md:py-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center shadow-sm">
-        <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
-          {(['ALL', 'pdf', 'video', 'text', 'link'] as Tab[]).map((tVal) => (
-            <button
-              key={tVal}
-              onClick={() => setTab(tVal)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                tab === tVal
-                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-              }`}
-            >
-              {filterLabels[tVal]}
-            </button>
-          ))}
+    <div className="space-y-5">
+      {/* Filters & Search */}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+          {/* Filter Pills */}
+          <div className="flex flex-wrap gap-2">
+            {filterTabs.map(({ value, label, icon }) => (
+              <button
+                key={value}
+                onClick={() => setTab(value)}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  tab === value
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {icon}
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder={t('materials.searchPlaceholder')}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full sm:w-64 pl-9 pr-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            />
+          </div>
         </div>
-        <input
-          type="text"
-          placeholder={t('materials.searchPlaceholder')}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="w-full sm:w-72 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-4 py-2 text-xs text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 outline-none"
-        />
       </div>
 
-      {/* один розділ або підрозділ */}
+      {/* Content Sections */}
       {activeSub ? (
-        <TopicContent
+        <TopicSection
           topic={activeSub}
           filteredMats={filteredMaterials(activeSub.materials)}
           onOpen={openMaterial}
           lang={lang as Lang}
           isMain
+          progressVersion={progressVersion}
         />
       ) : (
         <>
-          <TopicContent
+          <TopicSection
             topic={activeTopic}
             filteredMats={filteredMaterials(activeTopic.materials)}
             onOpen={openMaterial}
             lang={lang as Lang}
             isMain
+            progressVersion={progressVersion}
           />
           {activeTopic.children?.map((child) => (
-            <TopicContent
+            <TopicSection
               key={child.id}
               topic={child}
               filteredMats={filteredMaterials(child.materials)}
               onOpen={openMaterial}
               lang={lang as Lang}
+              progressVersion={progressVersion}
             />
           ))}
         </>
@@ -111,184 +128,310 @@ export function TopicView({
   )
 }
 
-interface TopicContentProps {
+interface TopicSectionProps {
   topic: TopicNode
   filteredMats: Material[]
   onOpen: (m: Material) => void
   lang: Lang
   isMain?: boolean
+  progressVersion: number
 }
 
-function TopicContent({
+function TopicSection({
   topic,
   filteredMats,
   onOpen,
   lang,
   isMain,
-}: TopicContentProps) {
+  progressVersion,
+}: TopicSectionProps) {
   const { t } = useTranslation()
-  const total = filteredMats.length
-  const done = filteredMats.filter((m) => isMaterialSeen(m.id)).length
-  const next = filteredMats.find((m) => !isMaterialSeen(m.id))
-  
-  // Локалізація назви та опису теми
+
+  const { done, total, next, progress } = useMemo(() => {
+    const total = filteredMats.length
+    const done = filteredMats.filter((m) => isMaterialSeen(m.id)).length
+    const next = filteredMats.find((m) => !isMaterialSeen(m.id))
+    const progress = total > 0 ? Math.round((done / total) * 100) : 0
+    return { done, total, next, progress }
+  }, [filteredMats, progressVersion])
+
   const topicName = localize(topic.nameJson as LocalizedString, topic.name, lang)
   const topicDesc = localize(topic.descJson as LocalizedString, topic.description || '', lang)
 
+  const isComplete = done === total && total > 0
+
   return (
-    <section className="rounded-2xl md:rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 sm:px-5 md:px-6 py-4 sm:py-5 md:py-6 shadow-sm space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <p className="inline-flex items-center gap-2 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            {isMain ? (
-              <BookOpen size={14} className="text-blue-500" />
-            ) : (
-              <FolderTree size={14} className="text-gray-400" />
-            )}
-            <span>{isMain ? t('materials.mainSection') || 'Основний розділ' : t('materials.subSection') || 'Підрозділ'}</span>
-          </p>
-          <h2 className="mt-1 text-xl md:text-2xl font-semibold text-gray-900 dark:text-white">
-            {topicName}
-          </h2>
-          {topicDesc && (
-            <p className="mt-1 text-xs md:text-[13px] text-gray-600 dark:text-gray-400 max-w-xl">
-              {topicDesc}
-            </p>
-          )}
-        </div>
-        <div className="w-full md:w-56">
-          <ProgressBar current={done} total={total} />
+    <section className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+      {/* Section Header */}
+      <div className={`px-5 py-4 border-b border-gray-100 dark:border-gray-800 ${
+        isComplete ? 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/10 dark:to-green-900/10' : 'bg-gray-50/50 dark:bg-gray-900/50'
+      }`}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className={`p-2.5 rounded-xl ${
+              isComplete 
+                ? 'bg-emerald-100 dark:bg-emerald-900/30' 
+                : isMain 
+                  ? 'bg-blue-100 dark:bg-blue-900/30' 
+                  : 'bg-gray-100 dark:bg-gray-800'
+            }`}>
+              {isComplete ? (
+                <CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400" />
+              ) : isMain ? (
+                <BookOpen size={20} className="text-blue-600 dark:text-blue-400" />
+              ) : (
+                <FolderTree size={20} className="text-gray-500 dark:text-gray-400" />
+              )}
+            </div>
+            <div>
+              <span className={`text-[10px] font-semibold uppercase tracking-wider ${
+                isComplete ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'
+              }`}>
+                {isComplete 
+                  ? t('materials.status.completed') 
+                  : isMain 
+                    ? t('materials.status.mainSection') 
+                    : t('materials.status.subSection')
+                }
+              </span>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">
+                {topicName}
+              </h2>
+              {topicDesc && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 max-w-lg">
+                  {topicDesc}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Progress */}
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {progress}%
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {done}/{total} {t('materials.count.materials')}
+              </div>
+            </div>
+            <div className="w-24 h-24 relative">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="15.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  className="text-gray-200 dark:text-gray-700"
+                />
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="15.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeDasharray={`${progress} 100`}
+                  strokeLinecap="round"
+                  className={isComplete ? 'text-emerald-500' : 'text-blue-500'}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                {isComplete ? (
+                  <CheckCircle2 size={20} className="text-emerald-500" />
+                ) : (
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                    {done}/{total}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* блок "продовжити навчання" */}
-      {next && (
-        <div className="rounded-xl sm:rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="text-sm">
-            <div className="uppercase text-[10px] tracking-[0.16em] text-blue-100/90">
-              {t('dashboard.continueLearning')}
+      {/* Continue Learning Banner */}
+      {next && !isComplete && (
+        <div className="mx-5 my-4 rounded-xl bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 p-4 text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/20">
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <div className="text-[10px] font-medium uppercase tracking-wider text-blue-100">
+                  {t('dashboard.continueLearning')}
+                </div>
+                <div className="text-sm font-semibold mt-0.5">
+                  {localize((next as any).titleJson, next.title, lang)}
+                </div>
+              </div>
             </div>
-            <div className="mt-1 text-[13px] font-semibold">
-              {t('materials.suggestedNext')}: {localize((next as any).titleJson, next.title, lang)}
-            </div>
+            <button
+              onClick={() => onOpen(next)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-blue-700 text-sm font-semibold hover:bg-blue-50 transition-colors"
+            >
+              {t('common.continue')}
+              <ArrowRight size={16} />
+            </button>
           </div>
-          <button
-            onClick={() => onOpen(next)}
-            className="inline-flex items-center gap-2 rounded-lg bg-white text-blue-700 px-4 py-2 text-xs font-semibold shadow-sm hover:bg-blue-50 active:scale-95 transition-transform"
-          >
-            {t('materials.open')} <ExternalLink size={14} />
-          </button>
         </div>
       )}
 
-      {/* список матеріалів */}
-      <div className="space-y-3">
-        {filteredMats.map((m, index) => (
-          <MaterialCard
-            key={m.id}
-            material={m}
-            index={index}
-            lang={lang}
-            onOpen={onOpen}
-          />
-        ))}
-
-        {filteredMats.length === 0 && (
-          <div className="mt-2 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 py-6 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
-            {t('materials.noMaterials') || 'Матеріали для цього розділу поки що відсутні або не підходять під фільтр.'}
+      {/* Materials Grid */}
+      <div className="p-5">
+        {filteredMats.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {filteredMats.map((m, index) => (
+              <MaterialCardNew
+                key={m.id}
+                material={m}
+                index={index}
+                lang={lang}
+                onOpen={onOpen}
+                progressVersion={progressVersion}
+              />
+            ))}
           </div>
+        ) : (
+          <div className="py-12 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+              <FileText size={24} className="text-gray-400" />
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t('materials.empty.noMaterials')}
+            </p>
+          </div>
+        )}
+
+        {/* Quiz Section - показується коли є квізи */}
+        {topic.quizzes && topic.quizzes.length > 0 && (
+          <TopicQuizSection
+            quizzes={topic.quizzes}
+            topicName={topicName}
+            allMaterialsViewed={isComplete}
+            materialsCount={total}
+            viewedCount={done}
+            lang={lang}
+          />
         )}
       </div>
     </section>
   )
 }
 
-interface MaterialCardProps {
+interface MaterialCardNewProps {
   material: Material
   index: number
   lang: Lang
   onOpen: (m: Material) => void
+  progressVersion: number
 }
 
-const MaterialCard = memo(function MaterialCard({ material: m, index, lang, onOpen }: MaterialCardProps) {
+const MaterialCardNew = memo(function MaterialCardNew({
+  material: m,
+  index,
+  lang,
+  onOpen,
+  progressVersion,
+}: MaterialCardNewProps) {
   const { t } = useTranslation()
-  const isSeen = isMaterialSeen(m.id)
-  
+  const isSeen = useMemo(() => isMaterialSeen(m.id), [m.id, progressVersion])
   const handleOpen = useCallback(() => onOpen(m), [onOpen, m])
-  
-  // Локалізована назва матеріалу
+
   const materialTitle = localize((m as any).titleJson, m.title, lang)
 
-  let Icon = FileText
-  let iconColor = 'text-blue-500 bg-blue-50'
-  if (m.type === 'video') {
-    Icon = PlayCircle
-    iconColor = 'text-pink-500 bg-pink-50'
-  }
-  if (m.type === 'link') {
-    Icon = LinkIcon
-    iconColor = 'text-emerald-500 bg-emerald-50'
-  }
-  if (m.type === 'pdf') {
-    Icon = BookOpen
-    iconColor = 'text-amber-500 bg-amber-50'
+  const getTypeConfig = () => {
+    switch (m.type) {
+      case 'video':
+        return {
+          Icon: PlayCircle,
+          color: 'text-pink-500',
+          bg: 'bg-pink-50 dark:bg-pink-900/20',
+          border: 'border-pink-200 dark:border-pink-800',
+          label: t('materials.video'),
+        }
+      case 'pdf':
+        return {
+          Icon: BookOpen,
+          color: 'text-amber-500',
+          bg: 'bg-amber-50 dark:bg-amber-900/20',
+          border: 'border-amber-200 dark:border-amber-800',
+          label: 'PDF',
+        }
+      case 'link':
+        return {
+          Icon: LinkIcon,
+          color: 'text-emerald-500',
+          bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+          border: 'border-emerald-200 dark:border-emerald-800',
+          label: t('materials.link'),
+        }
+      default:
+        return {
+          Icon: FileText,
+          color: 'text-blue-500',
+          bg: 'bg-blue-50 dark:bg-blue-900/20',
+          border: 'border-blue-200 dark:border-blue-800',
+          label: t('materials.text'),
+        }
+    }
   }
 
+  const config = getTypeConfig()
+  const TypeIcon = config.Icon
+
   return (
-    <div
-      className="flex items-center justify-between gap-3 sm:gap-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/60 px-3.5 sm:px-4 py-3 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-sm transition-all"
+    <button
+      onClick={handleOpen}
+      className={`group relative flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left hover:shadow-md ${
+        isSeen
+          ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800'
+          : `bg-white dark:bg-gray-900 ${config.border} hover:border-blue-400 dark:hover:border-blue-500`
+      }`}
     >
-      <div className="flex items-center gap-4 flex-1">
-        <div
-          className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconColor} dark:bg-gray-800`}
-        >
-          <Icon size={20} />
+      {/* Status indicator */}
+      <div className="absolute top-3 right-3">
+        {isSeen ? (
+          <CheckCircle2 size={18} className="text-emerald-500" />
+        ) : (
+          <Circle size={18} className="text-gray-300 dark:text-gray-600 group-hover:text-blue-400" />
+        )}
+      </div>
+
+      {/* Icon */}
+      <div className={`flex-shrink-0 p-3 rounded-xl ${config.bg}`}>
+        <TypeIcon size={22} className={config.color} />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0 pr-6">
+        <div className="flex items-center gap-2 mb-1">
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${config.color}`}>
+            {config.label}
+          </span>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+            #{index + 1}
+          </span>
         </div>
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-              {t('lesson.step') || 'Крок'} {index + 1}
-            </span>
-            {isSeen && (
-              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 size={12} />
-                {t('materials.viewed')}
-              </span>
-            )}
-          </div>
-          <h4 className="text-sm md:text-[15px] font-medium text-gray-900 dark:text-gray-100">
-            {materialTitle}
-          </h4>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-gray-700 px-2 py-0.5">
-              {m.type}
-            </span>
-            {m.tags?.map((tag) => (
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+          {materialTitle}
+        </h4>
+        {m.tags && m.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {m.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-0.5"
+                className="text-[9px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
               >
-                #{tag}
+                {tag}
               </span>
             ))}
           </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        {!isSeen && (
-          <Circle
-            size={16}
-            className="hidden sm:block text-gray-300 dark:text-gray-600"
-          />
         )}
-        <button
-          onClick={handleOpen}
-          className="inline-flex items-center gap-2 rounded-lg bg-gray-900 text-white px-4 py-2 text-xs md:text-[13px] font-semibold hover:bg-black dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 active:scale-95 transition-transform"
-        >
-          {t('materials.open')} <ExternalLink size={14} />
-        </button>
       </div>
-    </div>
+    </button>
   )
 })

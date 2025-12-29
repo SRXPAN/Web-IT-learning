@@ -1,6 +1,7 @@
 // src/components/ConfirmDialog.tsx
 import React, { useEffect, useRef, useCallback } from 'react'
 import { AlertTriangle, Info, AlertCircle, CheckCircle, X, LucideIcon } from 'lucide-react'
+import { useTranslation } from '@/i18n/useTranslation'
 
 type DialogVariant = 'danger' | 'warning' | 'info' | 'success'
 
@@ -62,13 +63,17 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
-  confirmText = 'Підтвердити',
-  cancelText = 'Скасувати',
+  confirmText,
+  cancelText,
   variant = 'danger',
   isLoading = false,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const confirmButtonRef = useRef<HTMLButtonElement>(null)
+  
+  const resolvedConfirmText = confirmText ?? t('dialog.confirm')
+  const resolvedCancelText = cancelText ?? t('dialog.cancel')
   
   const config = variantConfig[variant]
   const Icon = config.icon
@@ -139,7 +144,7 @@ export function ConfirmDialog({
               onClick={onClose}
               disabled={isLoading}
               className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:text-neutral-300 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
-              aria-label="Закрити"
+              aria-label={t('dialog.close')}
             >
               <X size={20} />
             </button>
@@ -152,7 +157,7 @@ export function ConfirmDialog({
               disabled={isLoading}
               className="flex-1 px-4 py-2.5 rounded-xl font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors disabled:opacity-50"
             >
-              {cancelText}
+              {resolvedCancelText}
             </button>
             <button
               ref={confirmButtonRef}
@@ -166,10 +171,10 @@ export function ConfirmDialog({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Обробка...
+                  {t('common.processing')}
                 </>
               ) : (
-                confirmText
+                resolvedConfirmText
               )}
             </button>
           </div>
@@ -247,15 +252,16 @@ export function DeleteConfirmDialog({
   itemName: string
   isLoading?: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <ConfirmDialog
       isOpen={isOpen}
       onClose={onClose}
       onConfirm={onConfirm}
-      title={`Видалити ${itemName}?`}
-      description={`Ви впевнені, що хочете видалити цей елемент? Цю дію неможливо скасувати.`}
-      confirmText="Видалити"
-      cancelText="Скасувати"
+      title={`${t('dialog.delete')} ${itemName}?`}
+      description={t('dialog.deleteConfirmation')}
+      confirmText={t('dialog.delete')}
+      cancelText={t('dialog.cancel')}
       variant="danger"
       isLoading={isLoading}
     />
@@ -276,15 +282,16 @@ export function LogoutConfirmDialog({
   onConfirm: () => void | Promise<void>
   isLoading?: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <ConfirmDialog
       isOpen={isOpen}
       onClose={onClose}
       onConfirm={onConfirm}
-      title="Вийти з акаунту?"
-      description="Ви будете перенаправлені на сторінку входу."
-      confirmText="Вийти"
-      cancelText="Залишитись"
+      title={t('dialog.logoutTitle')}
+      description={t('dialog.logoutDescription')}
+      confirmText={t('dialog.logout')}
+      cancelText={t('dialog.stay')}
       variant="warning"
       isLoading={isLoading}
     />
@@ -305,15 +312,16 @@ export function SaveConfirmDialog({
   onConfirm: () => void | Promise<void>
   isLoading?: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <ConfirmDialog
       isOpen={isOpen}
       onClose={onClose}
       onConfirm={onConfirm}
-      title="Зберегти зміни?"
-      description="Ви хочете зберегти внесені зміни перед виходом?"
-      confirmText="Зберегти"
-      cancelText="Не зберігати"
+      title={t('dialog.saveChangesTitle')}
+      description={t('dialog.saveChangesDescription')}
+      confirmText={t('dialog.save')}
+      cancelText={t('dialog.dontSave')}
       variant="info"
       isLoading={isLoading}
     />

@@ -1,8 +1,12 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, afterEach } from 'vitest'
+import { render, screen, cleanup } from '@testing-library/react'
 import Breadcrumb from '@/components/Breadcrumb'
 
 describe('Breadcrumb', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it('renders single item', () => {
     render(<Breadcrumb items={[{ label: 'Home', current: true }]} />)
     

@@ -1,5 +1,5 @@
 // check-system.ts - Повна діагностика системи
-import { prisma } from './src/db.js'
+import { prisma } from '../src/db.js'
 
 async function main() {
   console.log('╔════════════════════════════════════════════════╗')

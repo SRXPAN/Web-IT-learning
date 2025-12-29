@@ -37,7 +37,7 @@ export default function Register() {
       await register(name, email, password)
       nav('/')
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Registration failed'
+      const message = error instanceof Error ? error.message : t('auth.error.registrationFailed')
       setErr(message)
     } finally {
       setLoading(false)
@@ -80,7 +80,7 @@ export default function Register() {
             onChange={e => setEmail(e.target.value)} 
             type="email"
             className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2 bg-white dark:bg-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
-            placeholder="your@email.com"
+            placeholder={t('auth.placeholder.email')}
             required
             disabled={loading}
           />

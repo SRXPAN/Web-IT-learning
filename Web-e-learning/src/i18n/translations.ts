@@ -1,12 +1,16 @@
-import { Lang } from '@/store/i18n'
-
 /**
- * TranslationKey - all available translation keys
- * Primary source: Database (UiTranslation table)
- * This file serves as TypeScript type definition and fallback
+ * Translation Keys Type Definition
+ * 
+ * This file contains ONLY the TypeScript type definition for all translation keys.
+ * Actual translations are loaded dynamically from the API.
+ * 
+ * @description Types-only file - no runtime code, no translation values
  */
-export type TranslationKey = 
-  // Common
+
+export type TranslationKey =
+  // ============================================
+  // COMMON (20 keys)
+  // ============================================
   | 'app.name'
   | 'common.loading'
   | 'common.error'
@@ -20,8 +24,16 @@ export type TranslationKey =
   | 'common.continue'
   | 'common.back'
   | 'common.completed'
-  
-  // Navigation
+  | 'common.saving'
+  | 'common.processing'
+  | 'common.goHome'
+  | 'common.goBack'
+  | 'common.seconds'
+  | 'common.update'
+
+  // ============================================
+  // NAV (10 keys)
+  // ============================================
   | 'nav.dashboard'
   | 'nav.materials'
   | 'nav.quiz'
@@ -31,8 +43,11 @@ export type TranslationKey =
   | 'nav.login'
   | 'nav.register'
   | 'nav.logout'
-  
-  // Dashboard
+  | 'nav.admin'
+
+  // ============================================
+  // DASHBOARD (47 keys)
+  // ============================================
   | 'dashboard.welcome'
   | 'dashboard.level'
   | 'dashboard.nextLevel'
@@ -56,8 +71,34 @@ export type TranslationKey =
   | 'dashboard.recentActivity'
   | 'dashboard.allQuizzes'
   | 'dashboard.startLearning'
-  
-  // Materials
+  | 'dashboard.course.algorithms'
+  | 'dashboard.course.sql'
+  | 'dashboard.lesson.quicksort'
+  | 'dashboard.lesson.joins'
+  | 'dashboard.goal.quiz'
+  | 'dashboard.goal.materials'
+  | 'dashboard.goal.concept'
+  | 'dashboard.weak.recursion'
+  | 'dashboard.weak.recursion.advice'
+  | 'dashboard.weak.sqlJoin'
+  | 'dashboard.weak.sqlJoin.advice'
+  | 'dashboard.weak.bigO'
+  | 'dashboard.weak.bigO.advice'
+  | 'dashboard.achievement.firstQuiz'
+  | 'dashboard.achievement.weekStreak'
+  | 'dashboard.achievement.fastAnswer'
+  | 'dashboard.achievement.sqlMaster'
+  | 'dashboard.weekday.mon'
+  | 'dashboard.weekday.tue'
+  | 'dashboard.weekday.wed'
+  | 'dashboard.weekday.thu'
+  | 'dashboard.weekday.fri'
+  | 'dashboard.weekday.sat'
+  | 'dashboard.weekday.sun'
+
+  // ============================================
+  // MATERIALS (45 keys)
+  // ============================================
   | 'materials.title'
   | 'materials.all'
   | 'materials.pdf'
@@ -94,8 +135,19 @@ export type TranslationKey =
   | 'materials.remaining'
   | 'materials.materialsViewed'
   | 'materials.noSections'
-  
-  // Categories
+  | 'materials.status.completed'
+  | 'materials.status.mainSection'
+  | 'materials.status.subSection'
+  | 'materials.count.materials'
+  | 'materials.empty.noMaterials'
+  | 'materials.type.pdf'
+  | 'materials.type.video'
+  | 'materials.type.link'
+  | 'materials.type.text'
+
+  // ============================================
+  // CATEGORY (10 keys)
+  // ============================================
   | 'category.programming'
   | 'category.mathematics'
   | 'category.databases'
@@ -106,8 +158,10 @@ export type TranslationKey =
   | 'category.security'
   | 'category.devops'
   | 'category.operatingSystems'
-  
-  // Quiz
+
+  // ============================================
+  // QUIZ (51 keys)
+  // ============================================
   | 'quiz.title'
   | 'quiz.mode'
   | 'quiz.practice'
@@ -148,8 +202,21 @@ export type TranslationKey =
   | 'quiz.error'
   | 'quiz.start'
   | 'quiz.tryAgainMessage'
-  
-  // Lesson
+  | 'quiz.mode.practice'
+  | 'quiz.shortcuts.hide'
+  | 'quiz.shortcuts.show'
+  | 'quiz.shortcuts.selectAnswer'
+  | 'quiz.shortcuts.confirm'
+  | 'quiz.shortcuts.nextQuestion'
+  | 'quiz.shortcuts.skip'
+  | 'quiz.achievement.firstQuiz'
+  | 'quiz.achievement.perfectScore'
+  | 'quiz.achievement.accuracy90'
+  | 'quiz.error.historyLoadFailed'
+
+  // ============================================
+  // LESSON (26 keys)
+  // ============================================
   | 'lesson.breadcrumb.algorithms'
   | 'lesson.breadcrumb.search'
   | 'lesson.breadcrumb.binarySearch'
@@ -170,8 +237,16 @@ export type TranslationKey =
   | 'lesson.hint.splitHalf'
   | 'lesson.hint.complexity'
   | 'lesson.step'
-  
-  // Profile
+  | 'lesson.mock.questionText'
+  | 'lesson.mock.explanation'
+  | 'lesson.achievement.firstQuiz'
+  | 'lesson.achievement.fastAnswer'
+  | 'lesson.achievement.accuracy90'
+  | 'lesson.test.expected'
+
+  // ============================================
+  // PROFILE (32 keys)
+  // ============================================
   | 'profile.title'
   | 'profile.name'
   | 'profile.email'
@@ -182,8 +257,32 @@ export type TranslationKey =
   | 'profile.theme'
   | 'profile.light'
   | 'profile.dark'
-  
-  // Auth
+  | 'profile.badge.risingStar'
+  | 'profile.badge.algorithmMaster'
+  | 'profile.error.selectImage'
+  | 'profile.error.imageTooLarge'
+  | 'profile.error.avatarUploadFailed'
+  | 'profile.error.fileReadFailed'
+  | 'profile.error.avatarDeleteFailed'
+  | 'profile.error.invalidEmail'
+  | 'profile.error.emailChangeFailed'
+  | 'profile.error.passwordsNotMatch'
+  | 'profile.error.passwordTooShort'
+  | 'profile.error.passwordChangeFailed'
+  | 'profile.action.removeAvatar'
+  | 'profile.action.changeEmail'
+  | 'profile.action.changePassword'
+  | 'profile.label.newEmail'
+  | 'profile.label.currentPassword'
+  | 'profile.label.newPassword'
+  | 'profile.label.confirmNewPassword'
+  | 'profile.placeholder.newEmail'
+  | 'profile.success.emailChanged'
+  | 'profile.success.passwordChanged'
+
+  // ============================================
+  // AUTH (14 keys)
+  // ============================================
   | 'auth.login'
   | 'auth.register'
   | 'auth.password'
@@ -195,727 +294,256 @@ export type TranslationKey =
   | 'auth.passwordsNotMatch'
   | 'auth.passwordMinLength'
   | 'auth.namePlaceholder'
-  
-  // Editor
+  | 'auth.error.loginFailed'
+  | 'auth.error.registrationFailed'
+  | 'auth.placeholder.email'
+
+  // ============================================
+  // ERROR (5 keys)
+  // ============================================
+  | 'error.pageNotFound'
+  | 'error.pageNotFoundDescription'
+  | 'error.youMightLookingFor'
+  | 'error.accessDenied'
+  | 'error.noPermission'
+
+  // ============================================
+  // BADGE (6 keys)
+  // ============================================
+  | 'badge.firstSteps'
+  | 'badge.risingStar'
+  | 'badge.dedicatedLearner'
+  | 'badge.quizMaster'
+  | 'badge.expert'
+  | 'badge.legend'
+
+  // ============================================
+  // LEADERBOARD (8 keys)
+  // ============================================
+  | 'leaderboard.title'
+  | 'leaderboard.loading'
+  | 'leaderboard.participants'
+  | 'leaderboard.level'
+  | 'leaderboard.user'
+  | 'leaderboard.badges'
+  | 'leaderboard.you'
+  | 'leaderboard.error.loadFailed'
+
+  // ============================================
+  // EMPTY (20 keys)
+  // ============================================
+  | 'empty.materials.title'
+  | 'empty.materials.description'
+  | 'empty.materials.action'
+  | 'empty.search.title'
+  | 'empty.search.descriptionWithQuery'
+  | 'empty.search.descriptionNoQuery'
+  | 'empty.search.action'
+  | 'empty.leaderboard.title'
+  | 'empty.leaderboard.description'
+  | 'empty.quizHistory.title'
+  | 'empty.quizHistory.description'
+  | 'empty.quizHistory.action'
+  | 'empty.progress.title'
+  | 'empty.progress.description'
+  | 'empty.progress.action'
+  | 'empty.topics.title'
+  | 'empty.topics.description'
+  | 'empty.topics.action'
+  | 'empty.recommendations.title'
+  | 'empty.recommendations.description'
+
+  // ============================================
+  // SEARCH (13 keys)
+  // ============================================
+  | 'search.topicWith'
+  | 'search.quizzes'
+  | 'search.placeholder'
+  | 'search.fullPlaceholder'
+  | 'search.type.quiz'
+  | 'search.type.topic'
+  | 'search.type.lesson'
+  | 'search.noResults'
+  | 'search.tryAnother'
+  | 'search.startTyping'
+  | 'search.hint.navigation'
+  | 'search.hint.select'
+  | 'search.hint.close'
+
+  // ============================================
+  // DIALOG (13 keys)
+  // ============================================
+  | 'dialog.confirm'
+  | 'dialog.cancel'
+  | 'dialog.close'
+  | 'dialog.delete'
+  | 'dialog.deleteConfirmation'
+  | 'dialog.logoutTitle'
+  | 'dialog.logoutDescription'
+  | 'dialog.logout'
+  | 'dialog.stay'
+  | 'dialog.saveChangesTitle'
+  | 'dialog.saveChangesDescription'
+  | 'dialog.save'
+  | 'dialog.dontSave'
+
+  // ============================================
+  // EDITOR (83 keys)
+  // ============================================
   | 'editor.topics'
   | 'editor.materials'
   | 'editor.quizzes'
   | 'editor.create'
   | 'editor.edit'
   | 'editor.delete'
+  | 'editor.title'
+  | 'editor.tab.topics'
+  | 'editor.tab.materials'
+  | 'editor.tab.quizzes'
+  | 'editor.label.activeTopic'
+  | 'editor.label.name'
+  | 'editor.label.slug'
+  | 'editor.label.description'
+  | 'editor.label.category'
+  | 'editor.label.title'
+  | 'editor.label.type'
+  | 'editor.label.language'
+  | 'editor.label.url'
+  | 'editor.label.content'
+  | 'editor.label.quizTitle'
+  | 'editor.label.duration'
+  | 'editor.label.questions'
+  | 'editor.label.questionText'
+  | 'editor.label.explanation'
+  | 'editor.label.difficulty'
+  | 'editor.label.answerOptions'
+  | 'editor.title.editTopic'
+  | 'editor.title.createTopic'
+  | 'editor.title.rootTopics'
+  | 'editor.title.createMaterial'
+  | 'editor.title.structureTips'
+  | 'editor.title.materialsList'
+  | 'editor.title.editQuiz'
+  | 'editor.title.createQuiz'
+  | 'editor.title.editQuestion'
+  | 'editor.title.addQuestion'
+  | 'editor.placeholder.selectTopic'
+  | 'editor.placeholder.quizTitle'
+  | 'editor.placeholder.questionText'
+  | 'editor.placeholder.explanation'
+  | 'editor.action.reloadList'
+  | 'editor.action.addQuestion'
+  | 'editor.action.editQuiz'
+  | 'editor.action.deleteQuiz'
+  | 'editor.action.addOption'
+  | 'editor.hint.selectTopic'
+  | 'editor.hint.materialFields'
+  | 'editor.hint.selectTopicForQuizzes'
+  | 'editor.hint.correctAnswer'
+  | 'editor.hint.markCorrect'
+  | 'editor.hint.optionsGuide'
+  | 'editor.tip.clearTitles'
+  | 'editor.tip.correctType'
+  | 'editor.tip.matchLanguage'
+  | 'editor.tip.textForNotes'
+  | 'editor.error.nameSlugRequired'
+  | 'editor.error.selectTopicFirst'
+  | 'editor.error.titleTypeRequired'
+  | 'editor.error.loadTopicsFailed'
+  | 'editor.error.titleRequired'
+  | 'editor.error.selectQuizFirst'
+  | 'editor.error.questionTextRequired'
+  | 'editor.error.minOptionsRequired'
+  | 'editor.error.correctAnswerRequired'
+  | 'editor.success.topicUpdated'
+  | 'editor.success.topicCreated'
+  | 'editor.success.deleted'
+  | 'editor.success.materialCreated'
+  | 'editor.success.quizUpdated'
+  | 'editor.success.quizCreated'
+  | 'editor.success.quizDeleted'
+  | 'editor.success.questionUpdated'
+  | 'editor.success.questionCreated'
+  | 'editor.success.questionDeleted'
+  | 'editor.confirm.deleteTopic'
+  | 'editor.confirm.deleteQuiz'
+  | 'editor.confirm.deleteQuestion'
+  | 'editor.empty.noTopics'
+  | 'editor.empty.noMaterials'
+  | 'editor.empty.noQuizzes'
+  | 'editor.empty.noQuestions'
+  | 'editor.loading.questions'
 
-  // Dashboard Content
-  | 'dashboard.course.algorithms'
-  | 'dashboard.course.sql'
-  | 'dashboard.lesson.quicksort'
-  | 'dashboard.lesson.joins'
-  | 'dashboard.goal.quiz'
-  | 'dashboard.goal.materials'
-  | 'dashboard.goal.concept'
-  | 'dashboard.weak.recursion'
-  | 'dashboard.weak.recursion.advice'
-  | 'dashboard.weak.sqlJoin'
-  | 'dashboard.weak.sqlJoin.advice'
-  | 'dashboard.weak.bigO'
-  | 'dashboard.weak.bigO.advice'
-  | 'dashboard.achievement.firstQuiz'
-  | 'dashboard.achievement.weekStreak'
-  | 'dashboard.achievement.fastAnswer'
-  | 'dashboard.achievement.sqlMaster'
-  | 'dashboard.weekday.mon'
-  | 'dashboard.weekday.tue'
-  | 'dashboard.weekday.wed'
-  | 'dashboard.weekday.thu'
-  | 'dashboard.weekday.fri'
-  | 'dashboard.weekday.sat'
-  | 'dashboard.weekday.sun'
+  // ============================================
+  // ADMIN PANEL (50+ keys)
+  // ============================================
+  | 'admin.panel'
+  | 'admin.dashboard'
+  | 'admin.dashboardDescription'
+  | 'admin.users'
+  | 'admin.usersDescription'
+  | 'admin.files'
+  | 'admin.filesDescription'
+  | 'admin.translations'
+  | 'admin.auditLogs'
+  | 'admin.auditLogsDescription'
+  | 'admin.settings'
+  | 'admin.totalUsers'
+  | 'admin.totalTopics'
+  | 'admin.totalMaterials'
+  | 'admin.totalFiles'
+  | 'admin.usersByRole'
+  | 'admin.recentActivity'
+  | 'admin.timeSpent'
+  | 'admin.quizAttempts'
+  | 'admin.materialsViewed'
+  | 'admin.noActivityData'
+  | 'admin.searchUsers'
+  | 'admin.createUser'
+  | 'admin.allRoles'
+  | 'admin.changeRole'
+  | 'admin.deleteUser'
+  | 'admin.deleteUserConfirm'
+  | 'admin.noUsersFound'
+  | 'admin.verified'
+  | 'admin.unverified'
+  | 'admin.action'
+  | 'admin.resource'
+  | 'admin.startDate'
+  | 'admin.endDate'
+  | 'admin.systemAction'
+  | 'admin.viewDetails'
+  | 'admin.noLogsFound'
+  | 'admin.allCategories'
+  | 'admin.avatars'
+  | 'admin.materials'
+  | 'admin.attachments'
+  | 'admin.uploadedBy'
+  | 'admin.deleteFile'
+  | 'admin.deleteFileConfirm'
+  | 'admin.noFilesFound'
 
-type Translations = Record<Lang, Record<TranslationKey, string>>
-
-/**
- * Local translations - used as fallback when API is unavailable
- * Primary data source is now PostgreSQL database (UiTranslation table)
- */
-export const translations: Translations = {
-  UA: {
-    // Common
-    'app.name': 'E-Learn',
-    'common.loading': 'Завантаження...',
-    'common.error': 'Помилка',
-    'common.loadFailed': 'Не вдалося завантажити дані',
-    'common.save': 'Зберегти',
-    'common.cancel': 'Скасувати',
-    'common.delete': 'Видалити',
-    'common.edit': 'Редагувати',
-    'common.create': 'Створити',
-    'common.close': 'Закрити',
-    'common.continue': 'Продовжити',
-    'common.back': 'Назад',
-    'common.completed': 'Завершено',
-    
-    // Navigation
-    'nav.dashboard': 'Дашборд',
-    'nav.materials': 'Матеріали',
-    'nav.quiz': 'Квізи',
-    'nav.leaderboard': 'Рейтинг',
-    'nav.profile': 'Профіль',
-    'nav.editor': 'Редактор',
-    'nav.login': 'Увійти',
-    'nav.register': 'Реєстрація',
-    'nav.logout': 'Вийти',
-    
-    // Dashboard
-    'dashboard.welcome': 'Вітаємо',
-    'dashboard.level': 'Рівень',
-    'dashboard.nextLevel': 'До наступного рівня',
-    'dashboard.streak': 'Стрік',
-    'dashboard.days': 'днів',
-    'dashboard.attempts': 'Спроби',
-    'dashboard.time': 'Час',
-    'dashboard.achievements': 'Досягнення',
-    'dashboard.dailyGoals': 'Щоденні цілі',
-    'dashboard.continueLearning': 'Продовжити навчання',
-    'dashboard.recommended': 'Рекомендовано підтягнути',
-    'dashboard.quickLinks': 'Швидкі посилання',
-    'dashboard.community': 'Спільнота',
-    'dashboard.tipOfDay': 'Порада дня',
-    'dashboard.tipMessage': 'Приділяйте 15 хвилин щодня практиці — це покращить результати на 40%!',
-
-    'dashboard.done': 'Виконано',
-    'dashboard.pending': 'В процесі',
-    'dashboard.keepStreak': 'Продовжуй навчатися щодня, щоб зберегти стрік!',
-    'dashboard.goToCourseChat': 'Перейти до чату курсу',
-    'dashboard.last7days': 'за 7 днів',
-    'dashboard.recentActivity': 'Остання активність',
-    'dashboard.allQuizzes': 'Всі квізи',
-    'dashboard.startLearning': 'Почати навчання',
-    
-    // Materials
-    'materials.title': 'Матеріали',
-    'materials.all': 'Усі',
-    'materials.pdf': 'PDF',
-    'materials.video': 'Відео',
-    'materials.text': 'Текст',
-    'materials.link': 'Посилання',
-    'materials.progress': 'Прогрес',
-    'materials.open': 'Відкрити',
-    'materials.viewed': 'Переглянуто',
-    'materials.sections': 'Розділи',
-    'materials.searchPlaceholder': 'Пошук матеріалів...',
-    'materials.suggestedNext': 'Рекомендовано далі',
-    'materials.section': 'Розділ',
-    'materials.materialsCount': 'Матеріалів',
-    'materials.completedCount': 'Пройдено',
-    'materials.chooseSectionTitle': 'Обери розділ і розпочни маршрут',
-    'materials.chooseSectionDesc': 'Кожен розділ містить конспекти, відео та міні-задачі. Рухайся послідовно та повертайся, щоб повторювати.',
-    'materials.subtopics': 'Підтеми',
-    'materials.showAll': 'Показати всі',
-    'materials.categoriesAvailable': 'категорій доступно',
-    'materials.completed': 'Завершено',
-    'materials.mainSection': 'Основний розділ',
-    'materials.subSection': 'Підрозділ',
-    'materials.noMaterials': 'Матеріали відсутні',
-    'materials.openExternal': 'Відкрити',
-    'materials.download': 'Завантажити',
-    'materials.openInNewTab': 'Відкрити у новій вкладці',
-    'materials.externalLink': 'Зовнішнє посилання',
-    'materials.externalLinkDesc': 'Цей матеріал знаходиться на зовнішньому ресурсі',
-    'materials.goToResource': 'Перейти до ресурсу',
-    'materials.noContent': 'Контент недоступний',
-    'materials.viewTime': 'Час перегляду',
-    'materials.viewAllMaterials': 'Перегляньте всі матеріали, щоб розблокувати тест',
-    'materials.remaining': 'Залишилось',
-    'materials.materialsViewed': 'матеріалів переглянуто',
-    'materials.noSections': 'Розділи ще не додані',
-    
-    // Categories
-    'category.programming': 'Програмування',
-    'category.mathematics': 'Математика',
-    'category.databases': 'Бази даних',
-    'category.networks': 'Мережі',
-    'category.webDevelopment': 'Веб-розробка',
-    'category.mobileDevelopment': 'Мобільна розробка',
-    'category.machineLearning': 'Машинне навчання',
-    'category.security': 'Кібербезпека',
-    'category.devops': 'DevOps',
-    'category.operatingSystems': 'Операційні системи',
-    
-    // Quiz
-    'quiz.title': 'Квізи',
-    'quiz.mode': 'Режим',
-    'quiz.practice': 'Практика',
-    'quiz.exam': 'Екзамен',
-    'quiz.selectQuiz': 'Обери квіз',
-    'quiz.question': 'Питання',
-    'quiz.of': 'з',
-    'quiz.time': 'Час',
-    'quiz.result': 'Результат',
-    'quiz.completed': 'Квіз завершено!',
-    'quiz.congratulations': 'Вітаємо з завершенням квізу!',
-    'quiz.correctAnswers': 'правильних відповідей',
-    'quiz.tryAgain': 'Спробувати знову',
-    'quiz.backToMaterials': 'Повернутись до матеріалів',
-    'quiz.hints': 'Підказки',
-    'quiz.checklist': 'Чек-лист',
-    'quiz.answer': 'Відповісти',
-    'quiz.skip': 'Пропустити',
-    'quiz.next': 'Далі',
-    'quiz.finish': 'Завершити квіз',
-    'quiz.explanation': 'Пояснення',
-    'quiz.loading': 'Завантаження квізу...',
-    'quiz.explanationImmediate': 'Пояснення одразу',
-    'quiz.questionUnavailable': 'Питання недоступне',
-    'quiz.showAnswer': 'Показати відповідь',
-    'quiz.nextQuestion': 'Наступне питання',
-    'quiz.hint.practice': 'У режимі Практика ти отримуєш пояснення одразу',
-    'quiz.hint.exam': 'У режимі Екзамен час обмежений і немає підказок',
-    'quiz.hint.reviewMaterials': 'Переглядай матеріали перед проходженням квізу',
-    'quiz.checklist.reviewMaterials': 'Переглянути матеріали',
-    'quiz.checklist.pickMode': 'Вибрати режим квізу',
-    'quiz.checklist.answerAll': 'Відповісти на всі питання',
-    'quiz.checklist.score75': 'Отримати ≥75% правильних',
-    'quiz.noQuizzes': 'Немає доступних квізів',
-    'quiz.history': 'Історія спроб',
-    'quiz.noHistory': 'Ще немає спроб',
-    'quiz.loadingQuestion': 'Завантаження питання...',
-    'quiz.error': 'Сталася помилка. Спробуйте інший квіз.',
-    'quiz.start': 'Почати тест',
-    'quiz.tryAgainMessage': 'Спробуйте ще раз',
-    
-    // Lesson
-    'lesson.breadcrumb.algorithms': 'Алгоритми',
-    'lesson.breadcrumb.search': 'Пошук',
-    'lesson.breadcrumb.binarySearch': 'Бінарний пошук',
-    'lesson.toc': 'Зміст',
-    'lesson.progress': 'Прогрес',
-    'lesson.progressRequirement': 'Умова завершення: переглянути ≥1 матеріал + квіз ≥75%',
-    'lesson.content.notes': 'Конспект',
-    'lesson.content.video': 'Відео',
-    'lesson.content.quiz': 'Квіз',
-    'lesson.content.code': 'Практика коду',
-    'lesson.questionCounter': 'Питання',
-    'lesson.explanationTitle': 'Пояснення',
-    'lesson.placeholder': 'Контент буде тут',
-    'lesson.run': 'Запустити',
-    'lesson.tests': 'Тести',
-    'lesson.testTitle': 'Тест',
-    'lesson.hint.sortedOnly': 'Бінарний пошук працює лише на відсортованих масивах',
-    'lesson.hint.splitHalf': 'На кожному кроці масив ділиться навпіл',
-    'lesson.hint.complexity': 'Складність завжди O(log n) у гіршому випадку',
-    'lesson.step': 'Крок',
-    
-    // Profile
-    'profile.title': 'Профіль',
-    'profile.name': "Ім'я",
-    'profile.email': 'Email',
-    'profile.xp': 'XP',
-    'profile.badges': 'Бейджі',
-    'profile.settings': 'Налаштування',
-    'profile.language': 'Мова інтерфейсу',
-    'profile.theme': 'Тема',
-    'profile.light': 'Світла',
-    'profile.dark': 'Темна',
-    
-    // Auth
-    'auth.login': 'Вхід',
-    'auth.register': 'Реєстрація',
-    'auth.password': 'Пароль',
-    'auth.signIn': 'Увійти',
-    'auth.createAccount': 'Створити акаунт',
-    'auth.noAccount': 'Немає акаунту?',
-    'auth.hasAccount': 'Вже маєте акаунт?',
-    'auth.confirmPassword': 'Підтвердіть пароль',
-    'auth.passwordsNotMatch': 'Паролі не співпадають',
-    'auth.passwordMinLength': 'Пароль повинен містити мінімум 8 символів',
-    'auth.namePlaceholder': 'Ваше імʼя',
-    
-    // Editor
-    'editor.topics': 'Теми',
-    'editor.materials': 'Матеріали',
-    'editor.quizzes': 'Квізи',
-    'editor.create': 'Створити',
-    'editor.edit': 'Редагувати',
-    'editor.delete': 'Видалити',
-
-    // Dashboard Content
-    'dashboard.course.algorithms': 'Основи Алгоритмів',
-    'dashboard.course.sql': 'SQL для початківців',
-    'dashboard.lesson.quicksort': 'Урок 5: QuickSort',
-    'dashboard.lesson.joins': 'Урок 3: JOIN операції',
-    'dashboard.goal.quiz': 'Пройти 1 квіз',
-    'dashboard.goal.materials': 'Переглянути 3 матеріали',
-    'dashboard.goal.concept': 'Завчити нове поняття',
-    'dashboard.weak.recursion': 'Рекурсія',
-    'dashboard.weak.recursion.advice': 'Перегляньте конспект та пройдіть додаткові тести',
-    'dashboard.weak.sqlJoin': 'SQL INNER JOIN',
-    'dashboard.weak.sqlJoin.advice': 'Практикуйте з реальними прикладами даних',
-    'dashboard.weak.bigO': 'Big-O нотація',
-    'dashboard.weak.bigO.advice': 'Подивіться відео-пояснення та вирішіть 3 задачі',
-    'dashboard.achievement.firstQuiz': 'Перший квіз',
-    'dashboard.achievement.weekStreak': 'Тиждень поспіль',
-    'dashboard.achievement.fastAnswer': 'Швидка відповідь',
-    'dashboard.achievement.sqlMaster': 'Майстер SQL',
-    'dashboard.weekday.mon': 'Пн',
-    'dashboard.weekday.tue': 'Вт',
-    'dashboard.weekday.wed': 'Ср',
-    'dashboard.weekday.thu': 'Чт',
-    'dashboard.weekday.fri': 'Пт',
-    'dashboard.weekday.sat': 'Сб',
-    'dashboard.weekday.sun': 'Нд',
-  },
-  
-  PL: {
-    // Common
-    'app.name': 'E-Learn',
-    'common.loading': 'Ładowanie...',
-    'common.error': 'Błąd',
-    'common.loadFailed': 'Nie udało się załadować danych',
-    'common.save': 'Zapisz',
-    'common.cancel': 'Anuluj',
-    'common.delete': 'Usuń',
-    'common.edit': 'Edytuj',
-    'common.create': 'Utwórz',
-    'common.close': 'Zamknij',
-    'common.continue': 'Kontynuuj',
-    'common.back': 'Wstecz',
-    'common.completed': 'Ukończono',
-    
-    // Navigation
-    'nav.dashboard': 'Panel',
-    'nav.materials': 'Materiały',
-    'nav.quiz': 'Quiz',
-    'nav.leaderboard': 'Ranking',
-    'nav.profile': 'Profil',
-    'nav.editor': 'Edytor',
-    'nav.login': 'Zaloguj',
-    'nav.register': 'Rejestracja',
-    'nav.logout': 'Wyloguj',
-    
-    // Dashboard
-    'dashboard.welcome': 'Witaj',
-    'dashboard.level': 'Poziom',
-    'dashboard.nextLevel': 'Do następnego poziomu',
-    'dashboard.streak': 'Seria',
-    'dashboard.days': 'dni',
-    'dashboard.attempts': 'Próby',
-    'dashboard.time': 'Czas',
-    'dashboard.achievements': 'Osiągnięcia',
-    'dashboard.dailyGoals': 'Cele dzienne',
-    'dashboard.continueLearning': 'Kontynuuj naukę',
-    'dashboard.recommended': 'Zalecane do poprawy',
-    'dashboard.quickLinks': 'Szybkie linki',
-    'dashboard.community': 'Społeczność',
-    'dashboard.tipOfDay': 'Porada dnia',
-    'dashboard.tipMessage': 'Poświęcaj 15 minut dziennie na praktykę — to poprawi wyniki o 40%!',
-
-    'dashboard.done': 'Ukończone',
-    'dashboard.pending': 'W toku',
-    'dashboard.keepStreak': 'Ucz się codziennie, aby utrzymać serię!',
-    'dashboard.goToCourseChat': 'Przejdź do czatu kursu',
-    'dashboard.last7days': 'ostatnie 7 dni',
-    'dashboard.recentActivity': 'Ostatnia aktywność',
-    'dashboard.allQuizzes': 'Wszystkie quizy',
-    'dashboard.startLearning': 'Zacznij naukę',
-    
-    // Materials
-    'materials.title': 'Materiały',
-    'materials.all': 'Wszystkie',
-    'materials.pdf': 'PDF',
-    'materials.video': 'Wideo',
-    'materials.text': 'Tekst',
-    'materials.link': 'Link',
-    'materials.progress': 'Postęp',
-    'materials.open': 'Otwórz',
-    'materials.viewed': 'Obejrzane',
-    'materials.sections': 'Sekcje',
-    'materials.searchPlaceholder': 'Szukaj materiałów...',
-    'materials.suggestedNext': 'Polecane dalej',
-    'materials.section': 'Sekcja',
-    'materials.materialsCount': 'Materiałów',
-    'materials.completedCount': 'Ukończono',
-    'materials.chooseSectionTitle': 'Wybierz sekcję i zacznij naukę',
-    'materials.chooseSectionDesc': 'Każda sekcja zawiera notatki, filmy i mini-zadania. Ucz się po kolei i wracaj do powtórek.',
-    'materials.subtopics': 'Podtematy',
-    'materials.showAll': 'Pokaż wszystko',
-    'materials.categoriesAvailable': 'dostępnych kategorii',
-    'materials.completed': 'Ukończono',
-    'materials.mainSection': 'Główna sekcja',
-    'materials.subSection': 'Podsekcja',
-    'materials.noMaterials': 'Brak materiałów',
-    'materials.openExternal': 'Otwórz',
-    'materials.download': 'Pobierz',
-    'materials.openInNewTab': 'Otwórz w nowej karcie',
-    'materials.externalLink': 'Link zewnętrzny',
-    'materials.externalLinkDesc': 'Ten materiał znajduje się na zewnętrznym zasobie',
-    'materials.goToResource': 'Przejdź do zasobu',
-    'materials.noContent': 'Treść niedostępna',
-    'materials.viewTime': 'Czas oglądania',
-    'materials.viewAllMaterials': 'Obejrzyj wszystkie materiały, aby odblokować test',
-    'materials.remaining': 'Pozostało',
-    'materials.materialsViewed': 'materiałów obejrzanych',
-    'materials.noSections': 'Sekcje nie zostały jeszcze dodane',
-    
-    // Categories
-    'category.programming': 'Programowanie',
-    'category.mathematics': 'Matematyka',
-    'category.databases': 'Bazy danych',
-    'category.networks': 'Sieci',
-    'category.webDevelopment': 'Tworzenie stron',
-    'category.mobileDevelopment': 'Rozwój mobilny',
-    'category.machineLearning': 'Uczenie maszynowe',
-    'category.security': 'Cyberbezpieczeństwo',
-    'category.devops': 'DevOps',
-    'category.operatingSystems': 'Systemy operacyjne',
-    
-    // Quiz
-    'quiz.title': 'Quiz',
-    'quiz.mode': 'Tryb',
-    'quiz.practice': 'Praktyka',
-    'quiz.exam': 'Egzamin',
-    'quiz.selectQuiz': 'Wybierz quiz',
-    'quiz.question': 'Pytanie',
-    'quiz.of': 'z',
-    'quiz.time': 'Czas',
-    'quiz.result': 'Wynik',
-    'quiz.completed': 'Quiz ukończony!',
-    'quiz.congratulations': 'Gratulacje ukończenia quizu!',
-    'quiz.correctAnswers': 'poprawnych odpowiedzi',
-    'quiz.tryAgain': 'Spróbuj ponownie',
-    'quiz.backToMaterials': 'Powrót do materiałów',
-    'quiz.hints': 'Podpowiedzi',
-    'quiz.checklist': 'Lista kontrolna',
-    'quiz.answer': 'Odpowiedz',
-    'quiz.skip': 'Pomiń',
-    'quiz.next': 'Dalej',
-    'quiz.finish': 'Zakończ quiz',
-    'quiz.explanation': 'Wyjaśnienie',
-    'quiz.loading': 'Ładowanie quizu...',
-    'quiz.explanationImmediate': 'Wyjaśnienie od razu',
-    'quiz.questionUnavailable': 'Pytanie niedostępne',
-    'quiz.showAnswer': 'Pokaż odpowiedź',
-    'quiz.nextQuestion': 'Następne pytanie',
-    'quiz.hint.practice': 'W trybie Praktyka dostajesz wyjaśnienie od razu',
-    'quiz.hint.exam': 'W trybie Egzamin czas jest ograniczony i bez podpowiedzi',
-    'quiz.hint.reviewMaterials': 'Przejrzyj materiały przed quizem',
-    'quiz.checklist.reviewMaterials': 'Przejrzyj materiały',
-    'quiz.checklist.pickMode': 'Wybierz tryb quizu',
-    'quiz.checklist.answerAll': 'Odpowiedz na wszystkie pytania',
-    'quiz.checklist.score75': 'Zdobądź ≥75% poprawnych',
-    'quiz.noQuizzes': 'Brak dostępnych quizów',
-    'quiz.history': 'Historia prób',
-    'quiz.noHistory': 'Brak prób',
-    'quiz.loadingQuestion': 'Ładowanie pytania...',
-    'quiz.error': 'Wystąpił błąd. Spróbuj inny quiz.',
-    'quiz.start': 'Rozpocznij test',
-    'quiz.tryAgainMessage': 'Spróbuj ponownie',
-    
-    // Lesson
-    'lesson.breadcrumb.algorithms': 'Algoryтми',
-    'lesson.breadcrumb.search': 'Wyszukiwanie',
-    'lesson.breadcrumb.binarySearch': 'Wyszukiwanie binarne',
-    'lesson.toc': 'Spis treści',
-    'lesson.progress': 'Postęp',
-    'lesson.progressRequirement': 'Warunek: obejrzeć ≥1 materiał + quiz ≥75%',
-    'lesson.content.notes': 'Notatki',
-    'lesson.content.video': 'Wideo',
-    'lesson.content.quiz': 'Quiz',
-    'lesson.content.code': 'Praktyka kodu',
-    'lesson.questionCounter': 'Pytanie',
-    'lesson.explanationTitle': 'Wyjaśnienie',
-    'lesson.placeholder': 'Treść będzie tutaj',
-    'lesson.run': 'Uruchom',
-    'lesson.tests': 'Testy',
-    'lesson.testTitle': 'Test',
-    'lesson.hint.sortedOnly': 'Wyszukiwanie binarne działa tylko na posortowanych tablicach',
-    'lesson.hint.splitHalf': 'Na każdym kroku tablica dzieli się na pół',
-    'lesson.hint.complexity': 'Złożoność to zawsze O(log n) w najgorszym przypadku',
-    'lesson.step': 'Krok',
-    
-    // Profile
-    'profile.title': 'Profil',
-    'profile.name': 'Imię',
-    'profile.email': 'Email',
-    'profile.xp': 'XP',
-    'profile.badges': 'Odznaki',
-    'profile.settings': 'Ustawienia',
-    'profile.language': 'Język interfejsu',
-    'profile.theme': 'Motyw',
-    'profile.light': 'Jasny',
-    'profile.dark': 'Ciemny',
-    
-    // Auth
-    'auth.login': 'Logowanie',
-    'auth.register': 'Rejestracja',
-    'auth.password': 'Hasło',
-    'auth.signIn': 'Zaloguj się',
-    'auth.createAccount': 'Utwórz konto',
-    'auth.noAccount': 'Nie masz konta?',
-    'auth.hasAccount': 'Masz już konto?',
-    'auth.confirmPassword': 'Potwierdź hasło',
-    'auth.passwordsNotMatch': 'Hasła nie pasują',
-    'auth.passwordMinLength': 'Hasło musi mieć minimum 8 znaków',
-    'auth.namePlaceholder': 'Twoje imię',
-    
-    // Editor
-    'editor.topics': 'Tematy',
-    'editor.materials': 'Materiały',
-    'editor.quizzes': 'Quizy',
-    'editor.create': 'Utwórz',
-    'editor.edit': 'Edytuj',
-    'editor.delete': 'Usuń',
-
-    // Dashboard Content
-    'dashboard.course.algorithms': 'Podstawy Algorytmów',
-    'dashboard.course.sql': 'SQL dla początkujących',
-    'dashboard.lesson.quicksort': 'Lekcja 5: QuickSort',
-    'dashboard.lesson.joins': 'Lekcja 3: Operacje JOIN',
-    'dashboard.goal.quiz': 'Zrób 1 quiz',
-    'dashboard.goal.materials': 'Obejrzyj 3 materiały',
-    'dashboard.goal.concept': 'Naucz się nowej koncepcji',
-    'dashboard.weak.recursion': 'Rekurencja',
-    'dashboard.weak.recursion.advice': 'Przejrzyj notatki i zrób dodatkowe testy',
-    'dashboard.weak.sqlJoin': 'SQL INNER JOIN',
-    'dashboard.weak.sqlJoin.advice': 'Praktykuj z rzeczywistymi przykładami danych',
-    'dashboard.weak.bigO': 'Notacja Big-O',
-    'dashboard.weak.bigO.advice': 'Zobacz wyjaśnienie wideo i rozwiąż 3 zadania',
-    'dashboard.achievement.firstQuiz': 'Pierwszy quiz',
-    'dashboard.achievement.weekStreak': 'Tydzień z rzędu',
-    'dashboard.achievement.fastAnswer': 'Szybka odpowiedź',
-    'dashboard.achievement.sqlMaster': 'Mistrz SQL',
-    'dashboard.weekday.mon': 'Pn',
-    'dashboard.weekday.tue': 'Wt',
-    'dashboard.weekday.wed': 'Śr',
-    'dashboard.weekday.thu': 'Cz',
-    'dashboard.weekday.fri': 'Pt',
-    'dashboard.weekday.sat': 'So',
-    'dashboard.weekday.sun': 'Nd',
-  },
-  
-  EN: {
-    // Common
-    'app.name': 'E-Learn',
-    'common.loading': 'Loading...',
-    'common.error': 'Error',
-    'common.loadFailed': 'Failed to load data',
-    'common.save': 'Save',
-    'common.cancel': 'Cancel',
-    'common.delete': 'Delete',
-    'common.edit': 'Edit',
-    'common.create': 'Create',
-    'common.close': 'Close',
-    'common.continue': 'Continue',
-    'common.back': 'Back',
-    'common.completed': 'Completed',
-    
-    // Navigation
-    'nav.dashboard': 'Dashboard',
-    'nav.materials': 'Materials',
-    'nav.quiz': 'Quiz',
-    'nav.leaderboard': 'Leaderboard',
-    'nav.profile': 'Profile',
-    'nav.editor': 'Editor',
-    'nav.login': 'Login',
-    'nav.register': 'Register',
-    'nav.logout': 'Logout',
-    
-    // Dashboard
-    'dashboard.welcome': 'Welcome',
-    'dashboard.level': 'Level',
-    'dashboard.nextLevel': 'To next level',
-    'dashboard.streak': 'Streak',
-    'dashboard.days': 'days',
-    'dashboard.attempts': 'Attempts',
-    'dashboard.time': 'Time',
-    'dashboard.achievements': 'Achievements',
-    'dashboard.dailyGoals': 'Daily Goals',
-    'dashboard.continueLearning': 'Continue Learning',
-    'dashboard.recommended': 'Recommended to improve',
-    'dashboard.quickLinks': 'Quick Links',
-    'dashboard.community': 'Community',
-    'dashboard.tipOfDay': 'Tip of the day',
-    'dashboard.tipMessage': 'Spend 15 minutes daily on practice — it will improve results by 40%!',
-
-    'dashboard.done': 'Done',
-    'dashboard.pending': 'Pending',
-    'dashboard.keepStreak': 'Keep learning daily to maintain your streak!',
-    'dashboard.goToCourseChat': 'Go to course chat',
-    'dashboard.last7days': 'last 7 days',
-    'dashboard.recentActivity': 'Recent Activity',
-    'dashboard.allQuizzes': 'All quizzes',
-    'dashboard.startLearning': 'Start learning',
-    
-    // Materials
-    'materials.title': 'Materials',
-    'materials.all': 'All',
-    'materials.pdf': 'PDF',
-    'materials.video': 'Video',
-    'materials.text': 'Text',
-    'materials.link': 'Link',
-    'materials.progress': 'Progress',
-    'materials.open': 'Open',
-    'materials.viewed': 'Viewed',
-    'materials.sections': 'Sections',
-    'materials.searchPlaceholder': 'Search materials...',
-    'materials.suggestedNext': 'Suggested next',
-    'materials.section': 'Section',
-    'materials.materialsCount': 'Materials',
-    'materials.completedCount': 'Completed',
-    'materials.chooseSectionTitle': 'Choose a section and start learning',
-    'materials.chooseSectionDesc': 'Each section contains notes, videos and mini-tasks. Move sequentially and come back to review.',
-    'materials.subtopics': 'Subtopics',
-    'materials.showAll': 'Show all',
-    'materials.categoriesAvailable': 'categories available',
-    'materials.completed': 'Completed',
-    'materials.mainSection': 'Main section',
-    'materials.subSection': 'Subsection',
-    'materials.noMaterials': 'No materials available',
-    'materials.openExternal': 'Open',
-    'materials.download': 'Download',
-    'materials.openInNewTab': 'Open in new tab',
-    'materials.externalLink': 'External link',
-    'materials.externalLinkDesc': 'This material is located on an external resource',
-    'materials.goToResource': 'Go to resource',
-    'materials.noContent': 'Content unavailable',
-    'materials.viewTime': 'View time',
-    'materials.viewAllMaterials': 'View all materials to unlock the test',
-    'materials.remaining': 'Remaining',
-    'materials.materialsViewed': 'materials viewed',
-    'materials.noSections': 'Sections not yet added',
-    
-    // Categories
-    'category.programming': 'Programming',
-    'category.mathematics': 'Mathematics',
-    'category.databases': 'Databases',
-    'category.networks': 'Networks',
-    'category.webDevelopment': 'Web Development',
-    'category.mobileDevelopment': 'Mobile Development',
-    'category.machineLearning': 'Machine Learning',
-    'category.security': 'Cybersecurity',
-    'category.devops': 'DevOps',
-    'category.operatingSystems': 'Operating Systems',
-    
-    // Quiz
-    'quiz.title': 'Quizzes',
-    'quiz.mode': 'Mode',
-    'quiz.practice': 'Practice',
-    'quiz.exam': 'Exam',
-    'quiz.selectQuiz': 'Select quiz',
-    'quiz.question': 'Question',
-    'quiz.of': 'of',
-    'quiz.time': 'Time',
-    'quiz.result': 'Result',
-    'quiz.completed': 'Quiz completed!',
-    'quiz.congratulations': 'Congratulations on completing the quiz!',
-    'quiz.correctAnswers': 'correct answers',
-    'quiz.tryAgain': 'Try again',
-    'quiz.backToMaterials': 'Back to materials',
-    'quiz.hints': 'Hints',
-    'quiz.checklist': 'Checklist',
-    'quiz.answer': 'Answer',
-    'quiz.skip': 'Skip',
-    'quiz.next': 'Next',
-    'quiz.finish': 'Finish quiz',
-    'quiz.explanation': 'Explanation',
-    'quiz.loading': 'Loading quiz...',
-    'quiz.explanationImmediate': 'Instant explanation',
-    'quiz.questionUnavailable': 'Question unavailable',
-    'quiz.showAnswer': 'Show answer',
-    'quiz.nextQuestion': 'Next question',
-    'quiz.hint.practice': 'In Practice mode you get explanation immediately',
-    'quiz.hint.exam': 'In Exam mode time is limited and no hints',
-    'quiz.hint.reviewMaterials': 'Review materials before taking the quiz',
-    'quiz.checklist.reviewMaterials': 'Review materials',
-    'quiz.checklist.pickMode': 'Choose quiz mode',
-    'quiz.checklist.answerAll': 'Answer all questions',
-    'quiz.checklist.score75': 'Score ≥75% correct',
-    'quiz.noQuizzes': 'No quizzes available',
-    'quiz.history': 'Attempt history',
-    'quiz.noHistory': 'No attempts yet',
-    'quiz.loadingQuestion': 'Loading question...',
-    'quiz.error': 'An error occurred. Try another quiz.',
-    'quiz.start': 'Start test',
-    'quiz.tryAgainMessage': 'Try again',
-    
-    // Lesson
-    'lesson.breadcrumb.algorithms': 'Algorithms',
-    'lesson.breadcrumb.search': 'Search',
-    'lesson.breadcrumb.binarySearch': 'Binary Search',
-    'lesson.toc': 'Contents',
-    'lesson.progress': 'Progress',
-    'lesson.progressRequirement': 'Requirement: view ≥1 material + quiz ≥75%',
-    'lesson.content.notes': 'Notes',
-    'lesson.content.video': 'Video',
-    'lesson.content.quiz': 'Quiz',
-    'lesson.content.code': 'Code practice',
-    'lesson.questionCounter': 'Question',
-    'lesson.explanationTitle': 'Explanation',
-    'lesson.placeholder': 'Content will be here',
-    'lesson.run': 'Run',
-    'lesson.tests': 'Tests',
-    'lesson.testTitle': 'Test',
-    'lesson.hint.sortedOnly': 'Binary search works only on sorted arrays',
-    'lesson.hint.splitHalf': 'Each step splits the array in half',
-    'lesson.hint.complexity': 'Complexity is always O(log n) in worst case',
-    'lesson.step': 'Step',
-    // Profile
-    'profile.title': 'Profile',
-    'profile.name': 'Name',
-    'profile.email': 'Email',
-    'profile.xp': 'XP',
-    'profile.badges': 'Badges',
-    'profile.settings': 'Settings',
-    'profile.language': 'Interface language',
-    'profile.theme': 'Theme',
-    'profile.light': 'Light',
-    'profile.dark': 'Dark',
-    
-    // Auth
-    'auth.login': 'Login',
-    'auth.register': 'Register',
-    'auth.password': 'Password',
-    'auth.signIn': 'Sign in',
-    'auth.createAccount': 'Create account',    'auth.noAccount': 'Don\'t have an account?',
-    'auth.hasAccount': 'Already have an account?',
-    'auth.confirmPassword': 'Confirm password',
-    'auth.passwordsNotMatch': 'Passwords do not match',
-    'auth.passwordMinLength': 'Password must be at least 8 characters',
-    'auth.namePlaceholder': 'Your name',    
-    // Editor
-    'editor.topics': 'Topics',
-    'editor.materials': 'Materials',
-    'editor.quizzes': 'Quizzes',
-    'editor.create': 'Create',
-    'editor.edit': 'Edit',
-    'editor.delete': 'Delete',
-
-    // Dashboard Content
-    'dashboard.course.algorithms': 'Algorithm Basics',
-    'dashboard.course.sql': 'SQL for Beginners',
-    'dashboard.lesson.quicksort': 'Lesson 5: QuickSort',
-    'dashboard.lesson.joins': 'Lesson 3: JOIN Operations',
-    'dashboard.goal.quiz': 'Complete 1 quiz',
-    'dashboard.goal.materials': 'View 3 materials',
-    'dashboard.goal.concept': 'Learn a new concept',
-    'dashboard.weak.recursion': 'Recursion',
-    'dashboard.weak.recursion.advice': 'Review notes and take additional tests',
-    'dashboard.weak.sqlJoin': 'SQL INNER JOIN',
-    'dashboard.weak.sqlJoin.advice': 'Practice with real data examples',
-    'dashboard.weak.bigO': 'Big-O Notation',
-    'dashboard.weak.bigO.advice': 'Watch video explanation and solve 3 problems',
-    'dashboard.achievement.firstQuiz': 'First Quiz',
-    'dashboard.achievement.weekStreak': 'Week Streak',
-    'dashboard.achievement.fastAnswer': 'Fast Answer',
-    'dashboard.achievement.sqlMaster': 'SQL Master',
-    'dashboard.weekday.mon': 'Mon',
-    'dashboard.weekday.tue': 'Tue',
-    'dashboard.weekday.wed': 'Wed',
-    'dashboard.weekday.thu': 'Thu',
-    'dashboard.weekday.fri': 'Fri',
-    'dashboard.weekday.sat': 'Sat',
-    'dashboard.weekday.sun': 'Sun',
-  },
-}
-
-export function t(key: TranslationKey, lang: Lang): string {
-  return translations[lang]?.[key] || translations['EN'][key] || key
-}
+  // ============================================
+  // COMMON ADDITIONS
+  // ============================================
+  | 'common.total'
+  | 'common.search'
+  | 'common.page'
+  | 'common.of'
+  | 'common.name'
+  | 'common.email'
+  | 'common.password'
+  | 'common.role'
+  | 'common.user'
+  | 'common.status'
+  | 'common.created'
+  | 'common.actions'
+  | 'common.filters'
+  | 'common.all'
+  | 'common.clear'
+  | 'common.apply'
+  | 'common.date'
+  | 'common.minutes'
+  | 'common.download'
+  | 'common.refresh'
+  | 'common.retry';

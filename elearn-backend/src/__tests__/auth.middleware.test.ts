@@ -87,7 +87,7 @@ describe('requireAuth middleware', () => {
     requireAuth(mockReq as Request, mockRes as Response, mockNext);
 
     expect(statusMock).toHaveBeenCalledWith(401);
-    expect(jsonMock).toHaveBeenCalledWith({ error: 'Invalid token' });
+    expect(jsonMock).toHaveBeenCalledWith({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
   });
 
   it('should prefer cookie over Authorization header', () => {

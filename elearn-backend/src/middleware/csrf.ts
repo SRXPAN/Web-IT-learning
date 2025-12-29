@@ -1,6 +1,7 @@
 // src/middleware/csrf.ts
 import type { Request, Response, NextFunction } from 'express'
 import crypto from 'crypto'
+import { logger } from '../utils/logger.js'
 
 const CSRF_COOKIE = 'csrf_token'
 const CSRF_HEADER = 'x-csrf-token'
@@ -71,16 +72,16 @@ export function validateCsrfSoft(req: Request, res: Response, next: NextFunction
   const headerToken = req.headers[CSRF_HEADER] as string | undefined
 
   if (!cookieToken || !headerToken) {
-    console.warn('[CSRF] Missing token for', req.method, req.path)
+    logger.warn('[CSRF] Missing token for', { method: req.method, path: req.path })
     return next() // Пропускаємо, але логуємо
   }
 
   try {
     if (!crypto.timingSafeEqual(Buffer.from(cookieToken), Buffer.from(headerToken))) {
-      console.warn('[CSRF] Token mismatch for', req.method, req.path)
+      logger.warn('[CSRF] Token mismatch for', { method: req.method, path: req.path })
     }
   } catch {
-    console.warn('[CSRF] Token validation error for', req.method, req.path)
+    logger.warn('[CSRF] Token validation error for', { method: req.method, path: req.path })
   }
 
   next()

@@ -3,7 +3,7 @@ import RequireAuth from './components/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
 import Editor from './pages/editor/EditorLayout'
 import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, BookOpen, Trophy, User, LogIn, LogOut, LucideIcon, Menu, X, PenSquare } from 'lucide-react'
+import { LayoutDashboard, BookOpen, Trophy, User, LogIn, LogOut, LucideIcon, Menu, X, PenSquare, Shield } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Materials from './pages/Materials'
 import Leaderboard from './pages/Leaderboard'
@@ -16,6 +16,12 @@ import { useAuth } from './auth/AuthContext'
 import { useTranslation } from './i18n/useTranslation'
 import Toasts from '@/components/Toast'
 import LessonView from './pages/LessonView'
+// Admin Panel
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminFiles from './pages/admin/AdminFiles'
+import AdminAuditLogs from './pages/admin/AdminAuditLogs'
 
 interface NavItemProps {
   to: string
@@ -93,6 +99,9 @@ export default function App(){
               {user?.role && (user.role === 'ADMIN' || user.role === 'EDITOR') && (
                 <NavItem to="/editor" icon={PenSquare} label={t('nav.editor')} />
               )}
+              {user?.role === 'ADMIN' && (
+                <NavItem to="/admin" icon={Shield} label={t('nav.admin')} />
+              )}
             </nav>
 
             {/* Actions */}
@@ -145,6 +154,9 @@ export default function App(){
               {user?.role && (user.role === 'ADMIN' || user.role === 'EDITOR') && (
                 <NavItem to="/editor" icon={PenSquare} label={t('nav.editor')} onClick={closeMobileMenu} />
               )}
+              {user?.role === 'ADMIN' && (
+                <NavItem to="/admin" icon={Shield} label={t('nav.admin')} onClick={closeMobileMenu} />
+              )}
               
               {/* Mobile user info */}
               {user && (
@@ -176,6 +188,13 @@ export default function App(){
             <Route path="/profile" element={<RequireAuth><Profile/></RequireAuth>} />
             <Route path="/login" element={<Login/>} />
             <Route path="/register" element={<Register/>} />
+            {/* Admin Panel - only for ADMIN role */}
+            <Route path="/admin" element={<RequireAuth roles={['ADMIN']}><AdminLayout /></RequireAuth>}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="files" element={<AdminFiles />} />
+              <Route path="audit" element={<AdminAuditLogs />} />
+            </Route>
             <Route path="*" element={<NotFound/>} />
           </Routes>
         </ErrorBoundary>
