@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { ChevronRight, Play, FileText, Video, Link as LinkIcon, Code, CheckCircle, XCircle, Timer, Lightbulb, Award, ListChecks } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ChevronRight, Play, FileText, Video, Link as LinkIcon, Code, CheckCircle, XCircle, Timer, Lightbulb, Award, ListChecks, Loader2 } from 'lucide-react'
 import { useTranslation } from '@/i18n/useTranslation'
 import { useParams, useNavigate } from 'react-router-dom'
+import { fetchLesson, type Lesson } from '@/services/lessons'
 
 type ContentType = 'notes' | 'video' | 'quiz' | 'code'
 type Mode = 'practice' | 'exam'
@@ -27,7 +28,7 @@ const mockTests: TestCase[] = [
 ]
 
 export default function LessonView() {
-  const { t } = useTranslation()
+  const { t, lang } = useTranslation()
 
   const mockQuestion: Question = {
     id: 'q1',
@@ -38,6 +39,12 @@ export default function LessonView() {
   }
   const { topicId, lessonId } = useParams()
   const nav = useNavigate()
+  
+  // API data state
+  const [lesson, setLesson] = useState<Lesson | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
   const [mode, setMode] = useState<Mode>('practice')
   const [content, setContent] = useState<ContentType>('notes')
   const [currentQ, setCurrentQ] = useState(0)
@@ -45,11 +52,49 @@ export default function LessonView() {
   const [showExplanation, setShowExplanation] = useState(false)
   const [timeLeft, setTimeLeft] = useState(120) // секунди для екзамену
 
+  // Fetch lesson data from API
+  useEffect(() => {
+    if (!lessonId) return
+    
+    setLoading(true)
+    setError(null)
+    
+    fetchLesson(lessonId, lang as 'UA' | 'PL' | 'EN')
+      .then(data => {
+        setLesson(data)
+        // Set initial content type based on material type
+        if (data.type === 'video') setContent('video')
+        else if (data.type === 'text') setContent('notes')
+        else setContent('notes')
+      })
+      .catch(err => {
+        setError(err.message || t('common.error'))
+      })
+      .finally(() => setLoading(false))
+  }, [lessonId, lang, t])
+
   const breadcrumbs = [
     { label: t('lesson.breadcrumb.algorithms'), onClick: () => nav('/materials') },
-    { label: topicId || t('lesson.breadcrumb.search'), onClick: () => nav('/materials'), current: !lessonId },
-    { label: lessonId || t('lesson.breadcrumb.binarySearch'), current: true },
+    { label: lesson?.topic?.name || topicId || t('lesson.breadcrumb.search'), onClick: () => nav('/materials'), current: !lessonId },
+    { label: lesson?.title || lessonId || t('lesson.breadcrumb.binarySearch'), current: true },
   ]
+  
+  if (loading) {
+    return (
+      <div className="card flex items-center justify-center py-12">
+        <Loader2 className="animate-spin text-primary-600" size={32} />
+      </div>
+    )
+  }
+  
+  if (error) {
+    return (
+      <div className="card">
+        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+      </div>
+    )
+  }
+  
   if (!topicId || !lessonId) {
     return (
       <div className="card">
@@ -351,11 +396,94 @@ export default function LessonView() {
           )}
 
           {/* Notes/Video placeholder */}
-          {(content === 'notes' || content === 'video') && (
-            <div className="text-center py-12">
-              <p className="text-neutral-600 dark:text-neutral-400">
-                {t('lesson.placeholder')} "{content}"
-              </p>
+          {content === 'notes' && (
+            <div className="space-y-6">
+              {/* Lesson Title */}
+              <h2 className="text-2xl font-display font-bold text-neutral-900 dark:text-white">
+                {lesson?.title || t('lesson.placeholder')}
+              </h2>
+              
+              {/* Lesson Content */}
+              {lesson?.content ? (
+                <div className="prose prose-neutral dark:prose-invert max-w-none">
+                  <div 
+                    className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-300"
+                    dangerouslySetInnerHTML={{ __html: lesson.content }}
+                  />
+                </div>
+              ) : lesson?.url ? (
+                <div className="flex flex-col items-center gap-4 py-8">
+                  {lesson.type === 'pdf' ? (
+                    <>
+                      <FileText size={48} className="text-primary-600 dark:text-primary-400" />
+                      <a 
+                        href={lesson.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="btn"
+                      >
+                        {t('lesson.openPdf')}
+                      </a>
+                    </>
+                  ) : lesson.type === 'link' ? (
+                    <>
+                      <LinkIcon size={48} className="text-primary-600 dark:text-primary-400" />
+                      <a 
+                        href={lesson.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="btn"
+                      >
+                        {t('lesson.openLink')}
+                      </a>
+                    </>
+                  ) : (
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      {t('lesson.noContent')}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-center py-12 text-neutral-600 dark:text-neutral-400">
+                  {t('lesson.noContent')}
+                </p>
+              )}
+            </div>
+          )}
+          
+          {content === 'video' && (
+            <div className="space-y-6">
+              {/* Lesson Title */}
+              <h2 className="text-2xl font-display font-bold text-neutral-900 dark:text-white">
+                {lesson?.title || t('lesson.placeholder')}
+              </h2>
+              
+              {/* Video Player */}
+              {lesson?.url && lesson.type === 'video' ? (
+                <div className="aspect-video rounded-2xl overflow-hidden bg-neutral-900">
+                  {lesson.url.includes('youtube.com') || lesson.url.includes('youtu.be') ? (
+                    <iframe
+                      src={lesson.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video
+                      src={lesson.url}
+                      controls
+                      className="w-full h-full"
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Video size={48} className="mx-auto mb-4 text-neutral-400" />
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    {t('lesson.noVideo')}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </section>

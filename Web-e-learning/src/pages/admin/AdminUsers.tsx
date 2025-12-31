@@ -19,7 +19,9 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { Loading } from '@/components/Loading'
-import { ConfirmDialog } from '@/components/ConfirmDialog'
+import ConfirmDialog, { ConfirmDialog as BaseConfirmDialog } from '@/components/ConfirmDialog'
+import { Pagination } from '@/components/admin/Pagination'
+import { PageHeader } from '@/components/admin/PageHeader'
 
 const ROLES = ['STUDENT', 'EDITOR', 'ADMIN'] as const
 type Role = (typeof ROLES)[number]
@@ -58,7 +60,7 @@ export default function AdminUsers() {
   })
 
   const handleSearch = () => {
-    fetchUsers({ page: 1, limit: pagination.limit, search, role: roleFilter })
+    fetchUsers({ page: 1, limit: pagination?.limit || 20, search, role: roleFilter })
   }
 
   const handleRoleChange = async (userId: string, newRole: string) => {
@@ -83,31 +85,28 @@ export default function AdminUsers() {
     }
   }
 
-  if (loading && users.length === 0) {
+  if (loading && (!users || users.length === 0)) {
     return <Loading />
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-            <Users className="w-7 h-7 mr-3" />
-            {t('admin.users')}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {t('admin.usersDescription')} ({pagination.total} {t('common.total')})
-          </p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          {t('admin.createUser')}
-        </button>
-      </div>
+      <PageHeader
+        icon={Users}
+        title={t('admin.users')}
+        description={t('admin.usersDescription')}
+        stats={`${pagination?.total || 0} ${t('common.total')}`}
+        actions={
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            {t('admin.createUser')}
+          </button>
+        }
+      />
 
       {/* Filters */}
       <div className="flex gap-4">
@@ -178,7 +177,7 @@ export default function AdminUsers() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {users.map((user) => (
+            {(users || []).map((user) => (
               <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                 <td className="px-6 py-4">
                   <div className="flex items-center">
@@ -268,7 +267,7 @@ export default function AdminUsers() {
           </tbody>
         </table>
 
-        {users.length === 0 && !loading && (
+        {(!users || users.length === 0) && !loading && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             {t('admin.noUsersFound')}
           </div>
@@ -276,28 +275,14 @@ export default function AdminUsers() {
       </div>
 
       {/* Pagination */}
-      {pagination.pages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {t('common.page')} {pagination.page} {t('common.of')} {pagination.pages}
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => fetchUsers({ page: pagination.page - 1 })}
-              disabled={pagination.page <= 1}
-              className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => fetchUsers({ page: pagination.page + 1 })}
-              disabled={pagination.page >= pagination.pages}
-              className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          onPageChange={(page) => fetchUsers({ page, search, role: roleFilter })}
+          disabled={loading}
+        />
       )}
 
       {/* Create User Modal */}

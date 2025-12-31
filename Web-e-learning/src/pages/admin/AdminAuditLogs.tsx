@@ -20,6 +20,8 @@ import {
   Download,
 } from 'lucide-react'
 import { Loading } from '@/components/Loading'
+import { Pagination } from '@/components/admin/Pagination'
+import { PageHeader } from '@/components/admin/PageHeader'
 
 const actionIcons: Record<string, any> = {
   CREATE: Plus,
@@ -68,35 +70,32 @@ export default function AdminAuditLogs() {
     fetchLogs({ page: 1 })
   }
 
-  if (loading && logs.length === 0) {
+  if (loading && (!logs || logs.length === 0)) {
     return <Loading />
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-            <Activity className="w-7 h-7 mr-3" />
-            {t('admin.auditLogs')}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {t('admin.auditLogsDescription')} ({pagination.total} {t('common.total')})
-          </p>
-        </div>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`px-4 py-2 border rounded-lg flex items-center ${
-            showFilters
-              ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300'
-              : 'bg-white border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
-          }`}
-        >
-          <Filter className="w-4 h-4 mr-2" />
-          {t('common.filters')}
-        </button>
-      </div>
+      <PageHeader
+        icon={Activity}
+        title={t('admin.auditLogs')}
+        description={t('admin.auditLogsDescription')}
+        stats={`${pagination?.total || 0} ${t('common.total')}`}
+        actions={
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`px-4 py-2 border rounded-lg flex items-center gap-2 ${
+              showFilters
+                ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300'
+                : 'bg-white border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            {t('common.filters')}
+          </button>
+        }
+      />
 
       {/* Filters Panel */}
       {showFilters && (
@@ -182,7 +181,7 @@ export default function AdminAuditLogs() {
       {/* Logs List */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
-          {logs.map((log) => {
+          {(logs || []).map((log) => {
             const Icon = actionIcons[log.action] || FileText
             const colorClass = actionColors[log.action] || actionColors.VIEW
 
@@ -242,7 +241,7 @@ export default function AdminAuditLogs() {
           })}
         </div>
 
-        {logs.length === 0 && !loading && (
+        {(!logs || logs.length === 0) && !loading && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             {t('admin.noLogsFound')}
           </div>
@@ -250,28 +249,14 @@ export default function AdminAuditLogs() {
       </div>
 
       {/* Pagination */}
-      {pagination.pages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {t('common.page')} {pagination.page} {t('common.of')} {pagination.pages}
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => fetchLogs({ page: pagination.page - 1 })}
-              disabled={pagination.page <= 1}
-              className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => fetchLogs({ page: pagination.page + 1 })}
-              disabled={pagination.page >= pagination.pages}
-              className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          onPageChange={(page) => fetchLogs({ page, ...filters })}
+          disabled={loading}
+        />
       )}
     </div>
   )

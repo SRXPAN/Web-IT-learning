@@ -13,78 +13,28 @@ type BundleResponse = {
   bundle: Record<string, string>
 }
 
-// Fallback translations for when API is not available
-const fallbackTranslations: Partial<Record<TranslationKey, string>> = {
-  // Admin Panel
-  'admin.panel': 'Admin Panel',
-  'admin.dashboard': 'Dashboard',
-  'admin.dashboardDescription': 'System overview and statistics',
-  'admin.users': 'Users',
-  'admin.usersDescription': 'Manage system users',
-  'admin.files': 'Files',
-  'admin.filesDescription': 'Manage uploaded files',
-  'admin.translations': 'Translations',
-  'admin.auditLogs': 'Audit Logs',
-  'admin.auditLogsDescription': 'View system activity logs',
-  'admin.settings': 'Settings',
-  'admin.totalUsers': 'Total Users',
-  'admin.totalTopics': 'Topics',
-  'admin.totalMaterials': 'Materials',
-  'admin.totalFiles': 'Files',
-  'admin.usersByRole': 'Users by Role',
-  'admin.recentActivity': 'Recent Activity',
-  'admin.timeSpent': 'Time Spent',
-  'admin.quizAttempts': 'Quiz Attempts',
-  'admin.materialsViewed': 'Materials Viewed',
-  'admin.noActivityData': 'No activity data',
-  'admin.searchUsers': 'Search users...',
-  'admin.createUser': 'Create User',
-  'admin.allRoles': 'All Roles',
-  'admin.changeRole': 'Change Role',
-  'admin.deleteUser': 'Delete User',
-  'admin.deleteUserConfirm': 'Are you sure you want to delete user {name}?',
-  'admin.noUsersFound': 'No users found',
-  'admin.verified': 'Verified',
-  'admin.unverified': 'Unverified',
-  'admin.action': 'Action',
-  'admin.resource': 'Resource',
-  'admin.startDate': 'Start Date',
-  'admin.endDate': 'End Date',
-  'admin.systemAction': 'System',
-  'admin.viewDetails': 'View Details',
-  'admin.noLogsFound': 'No logs found',
-  'admin.allCategories': 'All Categories',
-  'admin.avatars': 'Avatars',
-  'admin.materials': 'Materials',
-  'admin.attachments': 'Attachments',
-  'admin.uploadedBy': 'Uploaded by',
-  'admin.deleteFile': 'Delete File',
-  'admin.deleteFileConfirm': 'Are you sure you want to delete {name}?',
-  'admin.noFilesFound': 'No files found',
-  // Common additions
-  'common.total': 'total',
-  'common.search': 'Search',
-  'common.page': 'Page',
-  'common.of': 'of',
-  'common.name': 'Name',
-  'common.email': 'Email',
-  'common.password': 'Password',
-  'common.role': 'Role',
-  'common.user': 'User',
-  'common.status': 'Status',
-  'common.created': 'Created',
-  'common.actions': 'Actions',
-  'common.filters': 'Filters',
-  'common.all': 'All',
-  'common.clear': 'Clear',
-  'common.apply': 'Apply',
-  'common.date': 'Date',
-  'common.minutes': 'min',
-  'common.download': 'Download',
-  'common.refresh': 'Refresh',
-  'common.retry': 'Retry',
-  // Nav
-  'nav.admin': 'Admin',
+// LocalStorage keys for caching
+const STORAGE_KEY_PREFIX = 'i18n_bundle_'
+const STORAGE_VERSION_PREFIX = 'i18n_version_'
+
+// Helper: load bundle from localStorage
+function loadCachedBundle(lang: string): Record<string, string> | null {
+  try {
+    const cached = localStorage.getItem(STORAGE_KEY_PREFIX + lang)
+    return cached ? JSON.parse(cached) : null
+  } catch {
+    return null
+  }
+}
+
+// Helper: save bundle to localStorage
+function saveBundleToCache(lang: string, bundle: Record<string, string>, version: string) {
+  try {
+    localStorage.setItem(STORAGE_KEY_PREFIX + lang, JSON.stringify(bundle))
+    localStorage.setItem(STORAGE_VERSION_PREFIX + lang, version)
+  } catch (e) {
+    console.warn('[i18n] Failed to cache bundle:', e)
+  }
 }
 
 // Store for API translations
@@ -95,6 +45,7 @@ type TranslationsState = {
   initialized: boolean
   error: string | null
   fetchTranslations: (lang: string) => Promise<void>
+  clearCache: () => void // Function to clear all cached translations
 }
 
 export const useTranslationsStore = create<TranslationsState>((set, get) => ({
@@ -106,28 +57,76 @@ export const useTranslationsStore = create<TranslationsState>((set, get) => ({
   fetchTranslations: async (lang: string) => {
     const state = get()
     
-    // Skip if already loaded for this language
-    if (state.bundles[lang]) return
+    // Skip if already loaded for this language AND has content
+    const existingBundle = state.bundles[lang]
+    if (existingBundle && Object.keys(existingBundle).length > 0) {
+      console.log(`[i18n] Using memory-cached bundle for ${lang} (${Object.keys(existingBundle).length} keys)`)
+      return
+    }
+    
+    // Try localStorage cache first
+    const cachedBundle = loadCachedBundle(lang)
+    if (cachedBundle && Object.keys(cachedBundle).length > 0) {
+      console.log(`[i18n] Using localStorage-cached bundle for ${lang} (${Object.keys(cachedBundle).length} keys)`)
+      set(s => ({
+        bundles: { ...s.bundles, [lang]: cachedBundle },
+        initialized: true
+      }))
+      // Still try to fetch fresh data in background (don't block)
+      get().fetchTranslations(lang).catch(() => {})
+      return
+    }
     
     set({ loading: true, error: null })
     try {
+      console.log(`[i18n] Fetching translations for lang: ${lang}`)
       const response = await apiGet<BundleResponse>(`/i18n/bundle?lang=${lang}`)
+      console.log(`[i18n] API response count: ${response.count}, version: ${response.version}`)
+      
+      const bundle = response.bundle || {}
+      
+      // Save to localStorage
+      saveBundleToCache(lang, bundle, response.version)
       
       set(s => ({
-        bundles: { ...s.bundles, [lang]: response.bundle },
+        bundles: { ...s.bundles, [lang]: bundle },
         versions: { ...s.versions, [lang]: response.version },
         loading: false,
         initialized: true
       }))
     } catch (err) {
       console.error('Failed to load translations from API:', err)
-      set({ loading: false, initialized: true, error: 'Failed to load translations' })
+      
+      // Try localStorage as last resort (already checked above, but recheck)
+      const fallbackCached = loadCachedBundle(lang) || loadCachedBundle('EN')
+      if (fallbackCached) {
+        console.log(`[i18n] Using fallback cached bundle`)
+        set(s => ({
+          bundles: { ...s.bundles, [lang]: fallbackCached },
+          loading: false,
+          initialized: true,
+          error: null
+        }))
+      } else {
+        set({ loading: false, initialized: true, error: 'Failed to load translations' })
+      }
     }
+  },
+  clearCache: () => {
+    console.log('[i18n] Clearing translation cache')
+    // Clear localStorage too
+    try {
+      const keys = Object.keys(localStorage).filter(k => k.startsWith(STORAGE_KEY_PREFIX) || k.startsWith(STORAGE_VERSION_PREFIX))
+      keys.forEach(k => localStorage.removeItem(k))
+    } catch (e) {
+      console.warn('[i18n] Failed to clear localStorage cache:', e)
+    }
+    set({ bundles: {}, versions: {}, initialized: false, error: null })
   }
 }))
 
 export function useTranslation() {
-  const { lang } = useI18n()
+  const { lang, setLang } = useI18n()
   const { bundles, loading, initialized, fetchTranslations } = useTranslationsStore()
   
   // Load translations on mount and when lang changes
@@ -136,22 +135,25 @@ export function useTranslation() {
   }, [lang, fetchTranslations])
   
   const t = (key: TranslationKey): string => {
-    // 1. Try API bundle
+    // 1. Try API bundle for current language
     const apiBundle = bundles[lang]
     if (apiBundle?.[key]) {
       return apiBundle[key]
     }
     
-    // 2. Try fallback translations
-    if (fallbackTranslations[key]) {
-      return fallbackTranslations[key]!
+    // 2. Fallback to EN bundle if different language
+    if (lang !== 'EN') {
+      const enBundle = bundles['EN'] || loadCachedBundle('EN')
+      if (enBundle?.[key]) {
+        return enBundle[key]
+      }
     }
     
-    // 3. Return key as last resort (for debugging - shows missing keys)
+    // 3. Return key as last resort (safe fallback - no crash)
     return key
   }
   
-  return { t, lang, loading, initialized }
+  return { t, lang, setLang, loading, initialized }
 }
 
 // Hook to preload all translations

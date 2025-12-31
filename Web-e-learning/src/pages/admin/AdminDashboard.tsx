@@ -19,14 +19,14 @@ export default function AdminDashboard() {
   const { stats, loading, error, refresh } = useAdminStats()
   const { t } = useTranslation()
 
-  if (loading && !stats) {
+  if (loading) {
     return <Loading />
   }
 
-  if (error) {
+  if (error || !stats) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-red-600 dark:text-red-400">{error || 'Failed to load stats'}</p>
         <button
           onClick={refresh}
           className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -40,25 +40,25 @@ export default function AdminDashboard() {
   const statCards = [
     {
       label: t('admin.totalUsers'),
-      value: stats?.users.total || 0,
+      value: stats?.users?.total || 0,
       icon: Users,
       color: 'blue',
     },
     {
       label: t('admin.totalTopics'),
-      value: stats?.content.topics || 0,
+      value: stats?.content?.topics || 0,
       icon: BookOpen,
       color: 'green',
     },
     {
       label: t('admin.totalMaterials'),
-      value: stats?.content.materials || 0,
+      value: stats?.content?.materials || 0,
       icon: FileQuestion,
       color: 'purple',
     },
     {
       label: t('admin.totalFiles'),
-      value: stats?.content.files || 0,
+      value: stats?.content?.files || 0,
       icon: FolderOpen,
       color: 'orange',
     },
@@ -115,7 +115,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Users by Role */}
-      {stats?.users.byRole && (
+      {stats?.users?.byRole && (
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             {t('admin.usersByRole')}
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
           <TrendingUp className="w-5 h-5 mr-2" />
           {t('admin.recentActivity')}
         </h2>
-        {stats?.activity.last7days ? (
+        {stats?.activity?.last7days ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

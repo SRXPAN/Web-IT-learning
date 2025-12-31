@@ -1,9 +1,8 @@
 import { useCallback, useState } from 'react'
 import RequireAuth from './components/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
-import Editor from './pages/editor/EditorLayout'
 import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, BookOpen, Trophy, User, LogIn, LogOut, LucideIcon, Menu, X, PenSquare, Shield } from 'lucide-react'
+import { LayoutDashboard, BookOpen, Trophy, User, LogIn, LogOut, LucideIcon, Menu, X, Shield } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Materials from './pages/Materials'
 import Leaderboard from './pages/Leaderboard'
@@ -22,6 +21,12 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminFiles from './pages/admin/AdminFiles'
 import AdminAuditLogs from './pages/admin/AdminAuditLogs'
+import AdminTranslations from './pages/admin/AdminTranslations'
+import AdminContent from './pages/admin/AdminContent'
+import AdminSettings from './pages/admin/AdminSettings'
+import AdminTopics from './pages/admin/AdminTopics'
+import AdminMaterials from './pages/admin/AdminMaterials'
+import AdminQuizzes from './pages/admin/AdminQuizzes'
 
 interface NavItemProps {
   to: string
@@ -87,7 +92,7 @@ export default function App(){
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-600 to-accent-500 flex items-center justify-center">
                 <span className="text-white font-display font-bold text-lg">E</span>
               </div>
-              <span className="font-display font-semibold text-xl text-neutral-900 dark:text-white">E-Learn</span>
+              <span className="font-display font-semibold text-xl text-neutral-900 dark:text-white">{t('app.name')}</span>
             </div>
 
             {/* Navigation - Desktop */}
@@ -97,9 +102,6 @@ export default function App(){
               <NavItem to="/leaderboard" icon={Trophy} label={t('nav.leaderboard')} />
               <NavItem to="/profile" icon={User} label={t('nav.profile')} />
               {user?.role && (user.role === 'ADMIN' || user.role === 'EDITOR') && (
-                <NavItem to="/editor" icon={PenSquare} label={t('nav.editor')} />
-              )}
-              {user?.role === 'ADMIN' && (
                 <NavItem to="/admin" icon={Shield} label={t('nav.admin')} />
               )}
             </nav>
@@ -152,9 +154,6 @@ export default function App(){
               <NavItem to="/leaderboard" icon={Trophy} label={t('nav.leaderboard')} onClick={closeMobileMenu} />
               <NavItem to="/profile" icon={User} label={t('nav.profile')} onClick={closeMobileMenu} />
               {user?.role && (user.role === 'ADMIN' || user.role === 'EDITOR') && (
-                <NavItem to="/editor" icon={PenSquare} label={t('nav.editor')} onClick={closeMobileMenu} />
-              )}
-              {user?.role === 'ADMIN' && (
                 <NavItem to="/admin" icon={Shield} label={t('nav.admin')} onClick={closeMobileMenu} />
               )}
               
@@ -179,8 +178,6 @@ export default function App(){
           <Routes>
             <Route path="/" element={<RequireAuth><Dashboard/></RequireAuth>} />
             <Route path="/lesson/:topicId/:lessonId" element={<RequireAuth><LessonView/></RequireAuth>} />
-            <Route path="/editor" element={
-            <RequireAuth roles={['ADMIN','EDITOR']}><Editor /></RequireAuth>} />
             <Route path="/dashboard" element={<RequireAuth><Dashboard/></RequireAuth>} />
             <Route path="/materials" element={<RequireAuth><Materials/></RequireAuth>} />
             <Route path="/quiz" element={<RequireAuth><Quiz/></RequireAuth>} />
@@ -188,12 +185,18 @@ export default function App(){
             <Route path="/profile" element={<RequireAuth><Profile/></RequireAuth>} />
             <Route path="/login" element={<Login/>} />
             <Route path="/register" element={<Register/>} />
-            {/* Admin Panel - only for ADMIN role */}
-            <Route path="/admin" element={<RequireAuth roles={['ADMIN']}><AdminLayout /></RequireAuth>}>
+            {/* Admin Panel - for ADMIN and EDITOR roles */}
+            <Route path="/admin" element={<RequireAuth roles={['ADMIN','EDITOR']}><AdminLayout /></RequireAuth>}>
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="files" element={<AdminFiles />} />
               <Route path="audit" element={<AdminAuditLogs />} />
+              <Route path="translations" element={<AdminTranslations />} />
+              <Route path="content" element={<AdminContent />} />
+              <Route path="topics" element={<AdminTopics />} />
+              <Route path="materials" element={<AdminMaterials />} />
+              <Route path="quizzes" element={<AdminQuizzes />} />
+              <Route path="settings" element={<AdminSettings />} />
             </Route>
             <Route path="*" element={<NotFound/>} />
           </Routes>

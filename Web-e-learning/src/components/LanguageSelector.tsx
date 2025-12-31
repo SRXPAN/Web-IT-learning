@@ -1,8 +1,8 @@
 // src/components/LanguageSelector.tsx
 import { Globe, Check } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
-import { useI18n, Lang } from '@/store/i18n'
 import { useTranslation } from '@/i18n/useTranslation'
+import type { Lang } from '@/store/i18n'
 
 interface LanguageSelectorProps {
   variant?: 'dropdown' | 'pills'
@@ -16,8 +16,7 @@ const languages: { code: Lang; name: string; flag: string }[] = [
 ]
 
 export default function LanguageSelector({ variant = 'dropdown', className = '' }: LanguageSelectorProps) {
-  const { lang, setLang } = useI18n()
-  const { t } = useTranslation()
+  const { t, lang, setLang } = useTranslation()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 

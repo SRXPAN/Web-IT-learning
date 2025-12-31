@@ -112,7 +112,7 @@ export function TopicQuizSection({
     }))
 
     try {
-      const result = await submitQuizAttempt(quiz.id, { answers: answerArray })
+      const result = await submitQuizAttempt(quiz.id, { answers: answerArray, lang })
       setScore(result.correct)
       setCorrectIds(result.correctMap || {})
       setShowResults(true)
@@ -124,7 +124,7 @@ export function TopicQuizSection({
     } catch (e) {
       console.error('Failed to submit quiz:', e)
     }
-  }, [quiz, answers, onQuizComplete])
+  }, [quiz, answers, onQuizComplete, lang])
 
   const resetQuiz = useCallback(() => {
     setQuiz(null)

@@ -38,8 +38,9 @@ export default function Materials() {
 
   useEffect(() => {
     setLoading(true)
-    loadTopics().catch(console.error).finally(() => setLoading(false))
-  }, [loadTopics])
+    // Pass lang to load localized topics from API
+    loadTopics(lang as 'UA' | 'PL' | 'EN').catch(console.error).finally(() => setLoading(false))
+  }, [loadTopics, lang])
 
   // Ініціалізація один раз після завантаження тем
   useEffect(() => {

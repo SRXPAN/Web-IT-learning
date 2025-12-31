@@ -1,5 +1,5 @@
 import { apiGet, apiPost } from '@/lib/http'
-import type { Option, Question, Quiz, QuizSubmitResult, QuizAnswer } from '@elearn/shared'
+import type { Option, Question, Quiz, QuizSubmitResult, QuizAnswer, Lang } from '@elearn/shared'
 
 // Re-export types for backward compatibility
 export type { Option, Question, Quiz }
@@ -9,6 +9,9 @@ export type SubmitResult = QuizSubmitResult & {
   correctIds?: Record<string, string>
 }
 
-export const fetchQuiz = (id: string) => apiGet<Quiz>(`/quiz/${id}`)
-export const submitQuizAttempt = (id: string, body: { answers: QuizAnswer[] }) =>
+export const fetchQuiz = (id: string, lang?: Lang) => {
+  const url = lang ? `/quiz/${id}?lang=${lang}` : `/quiz/${id}`
+  return apiGet<Quiz>(url)
+}
+export const submitQuizAttempt = (id: string, body: { answers: QuizAnswer[]; lang?: Lang }) =>
   apiPost<SubmitResult>(`/quiz/${id}/submit`, body)

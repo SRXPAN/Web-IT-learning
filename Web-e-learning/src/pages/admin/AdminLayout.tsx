@@ -16,15 +16,20 @@ import {
   FolderOpen,
   ChevronRight,
   LogOut,
+  BookOpen,
 } from 'lucide-react'
 
 const navItems = [
-  { path: '/admin', icon: BarChart3, labelKey: 'admin.dashboard' as const, end: true },
-  { path: '/admin/users', icon: Users, labelKey: 'admin.users' as const },
-  { path: '/admin/files', icon: FolderOpen, labelKey: 'admin.files' as const },
-  { path: '/admin/translations', icon: Languages, labelKey: 'admin.translations' as const },
-  { path: '/admin/audit', icon: Activity, labelKey: 'admin.auditLogs' as const },
-  { path: '/admin/settings', icon: Settings, labelKey: 'admin.settings' as const },
+  { path: '/admin', icon: BarChart3, labelKey: 'admin.dashboard' as const, end: true, roles: ['ADMIN', 'EDITOR'] },
+  { path: '/admin/users', icon: Users, labelKey: 'admin.users' as const, roles: ['ADMIN'] },
+  { path: '/admin/content', icon: BookOpen, labelKey: 'admin.content' as const, roles: ['ADMIN'] },
+  { path: '/admin/topics', icon: BookOpen, labelKey: 'editor.tab.topics' as const, roles: ['ADMIN', 'EDITOR'] },
+  { path: '/admin/materials', icon: FileText, labelKey: 'editor.tab.materials' as const, roles: ['ADMIN', 'EDITOR'] },
+  { path: '/admin/quizzes', icon: FileText, labelKey: 'editor.tab.quizzes' as const, roles: ['ADMIN', 'EDITOR'] },
+  { path: '/admin/files', icon: FolderOpen, labelKey: 'admin.files' as const, roles: ['ADMIN'] },
+  { path: '/admin/translations', icon: Languages, labelKey: 'admin.translations' as const, roles: ['ADMIN'] },
+  { path: '/admin/audit', icon: Activity, labelKey: 'admin.auditLogs' as const, roles: ['ADMIN'] },
+  { path: '/admin/settings', icon: Settings, labelKey: 'admin.settings' as const, roles: ['ADMIN'] },
 ]
 
 export default function AdminLayout() {
@@ -32,10 +37,13 @@ export default function AdminLayout() {
   const { t } = useTranslation()
   const location = useLocation()
 
-  // Only ADMIN can access admin panel
-  if (!user || user.role !== 'ADMIN') {
+  // Only ADMIN and EDITOR can access admin panel
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'EDITOR')) {
     return <Navigate to="/" replace />
   }
+
+  // Filter nav items based on user role
+  const visibleNavItems = navItems.filter(item => item.roles.includes(user.role))
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
@@ -51,7 +59,7 @@ export default function AdminLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map(({ path, icon: Icon, labelKey, end }) => (
+          {visibleNavItems.map(({ path, icon: Icon, labelKey, end }) => (
             <NavLink
               key={path}
               to={path}

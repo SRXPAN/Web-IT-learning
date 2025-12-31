@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react'
 import { useAuth } from '@/auth/AuthContext'
-import { useI18n, Lang } from '@/store/i18n'
 import { useTheme } from '@/store/theme'
 import { useTranslation } from '@/i18n/useTranslation'
+import type { Lang } from '@/store/i18n'
 import { Award, Settings, Globe, Palette, Sun, Moon, Lock, Loader2, CheckCircle, Camera, Mail, Trash2 } from 'lucide-react'
 import { LANG_GRADIENT_COLORS, getGradientColor } from '@/utils/colors'
 import PasswordInput from '@/components/PasswordInput'
@@ -17,9 +17,8 @@ const LANG_NAMES: Record<Lang, string> = {
 
 export default function Profile(){
   const { user, refresh } = useAuth()
-  const { lang, setLang } = useI18n()
   const { theme, toggle } = useTheme()
-  const { t } = useTranslation()
+  const { t, lang, setLang } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Password change state

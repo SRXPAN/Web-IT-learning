@@ -21,7 +21,9 @@ import {
   Filter,
 } from 'lucide-react'
 import { Loading } from '@/components/Loading'
-import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { Pagination } from '@/components/admin/Pagination'
+import { PageHeader } from '@/components/admin/PageHeader'
+import { ConfirmDialog as AdminConfirmDialog } from '@/components/admin/ConfirmDialog'
 
 interface FileRecord {
   id: string
@@ -106,7 +108,7 @@ export default function AdminFiles() {
     if (!deleteConfirm) return
     try {
       await apiDelete(`/files/${deleteConfirm.id}`)
-      fetchFiles({ page: pagination.page, category: categoryFilter })
+      fetchFiles({ page: pagination?.page || 1, category: categoryFilter })
       setDeleteConfirm(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete file')
@@ -132,24 +134,19 @@ export default function AdminFiles() {
     fetchFiles()
   }, [])
 
-  if (loading && files.length === 0) {
+  if (loading && (!files || files.length === 0)) {
     return <Loading />
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-            <FolderOpen className="w-7 h-7 mr-3" />
-            {t('admin.files')}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {t('admin.filesDescription')} ({pagination.total} {t('common.total')})
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon={FolderOpen}
+        title={t('admin.files')}
+        description={t('admin.filesDescription')}
+        stats={`${pagination?.total || 0} ${t('common.total')}`}
+      />
 
       {/* Filters */}
       <div className="flex gap-4">
@@ -177,7 +174,7 @@ export default function AdminFiles() {
 
       {/* Files Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {files.map((file) => {
+        {(files || []).map((file) => {
           const FileIcon = getFileIcon(file.mimeType)
 
           return (
@@ -232,7 +229,7 @@ export default function AdminFiles() {
         })}
       </div>
 
-      {files.length === 0 && !loading && (
+      {(!files || files.length === 0) && !loading && (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
           <FolderOpen className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600" />
           <p className="mt-4 text-gray-500 dark:text-gray-400">{t('admin.noFilesFound')}</p>
@@ -240,43 +237,25 @@ export default function AdminFiles() {
       )}
 
       {/* Pagination */}
-      {pagination.pages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {t('common.page')} {pagination.page} {t('common.of')} {pagination.pages}
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => fetchFiles({ page: pagination.page - 1, category: categoryFilter })}
-              disabled={pagination.page <= 1}
-              className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => fetchFiles({ page: pagination.page + 1, category: categoryFilter })}
-              disabled={pagination.page >= pagination.pages}
-              className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          onPageChange={(page) => fetchFiles({ page, category: categoryFilter })}
+          disabled={loading}
+        />
       )}
 
       {/* Delete Confirmation */}
-      {deleteConfirm && (
-        <ConfirmDialog
-          isOpen={!!deleteConfirm}
-          title={t('admin.deleteFile')}
-          description={`${t('admin.deleteFileConfirm').replace('{name}', deleteConfirm.originalName)}`}
-          confirmText={t('common.delete')}
-          cancelText={t('common.cancel')}
-          onConfirm={handleDelete}
-          onClose={() => setDeleteConfirm(null)}
-          variant="danger"
-        />
-      )}
+      <AdminConfirmDialog
+        isOpen={!!deleteConfirm}
+        title={t('admin.deleteFile')}
+        message={t('admin.deleteFileConfirm').replace('{name}', deleteConfirm?.originalName || '')}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirm(null)}
+        variant="danger"
+      />
     </div>
   )
 }

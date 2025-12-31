@@ -46,7 +46,7 @@ export default function LoginPage() {
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-600 to-accent-500 flex items-center justify-center shadow-lg">
             <span className="text-white font-display font-bold text-lg">E</span>
           </div>
-          <span className="font-display font-semibold text-xl text-neutral-900 dark:text-white">E-Learn</span>
+          <span className="font-display font-semibold text-xl text-neutral-900 dark:text-white">{t('app.name')}</span>
         </div>
         <LanguageSelector />
       </div>

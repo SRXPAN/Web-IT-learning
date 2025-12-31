@@ -245,3 +245,201 @@ export function useAdminStats() {
     refresh: fetchStats,
   }
 }
+
+// Content Types
+export interface Topic {
+  id: string
+  slug: string
+  name: string
+  nameJson?: Record<string, string>
+  description: string
+  descJson?: Record<string, string>
+  category: string
+  status: string
+  parentId: string | null
+  publishedAt?: string | null
+  children?: Topic[]
+  _count?: {
+    materials: number
+    quizzes: number
+    children: number
+  }
+}
+
+interface TopicCreateData {
+  slug: string
+  name: string
+  nameJson?: Record<string, string>
+  description?: string
+  descJson?: Record<string, string>
+  category?: string
+  parentId?: string | null
+}
+
+interface TopicUpdateData extends Partial<TopicCreateData> {
+  status?: string
+  publishedAt?: string | null
+}
+
+// Admin Content Hook
+export function useAdminContent() {
+  const [topics, setTopics] = useState<Topic[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchTopics = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await apiGet<{ topics: Topic[]; total: number }>('/admin/content/topics')
+      setTopics(response.topics)
+      setTotal(response.total)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load topics')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const createTopic = useCallback(async (data: TopicCreateData) => {
+    try {
+      const result = await apiPost<Topic>('/admin/content/topics', data)
+      await fetchTopics()
+      return result
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create topic')
+      throw err
+    }
+  }, [fetchTopics])
+
+  const updateTopic = useCallback(async (id: string, data: TopicUpdateData) => {
+    try {
+      const result = await apiPut<Topic>(`/admin/content/topics/${id}`, data)
+      await fetchTopics()
+      return result
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update topic')
+      throw err
+    }
+  }, [fetchTopics])
+
+  const deleteTopic = useCallback(async (id: string) => {
+    try {
+      await apiDelete(`/admin/content/topics/${id}`)
+      await fetchTopics()
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete topic')
+      throw err
+    }
+  }, [fetchTopics])
+
+  const publishTopic = useCallback(async (id: string) => {
+    return updateTopic(id, { status: 'Published', publishedAt: new Date().toISOString() })
+  }, [updateTopic])
+
+  const unpublishTopic = useCallback(async (id: string) => {
+    return updateTopic(id, { status: 'Draft', publishedAt: null })
+  }, [updateTopic])
+
+  useEffect(() => {
+    fetchTopics()
+  }, [])
+
+  return {
+    topics,
+    total,
+    loading,
+    error,
+    fetchTopics,
+    createTopic,
+    updateTopic,
+    deleteTopic,
+    publishTopic,
+    unpublishTopic,
+  }
+}
+
+// Admin Translations Hook
+interface UiTranslation {
+  id: string
+  key: string
+  translations: Record<string, string>
+  createdAt: string
+  updatedAt: string
+}
+
+export function useAdminTranslations(initialPage = 1, initialLimit = 50) {
+  const [translations, setTranslations] = useState<UiTranslation[]>([])
+  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, pages: 0 })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchTranslations = useCallback(async (params?: {
+    page?: number
+    limit?: number
+    search?: string
+    namespace?: string
+  }) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const query = new URLSearchParams()
+      if (params?.page) query.set('page', params.page.toString())
+      if (params?.limit) query.set('limit', params.limit.toString())
+      if (params?.search) query.set('search', params.search)
+      if (params?.namespace) query.set('namespace', params.namespace)
+
+      const response = await apiGet<{
+        translations: UiTranslation[]
+        pagination: typeof pagination
+      }>(`/translations/translations?${query}`)
+      setTranslations(response.translations)
+      setPagination(response.pagination)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load translations')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const createTranslation = useCallback(async (data: {
+    key: string
+    translations: Record<string, string>
+  }) => {
+    try {
+      await apiPost('/translations/translations', data)
+      await fetchTranslations({ page: 1, limit: pagination.limit })
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create translation')
+      throw err
+    }
+  }, [fetchTranslations, pagination])
+
+  const updateTranslation = useCallback(async (id: string, translations: Record<string, string>) => {
+    try {
+      await apiPut(`/translations/translations/${id}`, { translations })
+      await fetchTranslations({ page: pagination.page, limit: pagination.limit })
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update translation')
+      throw err
+    }
+  }, [fetchTranslations, pagination])
+
+  useEffect(() => {
+    fetchTranslations({ page: initialPage, limit: initialLimit })
+  }, [])
+
+  return {
+    translations,
+    pagination,
+    loading,
+    error,
+    fetchTranslations,
+    createTranslation,
+    updateTranslation,
+  }
+}

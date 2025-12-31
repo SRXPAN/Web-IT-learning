@@ -38,11 +38,12 @@ const normalizeTopic = (t: TopicApiResponse): TopicTree => ({
   quizzes: t?.quizzes ?? [],
 })
 
-export async function fetchTopicsTree(params?: { page?: number; limit?: number; category?: Category }): Promise<TopicTree[]> {
+export async function fetchTopicsTree(params?: { page?: number; limit?: number; category?: Category; lang?: Lang }): Promise<TopicTree[]> {
   const query = new URLSearchParams()
   if (params?.page) query.set('page', String(params.page))
   if (params?.limit) query.set('limit', String(params.limit))
   if (params?.category) query.set('category', params.category)
+  if (params?.lang) query.set('lang', params.lang)
   
   const queryString = query.toString()
   const url = queryString ? `/topics?${queryString}` : '/topics'

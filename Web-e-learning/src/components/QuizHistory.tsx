@@ -32,7 +32,7 @@ export default function QuizHistory() {
     async function fetchHistory() {
       try {
         setLoading(true)
-        const data = await http.get<QuizHistoryResponse>('/quiz/user/history?limit=5')
+        const data = await http.get<QuizHistoryResponse>(`/quiz/user/history?limit=5&lang=${lang}`)
         setHistory(data.data)
       } catch (e) {
         setError(t('quiz.error.historyLoadFailed'))
@@ -42,7 +42,7 @@ export default function QuizHistory() {
       }
     }
     fetchHistory()
-  }, []) // Тільки при маунті
+  }, [lang]) // Refetch when language changes
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

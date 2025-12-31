@@ -9,11 +9,12 @@ import { useTranslation } from '@/i18n/useTranslation'
 import useCatalogStore from '@/store/catalog'
 import { useQuizSession } from '@/hooks/useQuizSession'
 import { GRADIENT_COLORS, getGradientColor } from '@/utils/colors'
+import type { Lang } from '@elearn/shared'
 
 type Mode = 'practice' | 'exam'
 
 export default function QuizPage() {
-  const { t } = useTranslation()
+  const { t, lang } = useTranslation()
   const { refresh } = useAuth() // Переміщено ПЕРЕД useQuizSession
   const { topics, loadTopics, loadQuiz } = useCatalogStore()
   const [quizList, setQuizList] = useState<{ id: string; title: string; durationSec: number }[]>([])
@@ -27,11 +28,11 @@ export default function QuizPage() {
   // Мемоізований callback для submit
   const handleQuizSubmit = useCallback(async (answers: { questionId: string; optionId: string }[]) => {
     if (!quiz) return
-    const res = await submitQuizAttempt(quiz.id, { answers })
+    const res = await submitQuizAttempt(quiz.id, { answers, lang: lang as Lang })
     await refresh()
     logQuizAttempt()
     return res
-  }, [quiz, refresh])
+  }, [quiz, refresh, lang])
 
   const {
     idx, score, left, finished, selectedMap, correctMap, explanationMap, showExplanation,
@@ -98,15 +99,15 @@ export default function QuizPage() {
 
   // Load topics - тільки один раз
   useEffect(() => { 
-    loadTopics().catch(console.error) 
-  }, [loadTopics])
+    loadTopics(lang as Lang).catch(console.error) 
+  }, [loadTopics, lang])
   
   // Мемоізована функція вибору квізу
   const chooseQuiz = useCallback(async (id: string) => {
     setQuiz(undefined)
     setLoadingQuiz(true)
     try {
-      const loadedQuiz = await loadQuiz(id)
+      const loadedQuiz = await loadQuiz(id, lang as Lang)
       setQuiz(loadedQuiz)
       setQuizId(id)
     } catch (e) {
@@ -115,7 +116,7 @@ export default function QuizPage() {
     } finally {
       setLoadingQuiz(false)
     }
-  }, [loadQuiz])
+  }, [loadQuiz, lang])
 
   // Оновлення списку квізів при зміні topics
   useEffect(() => {
