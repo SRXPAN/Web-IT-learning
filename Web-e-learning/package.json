@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b --excludeFiles '**/__tests__/**' '**/*.test.*' && vite build",
+    "build:production": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:ui": "vitest --ui",
