@@ -65,10 +65,12 @@ model Topic {
   nameJson    Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use titleKey
   titleKeyId  String?    // Reference to I18nKey for localized title
   titleKey    I18nKey?   @relation("TopicTitle", fields: [titleKeyId], references: [id])
+  titleCache  Json?      // {"UA": "...", "EN": "..."}
   description String
   descJson    Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use descKey
   descKeyId   String?    // Reference to I18nKey for localized description
   descKey     I18nKey?   @relation("TopicDesc", fields: [descKeyId], references: [id])
+  descCache   Json?      // {"UA": "...", "EN": "..."}
   category    Category   @default(Programming)
   parentId    String?
   parent      Topic?     @relation("TopicTree", fields: [parentId], references: [id])

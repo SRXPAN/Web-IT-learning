@@ -20,15 +20,11 @@ import filesRouter from './routes/files.js'
 import adminRouter from './routes/admin.js'
 
 import { generalLimiter, authLimiter, webhookLimiter } from './middleware/rateLimit.js'
-import { validateCsrfSoft, validateCsrf } from './middleware/csrf.js'
+import { validateCsrf } from './middleware/csrf.js'
 import { sanitize } from './middleware/sanitize.js'
-import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
-import { requestIdMiddleware, requestLogger } from './middleware/requestId.js'
 
 const app = express()
 
-// --- Request ID tracking (should be first) ---
-app.use(requestIdMiddleware)
 
 // --- Security headers ---
 app.use(helmet({
@@ -63,7 +59,6 @@ app.use(cors({
 
 // --- Логи ---
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
-app.use(requestLogger) // Custom request logger with request ID
 app.use(cookieParser())
 
 // Stripe webhook повинен йти ДО json-парсера і з raw body
@@ -86,8 +81,13 @@ app.use(express.json({ limit: '1mb' }))
 // --- Санітизація вхідних даних ---
 app.use(sanitize)
 
-// --- CSRF захист (soft mode - логує, але не блокує) ---
-app.use('/api', validateCsrfSoft)
+app.use('/api', (req, res, next) => {
+  const mutatingMethods = ['POST', 'PUT', 'PATCH', 'DELETE']
+  if (mutatingMethods.includes(req.method)) {
+    return validateCsrf(req, res, next)
+  }
+  next()
+})
 
 // --- Глобальний м'який ліміт на решту API ---
 app.use('/api', generalLimiter)
@@ -112,37 +112,50 @@ app.use('/api/progress', progressRouter)
 app.use('/api/i18n', i18nRouter) // Публічний, без auth
 app.use('/api/files', filesRouter) // File uploads
 
-// --- ADMIN: hard CSRF для POST/PUT/DELETE операцій ---
-app.use('/api/admin', (req, res, next) => {
-  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-    return validateCsrf(req, res, next)
+// --- ADMIN ---
+app.use('/api/admin', adminRouter)
+
+// --- 404 JSON ---
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found' })
+})
+
+// --- Глобальний JSON error handler ---
+interface HttpError extends Error {
+  status?: number
+  type?: string
+}
+
+app.use((err: HttpError, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  if (err?.message === 'CORS not allowed') {
+    return res.status(403).json({ error: 'CORS blocked' })
   }
-  next()
-}, adminRouter)
+  if (err?.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Payload too large' })
+  }
+  if (err?.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Invalid JSON' })
+  }
+  const status = typeof err?.status === 'number' ? err.status : 500
+  const message = err?.message || 'Internal Server Error'
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(err)
+  }
+  res.status(status).json({ error: message })
+})
 
-// --- 404 Handler ---
-app.use(notFoundHandler)
-
-// --- Global Error Handler (must be last) ---
-app.use(errorHandler)
-
-// --- Server startup with graceful shutdown ---
 const port = Number(process.env.PORT ?? 4000)
 const server = app.listen(port, () => console.log(`API listening on http://localhost:${port}`))
 
-// Graceful shutdown handler
+// Graceful shutdown logic...
 async function gracefulShutdown(signal: string) {
   console.log(`\n${signal} received. Starting graceful shutdown...`)
-  
   server.close(async (err) => {
     if (err) {
       console.error('Error during server close:', err)
       process.exit(1)
     }
-    
     console.log('HTTP server closed')
-    
-    // Close database connection
     try {
       const { prisma } = await import('./db.js')
       await prisma.$disconnect()
@@ -150,23 +163,17 @@ async function gracefulShutdown(signal: string) {
     } catch (dbErr) {
       console.error('Error closing database:', dbErr)
     }
-    
     console.log('Graceful shutdown completed')
     process.exit(0)
   })
-  
-  // Force exit after 10 seconds if graceful shutdown fails
   setTimeout(() => {
     console.error('Forced shutdown after timeout')
     process.exit(1)
   }, 10000)
 }
 
-// Handle shutdown signals
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
 process.on('SIGINT', () => gracefulShutdown('SIGINT'))
-
-// Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err)
   gracefulShutdown('uncaughtException')
@@ -174,4 +181,4 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason)
-})
+})  

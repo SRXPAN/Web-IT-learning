@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # === Database ===
+  db:
+    image: postgres:15-alpine
+    container_name: elearn_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-elearn}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === Backend API ===
+  api:
+    build:
+      context: .
+      dockerfile: elearn-backend/Dockerfile
+    container_name: elearn_api
+    restart: always
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # Підключення до контейнера 'db'
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-elearn}?schema=public
+      
+      # Секрети (додай свої або прокинь через .env файл)
+      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_change_me}
+      COOKIE_NAME: access_token
+      REFRESH_COOKIE_NAME: refresh_token
+      
+      # URLs
+      APP_URL: ${APP_URL:-http://localhost:5173}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      
+      # Stripe & Mail (заповни в .env файлі)
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID}
+      MAILTRAP_USER: ${MAILTRAP_USER}
+      MAILTRAP_PASS: ${MAILTRAP_PASS}
+
+volumes:
+  postgres_data:

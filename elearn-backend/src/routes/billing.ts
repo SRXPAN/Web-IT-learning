@@ -5,11 +5,11 @@ import { prisma } from '../db'
 import crypto from 'node:crypto'
 import nodemailer from 'nodemailer'
 import { logger } from '../utils/logger.js'
+import { requireAuth } from '../middleware/auth.js'
 
 const router = Router()
-
-// Без apiVersion для простоти TS
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+
 
 const transporter = nodemailer.createTransport({
   host: process.env.MAILTRAP_HOST,
@@ -23,15 +23,19 @@ function genInvite() {
   return { token, expiresAt }
 }
 
-router.post('/checkout', async (req, res, next) => {
+router.post('/checkout', requireAuth, async (req, res, next) => {
   try {
-    const { email } = req.body as { email: string }
-    if (!email) return res.status(400).json({ error: 'email required' })
+    const user = req.user! // Гарантовано є завдяки requireAuth
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
-      customer_email: email,
+      customer_email: user.email, // Тільки для передзаповнення
+      client_reference_id: user.id, // [ВАЖЛИВО] Прив'язка до ID
+      metadata: {
+        userId: user.id,
+        userEmail: user.email
+      },
       success_url: `${process.env.APP_URL}/billing/success`,
       cancel_url: `${process.env.APP_URL}/billing/cancel`,
     })
@@ -45,7 +49,7 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
 
   try {
     event = stripe.webhooks.constructEvent(
-      req.body as Buffer, // raw
+      req.body as Buffer,
       sig as string,
       process.env.STRIPE_WEBHOOK_SECRET!
     )
@@ -56,13 +60,25 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    const email = session.customer_email!
+    const userId = session.client_reference_id || session.metadata?.userId
+
+    if (!userId) {
+      console.error('Webhook Error: No userId in session', session.id)
+      return res.sendStatus(400)
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) {
+        console.error('Webhook Error: User not found', userId)
+        return res.sendStatus(404)
+    }
+
     const amount = session.amount_total ?? 0
     const currency = (session.currency ?? 'pln').toUpperCase()
 
     await prisma.payment.create({
       data: {
-        userEmail: email,
+        userEmail: user.email, // Беремо email з нашої БД
         amount,
         currency,
         provider: 'stripe',
@@ -72,12 +88,14 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
     })
 
     const { token, expiresAt } = genInvite()
-    await prisma.inviteToken.create({ data: { email, token, expiresAt } })
+    await prisma.inviteToken.create({ 
+      data: { email: user.email, token, expiresAt } 
+    })
 
     const link = `${process.env.APP_URL}/invite?token=${token}`
     await transporter.sendMail({
       from: process.env.MAIL_FROM,
-      to: email,
+      to: user.email,
       subject: 'Your access to E-Learn',
       html: `<p>Welcome! Click to finish registration:</p>
              <p><a href="${link}">${link}</a></p>

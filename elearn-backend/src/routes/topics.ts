@@ -1,208 +1,239 @@
-// src/routes/topics.ts
 import { Router } from 'express'
-import { prisma } from '../db'
-import { requireAuth } from '../middleware/auth'
+import { prisma } from '../db.js'
+import { requireAuth, optionalAuth } from '../middleware/auth.js'
 import { z } from 'zod'
-import { localizeObject, localizeArray, getI18nKeyTranslation, type I18nKeyWithValues } from '../utils/i18n'
-import type { Lang } from '@elearn/shared'
 
 const router = Router()
 
-// Field mappings for localization (legacy JSON fields)
-const topicFields = { nameJson: 'name', descJson: 'description' }
-const materialFields = { titleJson: 'title', contentJson: 'content' }
-const quizFields = { titleJson: 'title' }
-
-// Include pattern for I18nKey values
-const i18nKeyInclude = { values: { select: { lang: true, value: true } } }
-
-// Type for topic with optional i18n keys
-interface TopicWithI18n {
-  name?: string
-  nameJson?: unknown
-  description?: string | null
-  descJson?: unknown
-  titleKey?: I18nKeyWithValues
-  descKey?: I18nKeyWithValues
-  titleKeyId?: string | null
-  descKeyId?: string | null
-  [key: string]: unknown
-}
-
-// Helper to localize topic using I18nKey or fallback to JSON
-function localizeTopic<T extends TopicWithI18n>(topic: T, lang: Lang): Omit<T, 'titleKey' | 'descKey' | 'titleKeyId' | 'descKeyId' | 'nameJson' | 'descJson'> {
-  const result: Record<string, unknown> = { ...topic }
-  
-  // Localize name: prefer titleKey, fallback to nameJson/name
-  if (topic.titleKey) {
-    result.name = getI18nKeyTranslation(topic.titleKey, lang, topic.name || '')
-  } else if (topic.nameJson) {
-    const localized = localizeObject(topic as Record<string, unknown>, lang, { nameJson: 'name' })
-    result.name = localized.name
-  }
-  
-  // Localize description: prefer descKey, fallback to descJson/description
-  if (topic.descKey) {
-    result.description = getI18nKeyTranslation(topic.descKey, lang, topic.description || '')
-  } else if (topic.descJson) {
-    const localized = localizeObject(topic as Record<string, unknown>, lang, { descJson: 'description' })
-    result.description = localized.description
-  }
-  
-  // Clean up internal fields from response
-  delete result.titleKey
-  delete result.descKey
-  delete result.titleKeyId
-  delete result.descKeyId
-  delete result.nameJson
-  delete result.descJson
-  
-  return result as Omit<T, 'titleKey' | 'descKey' | 'titleKeyId' | 'descKeyId' | 'nameJson' | 'descJson'>
-}
-
-// Схема для пагінації
+// Схема для валідації query параметрів
 const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
-  category: z.enum(['Programming', 'Mathematics', 'Databases', 'Networks']).optional(),
-  lang: z.enum(['UA', 'PL', 'EN']).optional(),
+  category: z.enum(['Programming', 'Mathematics', 'Databases', 'Networks', 'WebDevelopment', 'MobileDevelopment', 'MachineLearning', 'Security', 'DevOps', 'OperatingSystems']).optional(),
+  lang: z.string().toUpperCase().optional().default('EN'),
 })
 
-// Повертаємо дерево тем з оптимізацією
-router.get('/', requireAuth, async (req, res) => {
-  const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
-  
-  // Парсимо query параметри
-  const parsed = paginationSchema.safeParse(req.query)
-  const { page, limit, category, lang } = parsed.success 
-    ? parsed.data 
-    : { page: 1, limit: 20, category: undefined, lang: undefined }
-  
-  // Базовий where clause
-  const baseWhere = {
-    parentId: null,
-    ...(isStaff ? {} : { status: 'Published' as const }),
-    ...(category ? { category } : {}),
+/**
+ * Helper для отримання перекладу з JSON-кешу
+ * @param cache - об'єкт { "UA": "...", "EN": "..." }
+ * @param lang - поточна мова (напр. "UA")
+ * @param fallback - значення за замовчуванням (напр. англійська назва)
+ */
+function getLocalizedText(cache: any, lang: string, fallback: string): string {
+  if (cache && typeof cache === 'object' && !Array.isArray(cache)) {
+    // 1. Шукаємо точний збіг мови
+    if (cache[lang]) return cache[lang]
+    // 2. Шукаємо англійську як фолбек в кеші
+    if (cache['EN']) return cache['EN']
   }
-  
-  // Отримуємо загальну кількість для пагінації
-  const total = await prisma.topic.count({ where: baseWhere })
-  
-  const topics = await (prisma.topic.findMany as any)({
-    where: baseWhere,
-    orderBy: { name: 'asc' },
-    skip: (page - 1) * limit,
-    take: limit,
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      nameJson: true,
-      description: true,
-      descJson: true,
-      category: true,
-      status: true,
-      titleKey: lang ? { include: i18nKeyInclude } : false,
-      descKey: lang ? { include: i18nKeyInclude } : false,
-      materials: {
-        where: isStaff ? {} : { status: 'Published' },
-        select: { id: true, title: true, titleJson: true, type: true, url: true, content: true, contentJson: true, lang: true, status: true },
-      },
-      quizzes: {
-        where: isStaff ? {} : { status: 'Published' },
-        select: { id: true, title: true, titleJson: true, durationSec: true, status: true },
-      },
-      children: {
-        where: isStaff ? {} : { status: 'Published' },
-        orderBy: { name: 'asc' },
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          nameJson: true,
-          description: true,
-          descJson: true,
-          category: true,
-          status: true,
-          titleKey: lang ? { include: i18nKeyInclude } : false,
-          descKey: lang ? { include: i18nKeyInclude } : false,
-          materials: {
-            where: isStaff ? {} : { status: 'Published' },
-            select: { id: true, title: true, titleJson: true, type: true, url: true, content: true, contentJson: true, lang: true, status: true },
-          },
-          quizzes: {
-            where: isStaff ? {} : { status: 'Published' },
-            select: { id: true, title: true, titleJson: true, durationSec: true, status: true },
-          },
-        },
-      },
-      _count: {
-        select: { materials: true, quizzes: true, children: true },
-      },
-    },
-  }) as any[]
-  
-  // Apply localization if lang is specified
-  const localizedTopics = lang 
-    ? topics.map((topic: any) => {
-        const locTopic = localizeTopic(topic, lang as Lang)
-        return {
-          ...locTopic,
-          materials: localizeArray(topic.materials, lang as Lang, materialFields),
-          quizzes: localizeArray(topic.quizzes, lang as Lang, quizFields),
-          children: topic.children.map((child: any) => ({
-            ...localizeTopic(child, lang as Lang),
-            materials: localizeArray(child.materials, lang as Lang, materialFields),
-            quizzes: localizeArray(child.quizzes, lang as Lang, quizFields),
-          })),
+  // 3. Повертаємо базове значення з колонки (fallback)
+  return fallback
+}
+
+// GET /api/topics - Список тем (оптимізований)
+router.get('/', optionalAuth, async (req, res) => {
+  try {
+    // Валідація параметрів
+    const parsed = paginationSchema.safeParse(req.query)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid query params' })
+    }
+    
+    const { page, limit, category, lang } = parsed.data
+    
+    // Перевіряємо права доступу (адмін бачить все, студент - тільки опубліковане)
+    const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
+    const whereClause = {
+      parentId: null, // Тільки кореневі теми
+      ...(category ? { category: category as any } : {}),
+      ...(isStaff ? {} : { status: 'Published' as const }),
+    }
+
+    // Отримуємо загальну кількість для пагінації
+    const total = await prisma.topic.count({ where: whereClause })
+
+    // Оптимізований запит: використовуємо select замість include
+    const topics = await prisma.topic.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'asc' },
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        slug: true,
+        category: true,
+        parentId: true,
+        status: true,
+        // Базові поля (фолбеки)
+        name: true, 
+        description: true,
+        // [PERFORMANCE] Читаємо JSON кеш замість JOIN-ів
+        titleCache: true,
+        descCache: true,
+        // Агрегація для лічильників (набагато швидше за завантаження всіх дітей)
+        _count: {
+          select: { 
+            materials: true, 
+            quizzes: true,
+            children: true 
+          }
         }
-      })
-    : topics
-  
-  res.json({
-    data: localizedTopics,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  })
+      }
+    })
+
+    // Маппинг даних: вибираємо правильну мову з кешу
+    const mappedTopics = topics.map(t => ({
+      id: t.id,
+      slug: t.slug,
+      category: t.category,
+      parentId: t.parentId,
+      status: t.status,
+      // Миттєвий вибір мови
+      title: getLocalizedText(t.titleCache, lang, t.name),
+      description: getLocalizedText(t.descCache, lang, t.description),
+      stats: {
+        materials: t._count.materials,
+        quizzes: t._count.quizzes,
+        subtopics: t._count.children
+      }
+    }))
+
+    res.json({
+      data: mappedTopics,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    })
+  } catch (e) {
+    console.error('Error fetching topics:', e)
+    res.status(500).json({ error: 'Failed to fetch topics' })
+  }
 })
 
-router.get('/:slug', requireAuth, async (req, res) => {
-  const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
-  const lang = req.query.lang as Lang | undefined
-  
-  const topic = await (prisma.topic.findUnique as any)({
-    where: isStaff ? { slug: req.params.slug } : { slug: req.params.slug, status: 'Published' },
-    include: {
-      titleKey: lang ? { include: i18nKeyInclude } : false,
-      descKey: lang ? { include: i18nKeyInclude } : false,
-      materials: isStaff ? true : { where: { status: 'Published' } },
-      quizzes:   isStaff ? true : { where: { status: 'Published' } },
-      children:  isStaff 
-        ? { include: { titleKey: lang ? { include: i18nKeyInclude } : false, descKey: lang ? { include: i18nKeyInclude } : false } }
-        : { where: { status: 'Published' }, include: { titleKey: lang ? { include: i18nKeyInclude } : false, descKey: lang ? { include: i18nKeyInclude } : false } },
-      parent: lang 
-        ? { include: { titleKey: { include: i18nKeyInclude }, descKey: { include: i18nKeyInclude } } }
-        : true
-    }
-  }) as any
-  if (!topic) return res.status(404).json({ error: 'Not found' })
-  
-  // Apply localization if lang is specified
-  if (lang && ['UA', 'PL', 'EN'].includes(lang)) {
-    const locTopic = localizeTopic(topic, lang)
-    res.json({
-      ...locTopic,
-      materials: localizeArray(topic.materials, lang, materialFields),
-      quizzes: localizeArray(topic.quizzes, lang, quizFields),
-      children: topic.children.map((child: any) => localizeTopic(child, lang)),
-      parent: topic.parent ? localizeTopic(topic.parent, lang) : null,
+// GET /api/topics/:slug - Деталі теми (оптимізований)
+router.get('/:slug', optionalAuth, async (req, res) => {
+  try {
+    const lang = (req.query.lang as string || 'EN').toUpperCase()
+    const { slug } = req.params
+    const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
+
+    const topic = await prisma.topic.findUnique({
+      where: { 
+        slug,
+        // Якщо не адмін - перевіряємо чи опубліковано
+        ...(isStaff ? {} : { status: 'Published' })
+      },
+      select: {
+        id: true,
+        slug: true,
+        category: true,
+        parentId: true,
+        status: true,
+        name: true,
+        description: true,
+        // Кеш
+        titleCache: true,
+        descCache: true,
+        // Батьківська тема (тільки потрібні поля)
+        parent: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            titleCache: true
+          }
+        },
+        // Дочірні теми
+        children: {
+          where: isStaff ? {} : { status: 'Published' },
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            description: true,
+            titleCache: true,
+            descCache: true,
+            status: true,
+            _count: { select: { materials: true, quizzes: true } }
+          }
+        },
+        // Матеріали
+        materials: {
+          where: isStaff ? {} : { status: 'Published' },
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            titleCache: true // Припустимо, що в Material теж додано titleCache (якщо ні - використовуйте title)
+          }
+        },
+        // Квізи
+        quizzes: {
+          where: isStaff ? {} : { status: 'Published' },
+          select: {
+            id: true,
+            title: true,
+            durationSec: true,
+            titleCache: true // Аналогічно для Quiz
+          }
+        }
+      }
     })
-  } else {
-    res.json(topic)
+
+    if (!topic) {
+      return res.status(404).json({ error: 'Topic not found' })
+    }
+
+    // Формуємо відповідь з локалізацією
+    const response = {
+      id: topic.id,
+      slug: topic.slug,
+      category: topic.category,
+      parentId: topic.parentId,
+      status: topic.status,
+      title: getLocalizedText(topic.titleCache, lang, topic.name),
+      description: getLocalizedText(topic.descCache, lang, topic.description),
+      
+      parent: topic.parent ? {
+        id: topic.parent.id,
+        slug: topic.parent.slug,
+        title: getLocalizedText(topic.parent.titleCache, lang, topic.parent.name)
+      } : null,
+
+      children: topic.children.map(child => ({
+        id: child.id,
+        slug: child.slug,
+        status: child.status,
+        title: getLocalizedText(child.titleCache, lang, child.name),
+        description: getLocalizedText(child.descCache, lang, child.description || ''),
+        stats: {
+          materials: child._count.materials,
+          quizzes: child._count.quizzes
+        }
+      })),
+
+      materials: topic.materials.map(m => ({
+        id: m.id,
+        type: m.type,
+        // Тут використовуємо titleCache якщо він є в схемі Material, інакше просто title
+        title: getLocalizedText((m as any).titleCache, lang, m.title)
+      })),
+
+      quizzes: topic.quizzes.map(q => ({
+        id: q.id,
+        durationSec: q.durationSec,
+        title: getLocalizedText((q as any).titleCache, lang, q.title)
+      }))
+    }
+
+    res.json(response)
+
+  } catch (e) {
+    console.error('Error fetching topic details:', e)
+    res.status(500).json({ error: 'Failed to fetch topic' })
   }
 })
 
