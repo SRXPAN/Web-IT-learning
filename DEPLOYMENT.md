@@ -46,19 +46,37 @@ cat .env.production
 # Має бути: VITE_API_URL=https://your-backend.railway.app
 ```
 
-### **1.2 Build локально (тестування)**
+### **1.2 Build конфігурація для Cloudflare Pages**
 
-```bash
-npm run build
+Cloudflare Pages вже має вбудовану підтримку Vite проектів. Налаштування в Cloudflare Dashboard:
 
-# Перевір dist/ папку
-ls dist/
-# Має бути: index.html, assets/, ...
+**Framework preset**: `Vite`  
+**Build command**: `npm run build` або `npm run build:production`  
+**Build output directory**: `Web-e-learning/dist`  
+**Root directory**: `Web-e-learning`  
+**Node version**: `22` (або той же що у `engines.node`)
+
+**Environment Variables:**
+```
+Production:
+  VITE_API_URL=https://your-backend.railway.app
+
+Preview (development):
+  VITE_API_URL=https://your-backend-staging.railway.app
 ```
 
-### **1.3 Deploy на Cloudflare Pages**
+### **1.3 Конфігураційні файли**
 
-**Варіант A: Через Git (рекомендую)**
+Проект містить файли для Cloudflare оптимізації:
+
+- **`wrangler.json`** — конфіг для Cloudflare Workers (якщо буде потрібно)
+- **`_redirects`** — перенаправлення маршрутів SPA (в корені `dist/` після збірки)
+- **`public/_headers`** — cache-control headers для оптимізації
+- **`vite.config.ts`** — конфіг збірки з оптимізацією для Cloudflare
+
+### **1.4 Build та деплой варіанти**
+
+#### **Варіант A: Через Git (рекомендую)**
 
 1. **Залий проект в GitHub/GitLab**
    ```bash
@@ -68,45 +86,199 @@ ls dist/
    ```
 
 2. **В Cloudflare Dashboard:**
-   - Йди на https://dash.cloudflare.com
-   - Workers & Pages → Create application → Pages → Connect to Git
+   - https://dash.cloudflare.com → Workers & Pages
+   - Create application → Pages → Connect to Git
    - Обери свій репозиторій
+   - Cloudflare автоматично визначить монорепо структуру
    
-3. **Налаштування build:**
+3. **Автоматично налаштує:**
    ```yaml
    Build command: npm run build
    Build output directory: dist
    Root directory: Web-e-learning
-   Node version: 18
    ```
 
-4. **Environment Variables:**
-   ```bash
+4. **Додай Environment Variables:**
+   ```
    VITE_API_URL=https://your-backend.railway.app
-   # (буде заповнено після deployment бекенду)
    ```
 
-5. **Натискай "Save and Deploy"**
+5. **Натискай "Save and Deploy"** → Cloudflare почне білдити та розгортати
 
-**Варіант B: Через Wrangler CLI**
+**Переваги:**
+- ✅ Автоматичний redeploy на кожен push
+- ✅ Preview для PR
+- ✅ Кешування node_modules
+
+#### **Варіант B: Через Wrangler CLI**
 
 ```bash
-npm install -g wrangler
+# Встановити Wrangler
+npm install -g @cloudflare/wrangler
+
+# Залогіниться
 wrangler login
-wrangler pages project create elearn-frontend
+
+# Білдити локально (тестування)
+cd Web-e-learning
+npm run build
+
+# Перевірити що dist/ створена правильно
+ls -la dist/
+# Повинні бути: index.html, assets/, _redirects тощо
+
+# Preview локально
+npm run preview
+# Відкрити http://localhost:4173
+
+# Деплой на Cloudflare
 wrangler pages deploy dist --project-name elearn-frontend
 ```
 
-### **1.4 Custom Domain (опційно)**
+#### **Варіант C: Drag & Drop (простої для тестування)**
+
+1. Білдити локально: `npm run build`
+2. Відкрити https://dash.cloudflare.com → Pages
+3. Upload папку `dist/` в UI
+
+### **1.5 Custom Domain (опційно)**
+
+Після успішного деплою:
 
 ```bash
 # В Cloudflare Pages settings:
-Custom domains → Add custom domain → learn.yourdomain.com
+Settings → Custom domains → Add custom domain
+# Введи: learn.yourdomain.com
 ```
+
+**Cloudflare автоматично налаштує SSL/TLS**
 
 **URL після deployment:**
 - `https://elearn-frontend.pages.dev` (автоматичний)
 - `https://learn.yourdomain.com` (якщо додав custom domain)
+
+### **1.6 Перевірка перед деплоєм**
+
+```bash
+# 1. Локальна збірка
+cd Web-e-learning
+npm run build
+
+# 2. Перевірити dist/ структуру
+ls -la dist/
+# Повинні бути: index.html, assets/, 
+# Для SPA маршрутів повинен бути _redirects
+
+# 3. Preview
+npm run preview
+# Відкрити http://localhost:4173
+
+# 4. Перевірити routing (тестування SPA)
+# Навігуватися на маршрути типу:
+# - http://localhost:4173/materials
+# - http://localhost:4173/quiz/123
+# Повинна завантажитися сторінка без 404
+# (якщо 404 - перевір _redirects файл)
+
+# 5. Перевірити API connection
+# Відкрити DevTools → Network
+# Запити до VITE_API_URL повинні проходити (не 404)
+```
+
+### **1.7 Вирішення типових проблем**
+
+#### **Build timeout на Cloudflare**
+
+```bash
+# Рішення: оптимізуй білд
+# 1. Виключи непотрібні залежності
+npm prune --production
+
+# 2. Використовуй build:production команду (якщо існує)
+npm run build:production
+
+# 3. Vagy у Cloudflare Pages Settings збільши timeout на 30+ хв
+```
+
+#### **Missing environment variables**
+
+```bash
+# ВИРІШЕННЯ: у Cloudflare Pages Settings додай:
+Environment variables → VITE_API_URL
+# З значенням URL твого бекенду
+```
+
+#### **Routing не працює (404 на SPA маршрутах)**
+
+```bash
+# ПРОБЛЕМА: файл _redirects не знайдено
+# РІШЕННЯ: 
+# 1. Переконайся що _redirects в корені dist/ після білда
+#    ls dist/_redirects
+# 2. Cloudflare Pages автоматично обробляє _redirects
+# 3. Якщо не працює - перебудуй: npm run build
+```
+
+#### **CORS помилки при запитах до API**
+
+```bash
+# РІШЕННЯ: налаштуй CORS на бекенді
+# В elearn-backend/.env встанови:
+CORS_ORIGIN=https://yourdomain.pages.dev,https://learn.yourdomain.com
+
+# Тогоді перезапусти бекенд та перебудуй фронтенд
+```
+
+#### **Node version mismatch помилки**
+
+```bash
+# РІШЕННЯ: у Cloudflare Pages → Settings → Build
+# Change Node version: обери Node 22 (або той же як у package.json)
+# engines.node версія
+```
+
+#### **TypeScript не знаходить типи при білді**
+
+```bash
+# РІШЕННЯ: перевір tsconfig.json виключає тести:
+{
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}
+```
+
+#### **Залежність не знайдена (@elearn/shared)**
+
+```bash
+# РІШЕННЯ: Cloudflare Pages автоматично встановлює залежності
+# Переконайся що package.json правильно налаштований:
+# 1. workspace залежности налаштовані
+# 2. npm install локально працює
+# 3. Перебудуй: npm run build
+```
+
+### **1.8 Оптимізація для Cloudflare**
+
+**Кешування стратегія:**
+- HTML (index.html): 3600s (1 година) - реревалідація
+- JS/CSS (immutable): 31536000s (1 рік) - кешуються назавжди (Vite додає hash)
+- API запити: no-cache - всі запити йдуть на сервер
+
+**Performance оптимізації:**
+- Minification: Terser (вимикаємо console.log в production)
+- Sourcemaps: вимкнено для експорту (зменшує розмір)
+- Build output: оптимізований dist/ (тільки потрібні файли)
+
+**Автоматичні переваги Cloudflare Pages:**
+- ✅ Global CDN - коротший latency для користувачів
+- ✅ DDOS захист
+- ✅ Автоматичний SSL/TLS сертифікат
+- ✅ Поміжного кешування для статичних файлів
 
 ---
 

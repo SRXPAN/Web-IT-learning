@@ -12,7 +12,6 @@ import {
   Settings,
   Shield,
   BarChart3,
-  Languages,
   FolderOpen,
   ChevronRight,
   LogOut,
@@ -34,7 +33,6 @@ const navItems: NavItem[] = [
   { path: '/admin/users', icon: Users, labelKey: 'admin.users' as const, roles: ['ADMIN'] },
   { path: '/admin/content', icon: BookOpen, labelKey: 'admin.content' as const, roles: ['ADMIN', 'EDITOR'] },
   { path: '/admin/files', icon: FolderOpen, labelKey: 'admin.files' as const, roles: ['ADMIN'] },
-  { path: '/admin/translations', icon: Languages, labelKey: 'admin.translations' as const, roles: ['ADMIN'] },
   { path: '/admin/audit', icon: Activity, labelKey: 'admin.auditLogs' as const, roles: ['ADMIN'] },
   // { path: '/admin/settings', icon: Settings, labelKey: 'admin.settings' as const, roles: ['ADMIN'], badge: 'WIP' },
 ]

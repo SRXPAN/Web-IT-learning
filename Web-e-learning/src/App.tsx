@@ -23,7 +23,6 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 const AdminFiles = lazy(() => import('./pages/admin/AdminFiles'))
 const AdminAuditLogs = lazy(() => import('./pages/admin/AdminAuditLogs'))
-const AdminTranslations = lazy(() => import('./pages/admin/AdminTranslations'))
 const AdminContent = lazy(() => import('./pages/admin/AdminContent'))
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
 const AdminTopics = lazy(() => import('./pages/admin/AdminTopics'))
@@ -199,7 +198,6 @@ export default function App(){
                 <Route path="users/:id" element={<RequireRole allowedRoles={['ADMIN']}><AdminUserDetails /></RequireRole>} />
                 <Route path="files" element={<RequireRole allowedRoles={['ADMIN']}><AdminFiles /></RequireRole>} />
                 <Route path="audit" element={<RequireRole allowedRoles={['ADMIN']}><AdminAuditLogs /></RequireRole>} />
-                <Route path="translations" element={<RequireRole allowedRoles={['ADMIN']}><AdminTranslations /></RequireRole>} />
                 <Route path="content" element={<RequireRole allowedRoles={['ADMIN']}><AdminContent /></RequireRole>} />
                 <Route path="topics" element={<AdminTopics />} />
                 <Route path="materials" element={<AdminMaterials />} />

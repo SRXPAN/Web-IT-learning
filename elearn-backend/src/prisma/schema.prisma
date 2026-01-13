@@ -62,14 +62,10 @@ model Topic {
   id          String     @id @default(cuid())
   slug        String     @unique
   name        String // Fallback name (EN) - kept for backward compat
-  nameJson    Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use titleKey
-  titleKeyId  String?    // Reference to I18nKey for localized title
-  titleKey    I18nKey?   @relation("TopicTitle", fields: [titleKeyId], references: [id])
+  nameJson    Json? // {"UA": "...", "PL": "...", "EN": "..."}
   titleCache  Json?      // {"UA": "...", "EN": "..."}
   description String
-  descJson    Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use descKey
-  descKeyId   String?    // Reference to I18nKey for localized description
-  descKey     I18nKey?   @relation("TopicDesc", fields: [descKeyId], references: [id])
+  descJson    Json? // {"UA": "...", "PL": "...", "EN": "..."}
   descCache   Json?      // {"UA": "...", "EN": "..."}
   category    Category   @default(Programming)
   parentId    String?
@@ -86,27 +82,21 @@ model Topic {
 
   @@index([category])
   @@index([parentId])
-  @@index([titleKeyId])
-  @@index([descKeyId])
 }
 
 model Material {
   id            String       @id @default(cuid())
   title         String // Fallback title (EN)
-  titleJson     Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use titleKey
-  titleKeyId    String?      // Reference to I18nKey for localized title
-  titleKey      I18nKey?     @relation("MaterialTitle", fields: [titleKeyId], references: [id])
-  titleCache    Json?        // {"UA": "...", "EN": "..."} - read-optimized cache
+  titleJson     Json? // {"UA": "...", "PL": "...", "EN": "..."}
+  titleCache    Json?        // {"UA": "...", "EN": "..."}
   type          MaterialType
   url           String?      // Fallback URL (EN)
-  urlCache      Json?        // {"UA": "s3/file_ua.pdf", "EN": "s3/file_en.pdf"} - localized URLs
+  urlCache      Json?        // {"UA": "s3/file_ua.pdf", "EN": "s3/file_en.pdf"}
   fileId        String?      // Reference to File for pdf/video/image
   file          File?        @relation(fields: [fileId], references: [id])
   content       String?      // Fallback content (EN)
-  contentJson   Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use contentKey
-  contentKeyId  String?      // Reference to I18nKey for localized content
-  contentKey    I18nKey?     @relation("MaterialContent", fields: [contentKeyId], references: [id])
-  contentCache  Json?        // {"UA": "# Привіт", "EN": "# Hello"} - read-optimized cache
+  contentJson   Json? // {"UA": "...", "PL": "...", "EN": "..."}
+  contentCache  Json?        // {"UA": "# Привіт", "EN": "# Hello"}
   lang          Lang         @default(EN) // Primary language of material
   topic         Topic        @relation(fields: [topicId], references: [id])
   topicId       String
@@ -119,8 +109,6 @@ model Material {
   updatedAt     DateTime     @default(now()) @updatedAt
 
   @@index([topicId])
-  @@index([titleKeyId])
-  @@index([contentKeyId])
 }
 
 enum Lang {
@@ -139,10 +127,8 @@ enum MaterialType {
 model Quiz {
   id            String        @id @default(cuid())
   title         String // Fallback title (EN)
-  titleJson     Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use titleKey
-  titleKeyId    String?       // Reference to I18nKey for localized title
-  titleKey      I18nKey?      @relation("QuizTitle", fields: [titleKeyId], references: [id])
-  titleCache    Json?         // {"UA": "...", "EN": "..."} - read-optimized cache
+  titleJson     Json? // {"UA": "...", "PL": "...", "EN": "..."}
+  titleCache    Json?         // {"UA": "...", "EN": "..."}
   durationSec   Int           @default(60)
   topicId       String
   topic         Topic         @relation(fields: [topicId], references: [id], onDelete: Cascade)
@@ -156,19 +142,14 @@ model Quiz {
   updatedAt     DateTime      @default(now()) @updatedAt
 
   @@index([topicId])
-  @@index([titleKeyId])
 }
 
 model Question {
   id                 String     @id @default(cuid())
   text               String // Fallback text (EN)
-  textJson           Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use textKey
-  textKeyId          String?    // Reference to I18nKey for localized question text
-  textKey            I18nKey?   @relation("QuestionText", fields: [textKeyId], references: [id])
+  textJson           Json? // {"UA": "...", "PL": "...", "EN": "..."}
   explanation        String?
-  explanationJson    Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use explanationKey
-  explanationKeyId   String?    // Reference to I18nKey for localized explanation
-  explanationKey     I18nKey?   @relation("QuestionExplanation", fields: [explanationKeyId], references: [id])
+  explanationJson    Json? // {"UA": "...", "PL": "...", "EN": "..."}
   tags               String[]
   difficulty         Difficulty
   quizId             String
@@ -177,23 +158,18 @@ model Question {
   answers            Answer[]
 
   @@index([quizId])
-  @@index([textKeyId])
-  @@index([explanationKeyId])
 }
 
 model Option {
   id           String   @id @default(cuid())
   text         String // Fallback text (EN)
-  textJson     Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use textKey
-  textKeyId    String?  // Reference to I18nKey for localized option text
-  textKey      I18nKey? @relation("OptionText", fields: [textKeyId], references: [id])
+  textJson     Json? // {"UA": "...", "PL": "...", "EN": "..."}
   correct      Boolean  @default(false)
   questionId   String
   question     Question @relation(fields: [questionId], references: [id])
   answers      Answer[]
 
   @@index([questionId])
-  @@index([textKeyId])
 }
 
 model Answer {
@@ -377,15 +353,6 @@ model I18nKey {
   namespace            String       @default("common") // common, auth, quiz, nav, etc.
   description          String?      // Опис для редактора перекладів
   values               I18nValue[]
-  // Relations for content localization
-  topicTitles          Topic[]      @relation("TopicTitle")
-  topicDescs           Topic[]      @relation("TopicDesc")
-  materialTitles       Material[]   @relation("MaterialTitle")
-  materialContents     Material[]   @relation("MaterialContent")
-  quizTitles           Quiz[]       @relation("QuizTitle")
-  questionTexts        Question[]   @relation("QuestionText")
-  questionExplanations Question[]   @relation("QuestionExplanation")
-  optionTexts          Option[]     @relation("OptionText")
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @default(now()) @updatedAt
 
