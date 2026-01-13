@@ -10,6 +10,12 @@ const SMTP_PASS = getEnv('SMTP_PASS', '')
 const SMTP_FROM = getEnv('SMTP_FROM', 'E-Learn <noreply@elearn.com>')
 const FRONTEND_URL = getEnv('FRONTEND_URL', 'http://localhost:5173')
 
+// Production safety check: throw if SMTP not configured in prod
+const isProd = process.env.NODE_ENV === 'production'
+if (isProd && (!SMTP_USER || !SMTP_PASS)) {
+  throw new Error('CRITICAL: SMTP configuration required in production. Set SMTP_USER and SMTP_PASS.')
+}
+
 // Створюємо transporter тільки якщо налаштовано SMTP
 const transporter = SMTP_USER && SMTP_PASS
   ? nodemailer.createTransport({

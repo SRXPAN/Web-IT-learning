@@ -7,9 +7,9 @@ services:
     container_name: elearn_db
     restart: always
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-elearn}
+      POSTGRES_USER: ${DB_USER:?Variable 'DB_USER' not set}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Variable 'DB_PASSWORD' not set}
+      POSTGRES_DB: ${DB_NAME:?Variable 'DB_NAME' not set}
     ports:
       - "5432:5432"
     volumes:
@@ -36,14 +36,14 @@ services:
       NODE_ENV: production
       PORT: 4000
       # Підключення до контейнера 'db'
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-elearn}?schema=public
+      DATABASE_URL: postgresql://${DB_USER:?Variable 'DB_USER' not set}:${DB_PASSWORD:?Variable 'DB_PASSWORD' not set}@db:5432/${DB_NAME:?Variable 'DB_NAME' not set}?schema=public
       
-      # Секрети (додай свої або прокинь через .env файл)
-      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_change_me}
+      # Секрети (вимагаються - задай через .env файл!)
+      JWT_SECRET: ${JWT_SECRET:?Variable 'JWT_SECRET' not set}
       COOKIE_NAME: access_token
       REFRESH_COOKIE_NAME: refresh_token
       
-      # URLs
+      # URLs (можна з дефолтом для dev)
       APP_URL: ${APP_URL:-http://localhost:5173}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}

@@ -95,8 +95,8 @@ app.use('/api', generalLimiter)
 // --- Healthcheck без auth ---
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
-// --- Auth роути з селективним лімітом ---
-app.use('/api/auth', authRouter)
+// --- Auth роути з селективним лімітом (5 спроб за 15 хв) ---
+app.use('/api/auth', authLimiter, authRouter)
 
 // --- Invite / Billing (чутливі) — додатковий authLimiter ---
 app.use('/api/invite', authLimiter, inviteRouter)

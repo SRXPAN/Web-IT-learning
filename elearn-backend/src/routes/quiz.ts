@@ -4,8 +4,11 @@ import { prisma } from '../db'
 import { requireAuth } from '../middleware/auth'
 import { validateId } from '../middleware/validateParams.js'
 import { z } from 'zod'
+import jwt from 'jsonwebtoken'
 import type { QuizSubmitResult, QuizAnswer, Lang } from '@elearn/shared'
 import { localizeObject, localizeArray, getI18nKeyTranslation, type I18nKeyWithValues } from '../utils/i18n'
+import { getJwtSecret } from '../utils/env.js'
+import { logger } from '../utils/logger.js'
 
 const router = Router()
 
@@ -143,11 +146,20 @@ router.get('/:id', requireAuth, validateId, async (req, res) => {
     return res.status(404).json({ error: 'Not found' })
   }
   
+  // Generate quiz token with expiration (quiz duration + 2 min buffer)
+  const expiresAt = Date.now() + (quiz.durationSec * 1000) + (120 * 1000)
+  const quizPayload = { quizId: quiz.id, userId: req.user!.id, expiresAt }
+  const expiresInSeconds = (quiz.durationSec + 120) * 60 // Convert to seconds for JWT
+  const quizToken = jwt.sign(quizPayload, getJwtSecret(), { 
+    expiresIn: expiresInSeconds
+  })
+  
   // Apply localization if lang is specified
   if (lang && ['UA', 'PL', 'EN'].includes(lang)) {
     const locQuiz = localizeQuiz(quiz, lang)
     res.json({
       ...locQuiz,
+      token: quizToken,
       questions: quiz.questions.map((q: any) => ({
         ...localizeQuestion(q, lang),
         options: q.options.map((o: any) => localizeOption(o, lang)),
@@ -157,6 +169,7 @@ router.get('/:id', requireAuth, validateId, async (req, res) => {
     // Remove i18n internal fields for non-localized response
     res.json({
       ...quiz,
+      token: quizToken,
       titleKey: undefined,
       questions: quiz.questions.map((q: any) => ({
         ...q,
@@ -179,6 +192,7 @@ const submitSchema = z.object({
     }),
   ),
   lang: z.enum(['UA', 'PL', 'EN']).optional(),
+  token: z.string(), // Quiz token from GET /:id
 })
 
 router.post(
@@ -190,6 +204,25 @@ router.post(
       const parsed = submitSchema.safeParse(req.body)
       if (!parsed.success)
         return res.status(400).json({ error: parsed.error.flatten() })
+      
+      // Verify quiz token and check expiration
+      let quizPayload: any
+      try {
+        quizPayload = jwt.verify(parsed.data.token, getJwtSecret()) as any
+      } catch (e) {
+        logger.error('Quiz token verification failed:', e)
+        return res.status(401).json({ error: 'Invalid or expired quiz token' })
+      }
+
+      // Check if time is up
+      if (Date.now() > quizPayload.expiresAt) {
+        return res.status(403).json({ error: 'Quiz time limit exceeded' })
+      }
+
+      // Verify token matches this quiz and user
+      if (quizPayload.quizId !== req.params.id || quizPayload.userId !== req.user!.id) {
+        return res.status(403).json({ error: 'Quiz token mismatch' })
+      }
       
       const lang = parsed.data.lang as Lang | undefined
       

@@ -18,6 +18,7 @@ import {
 } from '../services/storage.service'
 import { ok, created, badRequest, notFound, forbidden, serverError } from '../utils/response'
 import { auditLog } from '../services/audit.service'
+import { logger } from '../utils/logger.js'
 const router = Router()
 
 /**
@@ -74,7 +75,7 @@ router.post('/presign-upload', requireAuth, async (req: Request, res: Response) 
       key,
     })
   } catch (err) {
-    console.error('Presign upload error:', err)
+    logger.error('Presign upload error:', err as Error)
     return serverError(res, 'Failed to generate upload URL')
   }
 })
@@ -139,7 +140,7 @@ router.post('/confirm', requireAuth, async (req: Request, res: Response) => {
       size: updated.size,
     })
   } catch (err) {
-    console.error('Confirm upload error:', err)
+    logger.error('Confirm upload error:', err as Error)
     return serverError(res, 'Failed to confirm upload')
   }
 })
@@ -185,7 +186,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       createdAt: file.createdAt,
     })
   } catch (err) {
-    console.error('Get file error:', err)
+    logger.error('Get file error:', err as Error)
     return serverError(res, 'Failed to get file')
   }
 })
@@ -218,7 +219,7 @@ router.get('/:id/download', requireAuth, async (req: Request, res: Response) => 
 
     return ok(res, { url, filename: file.originalName })
   } catch (err) {
-    console.error('Get download URL error:', err)
+    logger.error('Get download URL error:', err as Error)
     return serverError(res, 'Failed to get download URL')
   }
 })
@@ -265,7 +266,7 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
 
     return ok(res, { deleted: true })
   } catch (err) {
-    console.error('Delete file error:', err)
+    logger.error('Delete file error:', err as Error)
     return serverError(res, 'Failed to delete file')
   }
 })
@@ -312,7 +313,7 @@ router.get('/', requireAuth, requireRole(['ADMIN']), async (req: Request, res: R
       },
     })
   } catch (err) {
-    console.error('List files error:', err)
+    logger.error('List files error:', err as Error)
     return serverError(res, 'Failed to list files')
   }
 })

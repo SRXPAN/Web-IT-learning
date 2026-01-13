@@ -39,6 +39,7 @@ import {
 } from '../services/auth.service.js'
 import { validateImageBase64 } from '../utils/imageValidation.js'
 import { logger } from '../utils/logger.js'
+import { deleteFile } from '../services/storage.service.js'
 
 const router = Router()
 
@@ -389,6 +390,21 @@ router.post('/avatar', requireAuth, async (req, res, next) => {
     
     if (!file || file.uploadedById !== req.user!.id) {
       return res.status(400).json({ error: 'Invalid file' })
+    }
+
+    // Get current user with avatar
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { avatarFile: true }
+    })
+
+    // If new avatar is different from old one, delete old file from S3
+    if (fileId && currentUser?.avatarId && fileId !== currentUser.avatarId) {
+      if (currentUser.avatarFile?.key) {
+        deleteFile(currentUser.avatarFile.key).catch(err => 
+          logger.error('Failed to cleanup old avatar:', err)
+        )
+      }
     }
     
     const updatedUser = await prisma.user.update({

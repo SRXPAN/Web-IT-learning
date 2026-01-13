@@ -3,6 +3,7 @@ import { type TranslationKey } from './translations'
 import { create } from 'zustand'
 import { useEffect } from 'react'
 import { apiGet } from '@/lib/http'
+import { loadLanguageBundle, type TranslationBundle } from './i18nLoader'
 
 // API response type
 type BundleResponse = {
@@ -40,27 +41,46 @@ function saveBundleToCache(lang: string, bundle: Record<string, string>, version
 // Store for API translations
 type TranslationsState = {
   bundles: Record<string, Record<string, string>> // lang -> key -> value
+  localBundles: Record<string, TranslationBundle> // Local JSON fallback bundles
   versions: Record<string, string> // lang -> version
   loading: boolean
   initialized: boolean
   error: string | null
   fetchTranslations: (lang: string) => Promise<void>
+  loadLocalBundle: (lang: 'UA' | 'EN' | 'PL') => Promise<void>
   clearCache: () => void // Function to clear all cached translations
 }
 
 export const useTranslationsStore = create<TranslationsState>((set, get) => ({
   bundles: {},
+  localBundles: {},
   versions: {},
   loading: false,
   initialized: false,
   error: null,
+  
+  // Load local bundle (UA.json, EN.json, etc.)
+  loadLocalBundle: async (lang: 'UA' | 'EN' | 'PL') => {
+    const state = get()
+    if (state.localBundles[lang]) {
+      return // Already loaded
+    }
+    try {
+      const bundle = await loadLanguageBundle(lang)
+      set(s => ({
+        localBundles: { ...s.localBundles, [lang]: bundle }
+      }))
+    } catch (error) {
+      console.error(`Failed to load local bundle for ${lang}:`, error)
+    }
+  },
+  
   fetchTranslations: async (lang: string) => {
     const state = get()
     
     // Skip if already loaded for this language AND has content
     const existingBundle = state.bundles[lang]
     if (existingBundle && Object.keys(existingBundle).length > 0) {
-      // ✅ Видалено спам: не логуємо при кожному використанні кешу
       return
     }
     
@@ -134,29 +154,48 @@ export const useTranslationsStore = create<TranslationsState>((set, get) => ({
 
 export function useTranslation() {
   const { lang, setLang } = useI18n()
-  const { bundles, loading, initialized, fetchTranslations } = useTranslationsStore()
+  const { bundles, localBundles, loading, initialized, fetchTranslations, loadLocalBundle } = useTranslationsStore()
   
-  // Load translations on mount and when lang changes
+  // Load local bundle immediately for fast fallback
+  useEffect(() => {
+    loadLocalBundle(lang as 'UA' | 'EN' | 'PL')
+  }, [lang, loadLocalBundle])
+  
+  // Load translations from API on mount and when lang changes
   useEffect(() => {
     fetchTranslations(lang)
   }, [lang, fetchTranslations])
   
   const t = (key: TranslationKey): string => {
-    // 1. Try API bundle for current language
+    // 1. Try API bundle for current language (most up-to-date)
     const apiBundle = bundles[lang]
     if (apiBundle?.[key]) {
       return apiBundle[key]
     }
     
-    // 2. Fallback to EN bundle if different language
+    // 2. Try local bundle for current language (fast fallback)
+    const localBundle = localBundles[lang]
+    if (localBundle?.[key]) {
+      return localBundle[key]
+    }
+    
+    // 3. Fallback to EN API bundle if different language
     if (lang !== 'EN') {
-      const enBundle = bundles['EN'] || loadCachedBundle('EN')
-      if (enBundle?.[key]) {
-        return enBundle[key]
+      const enApiBundle = bundles['EN'] || loadCachedBundle('EN')
+      if (enApiBundle?.[key]) {
+        return enApiBundle[key]
       }
     }
     
-    // 3. Return key as last resort (safe fallback - no crash)
+    // 4. Fallback to EN local bundle if different language
+    if (lang !== 'EN') {
+      const enLocalBundle = localBundles['EN']
+      if (enLocalBundle?.[key]) {
+        return enLocalBundle[key]
+      }
+    }
+    
+    // 5. Return key as last resort (safe fallback - no crash)
     return key
   }
   

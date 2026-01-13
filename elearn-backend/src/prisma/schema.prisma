@@ -96,14 +96,17 @@ model Material {
   titleJson     Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use titleKey
   titleKeyId    String?      // Reference to I18nKey for localized title
   titleKey      I18nKey?     @relation("MaterialTitle", fields: [titleKeyId], references: [id])
+  titleCache    Json?        // {"UA": "...", "EN": "..."} - read-optimized cache
   type          MaterialType
-  url           String?
+  url           String?      // Fallback URL (EN)
+  urlCache      Json?        // {"UA": "s3/file_ua.pdf", "EN": "s3/file_en.pdf"} - localized URLs
   fileId        String?      // Reference to File for pdf/video/image
   file          File?        @relation(fields: [fileId], references: [id])
-  content       String?
+  content       String?      // Fallback content (EN)
   contentJson   Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use contentKey
   contentKeyId  String?      // Reference to I18nKey for localized content
   contentKey    I18nKey?     @relation("MaterialContent", fields: [contentKeyId], references: [id])
+  contentCache  Json?        // {"UA": "# Привіт", "EN": "# Hello"} - read-optimized cache
   lang          Lang         @default(EN) // Primary language of material
   topic         Topic        @relation(fields: [topicId], references: [id])
   topicId       String
@@ -139,6 +142,7 @@ model Quiz {
   titleJson     Json? // {"UA": "...", "PL": "...", "EN": "..."} - legacy, use titleKey
   titleKeyId    String?       // Reference to I18nKey for localized title
   titleKey      I18nKey?      @relation("QuizTitle", fields: [titleKeyId], references: [id])
+  titleCache    Json?         // {"UA": "...", "EN": "..."} - read-optimized cache
   durationSec   Int           @default(60)
   topicId       String
   topic         Topic         @relation(fields: [topicId], references: [id], onDelete: Cascade)
