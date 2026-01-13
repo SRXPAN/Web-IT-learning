@@ -6,46 +6,35 @@ import { validateId } from '../middleware/validateParams.js'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
 import type { QuizSubmitResult, QuizAnswer, Lang } from '@elearn/shared'
-import { localizeObject, localizeArray, getI18nKeyTranslation, type I18nKeyWithValues } from '../utils/i18n'
+import { localizeObject, localizeArray } from '../utils/i18n'
 import { getJwtSecret } from '../utils/env.js'
 import { logger } from '../utils/logger.js'
 
 const router = Router()
 
-// Field mappings for localization (legacy JSON fields)
+// Field mappings for localization (JSON fields)
 const quizFields = { titleJson: 'title' }
 const questionFields = { textJson: 'text', explanationJson: 'explanation' }
 const optionFields = { textJson: 'text' }
 
-// Include pattern for I18nKey values
-const i18nKeyInclude = { values: { select: { lang: true, value: true } } }
-
-// Type for quiz with optional i18n keys
+// Type for quiz with optional i18n fields
 interface QuizWithI18n {
   title?: string
   titleJson?: unknown
-  titleKey?: I18nKeyWithValues
-  titleKeyId?: string | null
   [key: string]: unknown
 }
 
 interface QuestionWithI18n {
   text?: string
   textJson?: unknown
-  textKey?: I18nKeyWithValues
-  textKeyId?: string | null
   explanation?: string | null
   explanationJson?: unknown
-  explanationKey?: I18nKeyWithValues
-  explanationKeyId?: string | null
   [key: string]: unknown
 }
 
 interface OptionWithI18n {
   text?: string
   textJson?: unknown
-  textKey?: I18nKeyWithValues
-  textKeyId?: string | null
   [key: string]: unknown
 }
 
@@ -53,16 +42,12 @@ interface OptionWithI18n {
 function localizeQuiz(quiz: QuizWithI18n, lang: Lang): Record<string, unknown> {
   const result: Record<string, unknown> = { ...quiz }
   
-  if (quiz.titleKey) {
-    result.title = getI18nKeyTranslation(quiz.titleKey, lang, quiz.title || '')
-  } else if (quiz.titleJson) {
+  if (quiz.titleJson) {
     const localized = localizeObject(quiz as Record<string, unknown>, lang, quizFields)
     result.title = localized.title
   }
   
   // Clean up internal fields
-  delete result.titleKey
-  delete result.titleKeyId
   delete result.titleJson
   
   return result
@@ -73,27 +58,19 @@ function localizeQuestion(q: QuestionWithI18n, lang: Lang): Record<string, unkno
   const result: Record<string, unknown> = { ...q }
   
   // Localize text
-  if (q.textKey) {
-    result.text = getI18nKeyTranslation(q.textKey, lang, q.text || '')
-  } else if (q.textJson) {
+  if (q.textJson) {
     const localized = localizeObject(q as Record<string, unknown>, lang, { textJson: 'text' })
     result.text = localized.text
   }
   
   // Localize explanation
-  if (q.explanationKey) {
-    result.explanation = getI18nKeyTranslation(q.explanationKey, lang, q.explanation || '')
-  } else if (q.explanationJson) {
+  if (q.explanationJson) {
     const localized = localizeObject(q as Record<string, unknown>, lang, { explanationJson: 'explanation' })
     result.explanation = localized.explanation
   }
   
   // Clean up internal fields
-  delete result.textKey
-  delete result.textKeyId
   delete result.textJson
-  delete result.explanationKey
-  delete result.explanationKeyId
   delete result.explanationJson
   
   return result
@@ -103,16 +80,12 @@ function localizeQuestion(q: QuestionWithI18n, lang: Lang): Record<string, unkno
 function localizeOption(opt: OptionWithI18n, lang: Lang): Record<string, unknown> {
   const result: Record<string, unknown> = { ...opt }
   
-  if (opt.textKey) {
-    result.text = getI18nKeyTranslation(opt.textKey, lang, opt.text || '')
-  } else if (opt.textJson) {
+  if (opt.textJson) {
     const localized = localizeObject(opt as Record<string, unknown>, lang, optionFields)
     result.text = localized.text
   }
   
   // Clean up internal fields
-  delete result.textKey
-  delete result.textKeyId
   delete result.textJson
   
   return result
@@ -124,17 +97,13 @@ router.get('/:id', requireAuth, validateId, async (req, res) => {
   const quiz = await (prisma.quiz.findUnique as any)({
     where: { id: req.params.id },
     include: {
-      titleKey: lang ? { include: i18nKeyInclude } : false,
       questions: { 
         include: { 
-          textKey: lang ? { include: i18nKeyInclude } : false,
-          explanationKey: lang ? { include: i18nKeyInclude } : false,
           options: { 
             select: { 
               id: true, 
               text: true, 
               textJson: true,
-              textKey: lang ? { include: i18nKeyInclude } : false,
               // NOTE: isCorrect is NOT included - students shouldn't see it
             } 
           } 
@@ -166,18 +135,14 @@ router.get('/:id', requireAuth, validateId, async (req, res) => {
       })),
     })
   } else {
-    // Remove i18n internal fields for non-localized response
+    // Return quiz without localization
     res.json({
       ...quiz,
       token: quizToken,
-      titleKey: undefined,
       questions: quiz.questions.map((q: any) => ({
         ...q,
-        textKey: undefined,
-        explanationKey: undefined,
         options: q.options.map((o: any) => ({
           ...o,
-          textKey: undefined,
         })),
       })),
     })
@@ -226,14 +191,13 @@ router.post(
       
       const lang = parsed.data.lang as Lang | undefined
       
-      // Fetch quiz with i18n keys for explanations
+      // Fetch quiz for explanations
       const quiz = await (prisma.quiz.findUnique as any)({
         where: { id: req.params.id },
         include: {
           questions: { 
             include: { 
               options: true, // include correctness
-              explanationKey: lang ? { include: i18nKeyInclude } : false,
             } 
           },
         },
@@ -255,9 +219,7 @@ router.post(
         }
         
         // Get localized explanation
-        if (lang && q.explanationKey) {
-          explanationMap[q.id] = getI18nKeyTranslation(q.explanationKey, lang, q.explanation || '')
-        } else if (lang && q.explanationJson) {
+        if (lang && q.explanationJson) {
           const localized = localizeObject(q as Record<string, unknown>, lang, { explanationJson: 'explanation' })
           explanationMap[q.id] = (localized.explanation as string) || ''
         } else if (q.explanation) {
@@ -335,7 +297,6 @@ router.get('/user/history', requireAuth, async (req: Request, res: Response, nex
               id: true, 
               title: true,
               titleJson: true,
-              titleKey: lang ? { include: i18nKeyInclude } : false,
             }
           }
         },
@@ -348,9 +309,7 @@ router.get('/user/history', requireAuth, async (req: Request, res: Response, nex
 
     const history = attempts.map((a: any) => {
       let quizTitle = a.quiz.title
-      if (lang && a.quiz.titleKey) {
-        quizTitle = getI18nKeyTranslation(a.quiz.titleKey, lang, a.quiz.title)
-      } else if (lang && a.quiz.titleJson) {
+      if (lang && a.quiz.titleJson) {
         quizTitle = (a.quiz.titleJson as Record<string, string>)[lang] || a.quiz.title
       }
       return {

@@ -3,59 +3,44 @@ import { Router } from 'express'
 import { prisma } from '../db'
 import { requireAuth } from '../middleware/auth'
 import { z } from 'zod'
-import { localizeObject, getI18nKeyTranslation, type I18nKeyWithValues } from '../utils/i18n'
+import { localizeObject } from '../utils/i18n'
 import type { Lang } from '@elearn/shared'
 
 const router = Router()
 
-// Include pattern for I18nKey values
-const i18nKeyInclude = { values: { select: { lang: true, value: true } } }
-
-// Type for material with optional i18n keys
+// Type for material with optional i18n fields
 interface MaterialWithI18n {
   title?: string
   titleJson?: unknown
   content?: string | null
   contentJson?: unknown
-  titleKey?: I18nKeyWithValues
-  contentKey?: I18nKeyWithValues
-  titleKeyId?: string | null
-  contentKeyId?: string | null
   [key: string]: unknown
 }
 
-// Helper to localize material using I18nKey or fallback to JSON
+// Helper to localize material using JSON fields
 function localizeMaterial<T extends MaterialWithI18n>(
   material: T,
   lang: Lang
-): Omit<T, 'titleKey' | 'contentKey' | 'titleKeyId' | 'contentKeyId' | 'titleJson' | 'contentJson'> {
+): Omit<T, 'titleJson' | 'contentJson'> {
   const result: Record<string, unknown> = { ...material }
   
-  // Localize title: prefer titleKey, fallback to titleJson/title
-  if (material.titleKey) {
-    result.title = getI18nKeyTranslation(material.titleKey, lang, material.title || '')
-  } else if (material.titleJson) {
+  // Localize title from titleJson
+  if (material.titleJson) {
     const localized = localizeObject(material as Record<string, unknown>, lang, { titleJson: 'title' })
     result.title = localized.title
   }
   
-  // Localize content: prefer contentKey, fallback to contentJson/content
-  if (material.contentKey) {
-    result.content = getI18nKeyTranslation(material.contentKey, lang, material.content || '')
-  } else if (material.contentJson) {
+  // Localize content from contentJson
+  if (material.contentJson) {
     const localized = localizeObject(material as Record<string, unknown>, lang, { contentJson: 'content' })
     result.content = localized.content
   }
   
   // Clean up internal fields from response
-  delete result.titleKey
-  delete result.contentKey
-  delete result.titleKeyId
-  delete result.contentKeyId
   delete result.titleJson
   delete result.contentJson
   
-  return result as Omit<T, 'titleKey' | 'contentKey' | 'titleKeyId' | 'contentKeyId' | 'titleJson' | 'contentJson'>
+  return result as Omit<T, 'titleJson' | 'contentJson'>
 }
 
 // Schema for query params
@@ -73,8 +58,6 @@ router.get('/', requireAuth, async (req, res) => {
     where: isStaff ? {} : { status: 'Published' },
     orderBy: { createdAt: 'desc' },
     include: {
-      titleKey: lang ? { include: i18nKeyInclude } : false,
-      contentKey: lang ? { include: i18nKeyInclude } : false,
       topic: {
         select: { id: true, name: true, slug: true }
       }
@@ -97,15 +80,12 @@ router.get('/:id', requireAuth, async (req, res) => {
   const material = await (prisma.material.findUnique as any)({
     where: { id: req.params.id },
     include: {
-      titleKey: lang ? { include: i18nKeyInclude } : false,
-      contentKey: lang ? { include: i18nKeyInclude } : false,
       topic: {
         select: { 
           id: true, 
           name: true, 
           nameJson: true,
           slug: true,
-          titleKey: lang ? { include: i18nKeyInclude } : false
         }
       },
       file: true, // Include file info for pdf/video/image
@@ -133,14 +113,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     
     // Also localize topic name if available
     let localizedTopic = material.topic
-    if (material.topic?.titleKey) {
-      localizedTopic = {
-        ...material.topic,
-        name: getI18nKeyTranslation(material.topic.titleKey, lang, material.topic.name || ''),
-      }
-      delete (localizedTopic as any).titleKey
-      delete (localizedTopic as any).nameJson
-    } else if (material.topic?.nameJson) {
+    if (material.topic?.nameJson) {
       const topicLocalized = localizeObject(material.topic, lang, { nameJson: 'name' })
       localizedTopic = { ...topicLocalized }
       delete (localizedTopic as any).nameJson
@@ -167,10 +140,6 @@ router.get('/by-topic/:topicId', requireAuth, async (req, res) => {
       ...(isStaff ? {} : { status: 'Published' }),
     },
     orderBy: { createdAt: 'asc' },
-    include: {
-      titleKey: lang ? { include: i18nKeyInclude } : false,
-      contentKey: lang ? { include: i18nKeyInclude } : false,
-    }
   })
   
   const localizedMaterials = lang
