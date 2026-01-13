@@ -41,20 +41,23 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
   const [quizzes, setQuizzes] = useState<QuizWithQuestions[]>([])
   const [loading, setLoading] = useState(false)
   
+  // Active language for multi-language editing
+  const [activeLanguage, setActiveLanguage] = useState<'UA' | 'EN' | 'PL'>('UA')
+  
   // Quiz form state
   const [quizTitle, setQuizTitle] = useState('')
   const [quizDuration, setQuizDuration] = useState(120)
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null)
 
-  // Question form state
+  // Question form state with multi-language support
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null)
-  const [questionText, setQuestionText] = useState('')
-  const [questionExplanation, setQuestionExplanation] = useState('')
+  const [questionText, setQuestionText] = useState({ UA: '', EN: '', PL: '' })
+  const [questionExplanation, setQuestionExplanation] = useState({ UA: '', EN: '', PL: '' })
   const [questionDifficulty, setQuestionDifficulty] = useState<Difficulty>('Easy')
-  const [options, setOptions] = useState<{ text: string; correct: boolean }[]>([
-    { text: '', correct: true },
-    { text: '', correct: false },
-    { text: '', correct: false },
+  const [options, setOptions] = useState<{ UA: string; EN: string; PL: string; correct: boolean }[]>([
+    { UA: '', EN: '', PL: '', correct: true },
+    { UA: '', EN: '', PL: '', correct: false },
+    { UA: '', EN: '', PL: '', correct: false },
   ])
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
 
@@ -196,11 +199,14 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
       push({ type: 'error', msg: t('editor.error.selectQuizFirst') })
       return
     }
-    if (!questionText.trim()) {
+    // At least one language must have question text
+    if (!questionText.UA.trim() && !questionText.EN.trim() && !questionText.PL.trim()) {
       push({ type: 'error', msg: t('editor.error.questionTextRequired') })
       return
     }
-    if (options.filter((o) => o.text.trim()).length < 2) {
+    // Check options (at least one language must have text for each option)
+    const validOptions = options.filter((o) => o.UA.trim() || o.EN.trim() || o.PL.trim())
+    if (validOptions.length < 2) {
       push({ type: 'error', msg: t('editor.error.minOptionsRequired') })
       return
     }
@@ -210,13 +216,17 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
     }
 
     const questionData: CreateQuestionRequest = {
-      text: questionText,
-      explanation: questionExplanation || undefined,
+      text: questionText.UA || questionText.EN || questionText.PL, // Fallback for backward compat
+      textJson: { UA: questionText.UA, EN: questionText.EN, PL: questionText.PL }, // Multi-language
+      explanation: questionExplanation.UA || questionExplanation.EN || questionExplanation.PL || undefined,
+      explanationJson: { UA: questionExplanation.UA, EN: questionExplanation.EN, PL: questionExplanation.PL },
       difficulty: questionDifficulty,
       tags: [],
-      options: options
-        .filter((o) => o.text.trim())
-        .map((o) => ({ text: o.text, correct: o.correct })),
+      options: validOptions.map((o) => ({ 
+        text: o.UA || o.EN || o.PL, // Fallback
+        textJson: { UA: o.UA, EN: o.EN, PL: o.PL }, // Multi-language
+        correct: o.correct 
+      })),
     }
 
     try {
@@ -274,13 +284,13 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
 
   // Reset question form
   const resetQuestionForm = useCallback(() => {
-    setQuestionText('')
-    setQuestionExplanation('')
+    setQuestionText({ UA: '', EN: '', PL: '' })
+    setQuestionExplanation({ UA: '', EN: '', PL: '' })
     setQuestionDifficulty('Easy')
     setOptions([
-      { text: '', correct: true },
-      { text: '', correct: false },
-      { text: '', correct: false },
+      { UA: '', EN: '', PL: '', correct: true },
+      { UA: '', EN: '', PL: '', correct: false },
+      { UA: '', EN: '', PL: '', correct: false },
     ])
     setEditingQuestionId(null)
     setActiveQuizId(null)
@@ -289,11 +299,32 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
   // Edit question
   const startEditQuestion = useCallback((quizId: string, question: QuestionWithOptions) => {
     setActiveQuizId(quizId)
-    setQuestionText(question.text)
-    setQuestionExplanation(question.explanation || '')
+    // Load multi-language text or fallback to single text
+    const textJson = question.textJson as { UA?: string; EN?: string; PL?: string } | undefined
+    setQuestionText({
+      UA: textJson?.UA || question.text || '',
+      EN: textJson?.EN || question.text || '',
+      PL: textJson?.PL || question.text || '',
+    })
+    // Load multi-language explanation or fallback
+    const explJson = question.explanationJson as { UA?: string; EN?: string; PL?: string } | undefined
+    setQuestionExplanation({
+      UA: explJson?.UA || question.explanation || '',
+      EN: explJson?.EN || question.explanation || '',
+      PL: explJson?.PL || question.explanation || '',
+    })
     setQuestionDifficulty(question.difficulty)
+    // Load multi-language options
     setOptions(
-      question.options.map((o) => ({ text: o.text, correct: o.correct || false }))
+      question.options.map((o) => {
+        const optJson = o.textJson as { UA?: string; EN?: string; PL?: string } | undefined
+        return {
+          UA: optJson?.UA || o.text || '',
+          EN: optJson?.EN || o.text || '',
+          PL: optJson?.PL || o.text || '',
+          correct: o.correct || false
+        }
+      })
     )
     setEditingQuestionId(question.id)
   }, [])
@@ -304,17 +335,17 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
     setActiveQuizId(quizId)
   }, [resetQuestionForm])
 
-  // Update option
-  const updateOption = useCallback((index: number, field: 'text' | 'correct', value: string | boolean) => {
+  // Update option (now with multi-language support)
+  const updateOption = useCallback((index: number, lang: 'UA' | 'EN' | 'PL' | 'correct', value: string | boolean) => {
     setOptions((prev) =>
       prev.map((o, i) => {
         if (i === index) {
-          if (field === 'correct' && value === true) {
+          if (lang === 'correct' && value === true) {
             return { ...o, correct: true }
           }
-          return { ...o, [field]: value }
+          return { ...o, [lang]: value }
         }
-        if (field === 'correct' && value === true) {
+        if (lang === 'correct' && value === true) {
           return { ...o, correct: false }
         }
         return o
@@ -325,7 +356,7 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
   // Add option
   const addOption = useCallback(() => {
     if (options.length < 6) {
-      setOptions((prev) => [...prev, { text: '', correct: false }])
+      setOptions((prev) => [...prev, { UA: '', EN: '', PL: '', correct: false }])
     }
   }, [options.length])
 
@@ -406,9 +437,26 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
 
       {/* Quizzes List */}
       <div className="card">
-        <h2 className="text-xl font-display font-bold mb-4 gradient-text">
-          Quizzes ({quizzes.length})
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-display font-bold gradient-text">
+            Quizzes ({quizzes.length})
+          </h2>
+          <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            {(['UA', 'EN', 'PL'] as const).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => setActiveLanguage(lang)}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                  activeLanguage === lang
+                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                {lang === 'UA' && '🇺🇦'} {lang === 'EN' && '🇬🇧'} {lang === 'PL' && '🇵🇱'} {lang}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {loading ? (
           <div className="text-center py-8 text-gray-500">{t('common.loading')}</div>
@@ -502,22 +550,29 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
                                   </span>
                                 </div>
                                 <p className="text-sm text-gray-900 dark:text-white">
-                                  {question.text}
+                                  {question.textJson 
+                                    ? (question.textJson as any)[activeLanguage] || question.text
+                                    : question.text}
                                 </p>
                                 <div className="mt-2 flex flex-wrap gap-1">
-                                  {question.options.map((opt) => (
-                                    <span
-                                      key={opt.id}
-                                      className={`text-xs px-2 py-1 rounded-lg ${
-                                        opt.correct
-                                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                                      }`}
-                                    >
-                                      {opt.correct && '✓ '}
-                                      {opt.text}
-                                    </span>
-                                  ))}
+                                  {question.options.map((opt) => {
+                                    const optText = opt.textJson 
+                                      ? (opt.textJson as any)[activeLanguage] || opt.text
+                                      : opt.text;
+                                    return (
+                                      <span
+                                        key={opt.id}
+                                        className={`text-xs px-2 py-1 rounded-lg ${
+                                          opt.correct
+                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                                        }`}
+                                      >
+                                        {opt.correct && '✓ '}
+                                        {optText}
+                                      </span>
+                                    );
+                                  })}
                                 </div>
                               </div>
                               <div className="flex items-center gap-1">
@@ -569,14 +624,31 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
             </div>
 
             <div className="p-4 space-y-4">
+              {/* Language Tabs */}
+              <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+                {(['UA', 'EN', 'PL'] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setActiveLanguage(lang)}
+                    className={`px-4 py-2 rounded-t-lg font-medium transition-colors ${
+                      activeLanguage === lang
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {lang === 'UA' ? '🇺🇦 UA' : lang === 'EN' ? '🇬🇧 EN' : '🇵🇱 PL'}
+                  </button>
+                ))}
+              </div>
+
               {/* Question Text */}
               <div>
                 <label className="block text-sm font-medium mb-1.5">
-                  {t('editor.label.questionText')}
+                  {t('editor.label.questionText')} ({activeLanguage})
                 </label>
                 <textarea
-                  value={questionText}
-                  onChange={(e) => setQuestionText(e.target.value)}
+                  value={questionText[activeLanguage]}
+                  onChange={(e) => setQuestionText(prev => ({ ...prev, [activeLanguage]: e.target.value }))}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none min-h-[80px]"
                   placeholder={t('editor.placeholder.questionText')}
                 />
@@ -585,11 +657,11 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
               {/* Explanation */}
               <div>
                 <label className="block text-sm font-medium mb-1.5">
-                  {t('editor.label.explanation')}
+                  {t('editor.label.explanation')} ({activeLanguage})
                 </label>
                 <textarea
-                  value={questionExplanation}
-                  onChange={(e) => setQuestionExplanation(e.target.value)}
+                  value={questionExplanation[activeLanguage]}
+                  onChange={(e) => setQuestionExplanation(prev => ({ ...prev, [activeLanguage]: e.target.value }))}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none min-h-[60px]"
                   placeholder={t('editor.placeholder.explanation')}
                 />
@@ -644,10 +716,10 @@ export default function QuizzesTab({ topicId }: { topicId?: string }) {
                         {opt.correct && <Check className="w-3.5 h-3.5" />}
                       </button>
                       <input
-                        value={opt.text}
-                        onChange={(e) => updateOption(idx, 'text', e.target.value)}
+                        value={opt[activeLanguage]}
+                        onChange={(e) => updateOption(idx, activeLanguage, e.target.value)}
                         className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                        placeholder={`Option ${idx + 1}`}
+                        placeholder={`Option ${idx + 1} (${activeLanguage})`}
                       />
                       {options.length > 2 && (
                         <button

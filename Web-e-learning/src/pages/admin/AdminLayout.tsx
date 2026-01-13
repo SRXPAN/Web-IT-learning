@@ -32,8 +32,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { path: '/admin', icon: BarChart3, labelKey: 'admin.dashboard' as const, end: true, roles: ['ADMIN', 'EDITOR'] },
   { path: '/admin/users', icon: Users, labelKey: 'admin.users' as const, roles: ['ADMIN'] },
-  { path: '/admin/content', icon: BookOpen, labelKey: 'admin.content' as const, roles: ['ADMIN'] },
-  { path: '/admin/topics', icon: BookOpen, labelKey: 'editor.tab.topics' as const, roles: ['ADMIN', 'EDITOR'] },
+  { path: '/admin/content', icon: BookOpen, labelKey: 'admin.content' as const, roles: ['ADMIN', 'EDITOR'] },
   { path: '/admin/files', icon: FolderOpen, labelKey: 'admin.files' as const, roles: ['ADMIN'] },
   { path: '/admin/translations', icon: Languages, labelKey: 'admin.translations' as const, roles: ['ADMIN'] },
   { path: '/admin/audit', icon: Activity, labelKey: 'admin.auditLogs' as const, roles: ['ADMIN'] },

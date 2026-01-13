@@ -456,26 +456,32 @@ export default function LessonView() {
             <div className="space-y-6">
               {/* Lesson Title */}
               <h2 className="text-2xl font-display font-bold text-neutral-900 dark:text-white">
-                {lesson?.title || t('lesson.placeholder')}
+                {lesson ? getLocalizedContent(lesson, lang).title : t('lesson.placeholder')}
               </h2>
               
               {/* Video Player */}
-              {lesson?.url && lesson.type === 'video' ? (
+              {lesson && getLocalizedContent(lesson, lang).url && lesson.type === 'video' ? (
                 <div className="aspect-video rounded-2xl overflow-hidden bg-neutral-900">
-                  {lesson.url.includes('youtube.com') || lesson.url.includes('youtu.be') ? (
-                    <iframe
-                      src={lesson.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <video
-                      src={lesson.url}
-                      controls
-                      className="w-full h-full"
-                    />
-                  )}
+                  {(() => {
+                    const videoUrl = getLocalizedContent(lesson, lang).url || ''
+                    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+                      return (
+                        <iframe
+                          src={videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      )
+                    }
+                    return (
+                      <video
+                        src={videoUrl}
+                        controls
+                        className="w-full h-full"
+                      />
+                    )
+                  })()}
                 </div>
               ) : (
                 <div className="text-center py-12">
