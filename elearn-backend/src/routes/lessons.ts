@@ -8,6 +8,11 @@ import type { Lang } from '@elearn/shared'
 
 const router = Router()
 
+// Helper to safely extract string from params (handles string | string[])
+function getParam(param: string | string[]): string {
+  return Array.isArray(param) ? param[0] : param
+}
+
 // Type for material with optional i18n fields
 interface MaterialWithI18n {
   title?: string
@@ -76,9 +81,10 @@ router.get('/:id', requireAuth, async (req, res) => {
   const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
   const parsed = querySchema.safeParse(req.query)
   const lang = parsed.success ? parsed.data.lang : undefined
+  const id = getParam(req.params.id)
   
   const material = await (prisma.material.findUnique as any)({
-    where: { id: req.params.id },
+    where: { id },
     include: {
       topic: {
         select: { 
@@ -103,7 +109,7 @@ router.get('/:id', requireAuth, async (req, res) => {
   
   // Increment view count (fire and forget)
   prisma.material.update({
-    where: { id: req.params.id },
+    where: { id },
     data: { views: { increment: 1 } }
   }).catch(() => {})
   

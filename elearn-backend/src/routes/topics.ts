@@ -6,6 +6,11 @@ import { getTopics, getTopicByIdOrSlug } from '../services/topics.service.js'
 
 const router = Router()
 
+// Helper to safely extract string from params (handles string | string[])
+function getParam(param: string | string[]): string {
+  return Array.isArray(param) ? param[0] : param
+}
+
 // Схема для валідації query параметрів
 const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -47,7 +52,7 @@ router.get('/', optionalAuth, async (req, res) => {
 router.get('/:slug', optionalAuth, async (req, res) => {
   try {
     const lang = (req.query.lang as string || 'EN').toUpperCase()
-    const { slug } = req.params
+    const slug = getParam(req.params.slug)
     const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
 
     const topic = await getTopicByIdOrSlug(slug, lang, isStaff)

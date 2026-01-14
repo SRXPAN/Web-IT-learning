@@ -10,6 +10,11 @@ import { getQuizWithToken, submitQuizAttempt, getUserQuizHistory } from '../serv
 
 const router = Router()
 
+// Helper to safely extract string from params (handles string | string[])
+function getParam(param: string | string[]): string {
+  return Array.isArray(param) ? param[0] : param
+}
+
 const submitSchema = z.object({
   token: z.string().min(1),
   answers: z.array(
@@ -24,8 +29,9 @@ const submitSchema = z.object({
 router.get('/:id', requireAuth, validateId, async (req, res) => {
   try {
     const lang = req.query.lang as Lang | undefined
+    const id = getParam(req.params.id)
     
-    const quiz = await getQuizWithToken(req.params.id, req.user!.id, lang)
+    const quiz = await getQuizWithToken(id, req.user!.id, lang)
     
     if (!quiz) {
       return res.status(404).json({ error: 'Quiz not found' })
@@ -48,8 +54,9 @@ router.post(
       if (!parsed.success)
         return res.status(400).json({ error: parsed.error.flatten() })
       
+      const id = getParam(req.params.id)
       const result = await submitQuizAttempt(
-        req.params.id, 
+        id, 
         req.user!.id, 
         parsed.data.token,
         parsed.data.answers,

@@ -16,6 +16,11 @@ import {
 
 const router = Router()
 
+// Helper to safely extract string from params (handles string | string[])
+function getParam(param: string | string[]): string {
+  return Array.isArray(param) ? param[0] : param
+}
+
 // GET /api/progress/viewed — отримати список переглянутих матеріалів
 router.get('/viewed', requireAuth, async (req, res, next) => {
   try {
@@ -46,7 +51,7 @@ router.post('/viewed', requireAuth, async (req, res, next) => {
 // GET /api/progress/viewed/:materialId — перевірити чи матеріал переглянутий
 router.get('/viewed/:materialId', requireAuth, async (req, res, next) => {
   try {
-    const viewed = await isMaterialViewed(req.user!.id, req.params.materialId)
+    const viewed = await isMaterialViewed(req.user!.id, getParam(req.params.materialId))
     res.json({ viewed })
   } catch (e) { next(e) }
 })

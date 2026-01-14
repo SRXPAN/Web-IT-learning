@@ -12,8 +12,50 @@ import { updateMaterialWithLocalization } from '../services/materials.service.js
 
 const router = Router()
 
+// Helper to safely extract string from params (handles string | string[])
+function getParam(param: string | string[]): string {
+  return Array.isArray(param) ? param[0] : param
+}
+
 // ==================== TOPICS ====================
 
+/**
+ * @openapi
+ * /api/editor/topics:
+ *   get:
+ *     tags:
+ *       - Editor
+ *     summary: Get all root topics for editing
+ *     description: Returns all root-level topics (parentId = null) for content management
+ *     security:
+ *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of root topics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     format: uuid
+ *                   name:
+ *                     type: string
+ *                   slug:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   category:
+ *                     type: string
+ *       401:
+ *         description: Unauthorized - requires EDITOR or ADMIN role
+ *       403:
+ *         description: Forbidden - insufficient permissions
+ */
 router.get('/topics', requireAuth, requireRole(['EDITOR','ADMIN']), async (_req, res) => {
   const topics = await prisma.topic.findMany({
     where: { parentId: null },
@@ -31,8 +73,43 @@ router.get('/topics', requireAuth, requireRole(['EDITOR','ADMIN']), async (_req,
 
 // ==================== MATERIALS ====================
 
+/**
+ * @openapi
+ * /api/editor/topics/{topicId}/materials:
+ *   get:
+ *     tags:
+ *       - Editor
+ *     summary: Get all materials for a topic
+ *     description: Returns all learning materials associated with a specific topic
+ *     security:
+ *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: topicId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The topic ID
+ *     responses:
+ *       200:
+ *         description: List of materials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Material'
+ *       400:
+ *         description: Invalid topic ID format
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - requires EDITOR or ADMIN role
+ */
 router.get('/topics/:topicId/materials', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
-  const { topicId } = req.params
+  const topicId = getParam(req.params.topicId)
   const mats = await prisma.material.findMany({
     where: { topicId },
     orderBy: { updatedAt: 'desc' },
@@ -41,7 +118,7 @@ router.get('/topics/:topicId/materials', requireAuth, requireRole(['EDITOR','ADM
 })
 
 router.post('/topics/:topicId/materials', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
-  const { topicId } = req.params
+  const topicId = getParam(req.params.topicId)
   const schema = z.object({
     title: z.string().min(2),
     type: z.enum(['pdf','video','link','text']),
@@ -71,8 +148,94 @@ router.post('/topics/:topicId/materials', requireAuth, requireRole(['EDITOR','AD
 })
 
 // Manual localization update: accepts flattened EN/UA/PL fields
+/**
+ * @openapi
+ * /api/editor/materials/{id}:
+ *   put:
+ *     tags:
+ *       - Editor
+ *     summary: Update material with multi-language content
+ *     description: Update a learning material with localized content for EN, UA, and PL languages. All language fields are stored in JSON cache.
+ *     security:
+ *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The material ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - type
+ *               - titleEN
+ *             properties:
+ *               type:
+ *                 type: string
+ *                 enum: [VIDEO, TEXT, PDF, LINK]
+ *               titleEN:
+ *                 type: string
+ *                 description: English title (required, used as fallback)
+ *               titleUA:
+ *                 type: string
+ *                 description: Ukrainian title (optional)
+ *               titlePL:
+ *                 type: string
+ *                 description: Polish title (optional)
+ *               linkEN:
+ *                 type: string
+ *                 format: uri
+ *                 description: English URL (for VIDEO/LINK types)
+ *               linkUA:
+ *                 type: string
+ *                 format: uri
+ *                 description: Ukrainian URL
+ *               linkPL:
+ *                 type: string
+ *                 format: uri
+ *                 description: Polish URL
+ *               contentEN:
+ *                 type: string
+ *                 description: English content (for TEXT type)
+ *               contentUA:
+ *                 type: string
+ *                 description: Ukrainian content
+ *               contentPL:
+ *                 type: string
+ *                 description: Polish content
+ *           example:
+ *             type: VIDEO
+ *             titleEN: Introduction to TypeScript
+ *             titleUA: Вступ до TypeScript
+ *             titlePL: Wprowadzenie do TypeScript
+ *             linkEN: https://youtube.com/watch?v=example_en
+ *             linkUA: https://youtube.com/watch?v=example_ua
+ *             linkPL: https://youtube.com/watch?v=example_pl
+ *     responses:
+ *       200:
+ *         description: Material updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Material'
+ *       400:
+ *         description: Invalid input or validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - requires EDITOR or ADMIN role
+ *       404:
+ *         description: Material not found
+ */
 router.put('/materials/:id', requireEditor, async (req, res) => {
-  const { id } = req.params
+  const id = getParam(req.params.id)
   const { 
     type, 
     titleEN, titleUA, titlePL,
@@ -97,7 +260,8 @@ router.put('/materials/:id', requireEditor, async (req, res) => {
 })
 
 router.delete('/topics/:topicId/materials/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
-  const { topicId, id } = req.params
+  const topicId = getParam(req.params.topicId)
+  const id = getParam(req.params.id)
   await prisma.material.delete({ where: { id } })
   logger.audit(req.user?.id ?? 'unknown', 'material.delete', { id, topicId })
   res.json({ ok: true })
@@ -106,7 +270,7 @@ router.delete('/topics/:topicId/materials/:id', requireAuth, requireRole(['EDITO
 // ==================== QUIZZES ====================
 
 router.get('/topics/:topicId/quizzes', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
-  const { topicId } = req.params
+  const topicId = getParam(req.params.topicId)
   const quizzes = await prisma.quiz.findMany({
     where: { topicId },
     orderBy: { updatedAt: 'desc' },
@@ -116,7 +280,7 @@ router.get('/topics/:topicId/quizzes', requireAuth, requireRole(['EDITOR','ADMIN
 })
 
 router.post('/topics/:topicId/quizzes', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
-  const { topicId } = req.params
+  const topicId = getParam(req.params.topicId)
   const schema = z.object({
     title: z.string().min(2),
     durationSec: z.number().int().min(10).max(3600),
@@ -140,7 +304,8 @@ router.post('/topics/:topicId/quizzes', requireAuth, requireRole(['EDITOR','ADMI
 })
 
 router.put('/topics/:topicId/quizzes/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
-  const { topicId, id } = req.params
+  const topicId = getParam(req.params.topicId)
+  const id = getParam(req.params.id)
   const schema = z.object({
     title: z.string().min(2).optional(),
     durationSec: z.number().int().min(10).max(3600).optional(),
@@ -163,7 +328,8 @@ router.put('/topics/:topicId/quizzes/:id', requireAuth, requireRole(['EDITOR','A
 })
 
 router.delete('/topics/:topicId/quizzes/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
-  const { topicId, id } = req.params
+  const topicId = getParam(req.params.topicId)
+  const id = getParam(req.params.id)
   await prisma.quiz.delete({ where: { id } })
   logger.audit(req.user?.id ?? 'unknown', 'quiz.delete', { id, topicId })
   res.json({ ok: true })
@@ -173,7 +339,7 @@ router.delete('/topics/:topicId/quizzes/:id', requireAuth, requireRole(['EDITOR'
 
 // Get questions for a quiz
 router.get('/quizzes/:quizId/questions', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
-  const { quizId } = req.params
+  const quizId = getParam(req.params.quizId)
   const questions = await prisma.question.findMany({
     where: { quizId },
     orderBy: { id: 'asc' },
@@ -189,7 +355,7 @@ router.get('/quizzes/:quizId/questions', requireAuth, requireRole(['EDITOR','ADM
 
 // Create question
 router.post('/quizzes/:quizId/questions', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
-  const { quizId } = req.params
+  const quizId = getParam(req.params.quizId)
   const schema = z.object({
     text: z.string().min(5),
     textJson: z.object({
@@ -249,7 +415,8 @@ router.post('/quizzes/:quizId/questions', requireAuth, requireRole(['EDITOR','AD
 
 // Update question
 router.put('/quizzes/:quizId/questions/:id', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
-  const { quizId, id } = req.params
+  const quizId = getParam(req.params.quizId)
+  const id = getParam(req.params.id)
   const schema = z.object({
     text: z.string().min(5).optional(),
     textJson: z.object({
@@ -318,7 +485,8 @@ router.put('/quizzes/:quizId/questions/:id', requireAuth, requireRole(['EDITOR',
 
 // Delete question
 router.delete('/quizzes/:quizId/questions/:id', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
-  const { quizId, id } = req.params
+  const quizId = getParam(req.params.quizId)
+  const id = getParam(req.params.id)
   await prisma.question.delete({ where: { id } })
   logger.audit(req.user?.id ?? 'unknown', 'question.delete', { id, quizId })
   res.json({ ok: true })

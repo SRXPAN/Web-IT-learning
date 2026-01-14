@@ -13,7 +13,14 @@ import { ok, created, badRequest, notFound, forbidden, serverError, conflict } f
 import { auditLog, AuditActions, AuditResources } from '../services/audit.service'
 import { z } from 'zod'
 import { emailSchema, nameSchema, passwordSchemaSimple } from '../utils/validation'
+import { logger } from '../utils/logger.js'
+
 const router = Router()
+
+// Helper to safely extract string from params (handles string | string[])
+function getParam(param: string | string[]): string {
+  return Array.isArray(param) ? param[0] : param
+}
 
 // All admin routes require auth
 router.use(requireAuth)
@@ -217,7 +224,7 @@ router.get('/users', async (req: Request, res: Response) => {
  */
 router.get('/users/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params
+    const id = getParam(req.params.id)
 
     const user = await prisma.user.findUnique({
       where: { id },
@@ -258,7 +265,7 @@ router.get('/users/:id', async (req: Request, res: Response) => {
  */
 router.put('/users/:id/role', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params
+    const id = getParam(req.params.id)
     const { role } = req.body
 
     if (!role || !['STUDENT', 'EDITOR', 'ADMIN'].includes(role)) {
@@ -304,7 +311,7 @@ router.put('/users/:id/role', async (req: Request, res: Response) => {
  */
 router.put('/users/:id/verify', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params
+    const id = getParam(req.params.id)
 
     const user = await prisma.user.findUnique({ where: { id } })
     if (!user) {
@@ -394,7 +401,7 @@ router.post('/users', async (req: Request, res: Response) => {
  */
 router.delete('/users/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params
+    const id = getParam(req.params.id)
 
     // Prevent self-deletion
     if (id === req.user!.id) {
@@ -599,7 +606,7 @@ router.post('/content/topics', async (req: Request, res: Response) => {
  */
 router.put('/content/topics/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params
+    const id = getParam(req.params.id)
     const { slug, name, nameJson, description, descJson, category, parentId, status, publishedAt } = req.body
 
     const existing = await prisma.topic.findUnique({ where: { id } })
@@ -653,7 +660,7 @@ router.put('/content/topics/:id', async (req: Request, res: Response) => {
  */
 router.delete('/content/topics/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params
+    const id = getParam(req.params.id)
 
     const topic = await prisma.topic.findUnique({
       where: { id },

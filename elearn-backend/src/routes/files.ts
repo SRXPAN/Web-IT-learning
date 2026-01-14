@@ -21,6 +21,11 @@ import { auditLog } from '../services/audit.service'
 import { logger } from '../utils/logger.js'
 const router = Router()
 
+// Helper to safely extract string from params (handles string | string[])
+function getParam(param: string | string[]): string {
+  return Array.isArray(param) ? param[0] : param
+}
+
 /**
  * POST /files/presign-upload
  * Get presigned URL for direct upload to S3/R2
@@ -151,7 +156,7 @@ router.post('/confirm', requireAuth, async (req: Request, res: Response) => {
  */
 router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params
+    const id = getParam(req.params.id)
 
     const file = await prisma.file.findUnique({
       where: { id },
@@ -197,7 +202,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
  */
 router.get('/:id/download', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params
+    const id = getParam(req.params.id)
 
     const file = await prisma.file.findUnique({
       where: { id },
@@ -230,7 +235,7 @@ router.get('/:id/download', requireAuth, async (req: Request, res: Response) => 
  */
 router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params
+    const id = getParam(req.params.id)
 
     const file = await prisma.file.findUnique({
       where: { id },

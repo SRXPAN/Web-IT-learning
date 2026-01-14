@@ -84,10 +84,86 @@ function getBadges(xp: number): string[] {
 // AUTH ROUTES
 // ============================================
 
-// GET /api/auth/csrf — отримати CSRF токен
+/**
+ * @openapi
+ * /api/auth/csrf:
+ *   get:
+ *     tags:
+ *       - Authentication
+ *     summary: Get CSRF token
+ *     description: Returns a CSRF token that must be included in all mutating requests
+ *     responses:
+ *       200:
+ *         description: CSRF token generated successfully
+ *         headers:
+ *           X-CSRF-Token:
+ *             schema:
+ *               type: string
+ *             description: CSRF token to include in subsequent requests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 csrfToken:
+ *                   type: string
+ */
 router.get('/csrf', setCsrfToken)
 
-// GET /api/auth/me — поточний користувач
+/**
+ * @openapi
+ * /api/auth/me:
+ *   get:
+ *     tags:
+ *       - Authentication
+ *     summary: Get current user profile
+ *     description: Returns the currently authenticated user's profile information
+ *     security:
+ *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   format: uuid
+ *                 name:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *                 role:
+ *                   type: string
+ *                   enum: [STUDENT, EDITOR, ADMIN]
+ *                 xp:
+ *                   type: integer
+ *                 avatarId:
+ *                   type: string
+ *                   nullable: true
+ *                 emailVerified:
+ *                   type: boolean
+ *                 avatarFile:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     key:
+ *                       type: string
+ *                     mimeType:
+ *                       type: string
+ *       401:
+ *         description: Unauthorized - invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/me', requireAuth, async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
@@ -108,7 +184,68 @@ router.get('/me', requireAuth, async (req, res, next) => {
   } catch (e) { next(e) }
 })
 
-// POST /api/auth/register — реєстрація
+/**
+ * @openapi
+ * /api/auth/register:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Register a new user
+ *     description: Create a new student account with email verification
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - name
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: student@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 minLength: 8
+ *                 example: SecurePass123!
+ *               name:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 100
+ *                 example: John Doe
+ *     responses:
+ *       200:
+ *         description: User registered successfully
+ *         headers:
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *             description: Authentication cookies (elearn_token, elearn_refresh_token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 message:
+ *                   type: string
+ *                   example: Registration successful. Please verify your email.
+ *       400:
+ *         description: Validation error or user already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/Error'
+ *                 - $ref: '#/components/schemas/ValidationError'
+ *       429:
+ *         description: Too many registration attempts
+ */
 router.post('/register', authLimiter, async (req, res, next) => {
   try {
     const parsed = registerSchema.safeParse(req.body)
@@ -134,7 +271,67 @@ router.post('/register', authLimiter, async (req, res, next) => {
   }
 })
 
-// POST /api/auth/login — вхід
+/**
+ * @openapi
+ * /api/auth/login:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Login with email and password
+ *     description: Authenticate a user and receive access/refresh tokens
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: student@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: SecurePass123!
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         headers:
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *             description: Authentication cookies (elearn_token, elearn_refresh_token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 badges:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ['first_steps', 'rising_star']
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ *       401:
+ *         description: Invalid credentials or unverified email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         description: Too many login attempts
+ */
 router.post('/login', authLimiter, async (req, res, next) => {
   try {
     const parsed = loginSchema.safeParse(req.body)

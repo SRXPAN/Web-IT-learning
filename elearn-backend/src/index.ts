@@ -20,6 +20,7 @@ import adminRouter from './routes/admin.js'
 import { generalLimiter, authLimiter, webhookLimiter } from './middleware/rateLimit.js'
 import { validateCsrf } from './middleware/csrf.js'
 import { sanitize } from './middleware/sanitize.js'
+import { swaggerSpec } from './swagger.js'
 
 const app = express()
 
@@ -92,6 +93,10 @@ app.use('/api', generalLimiter)
 
 // --- Healthcheck без auth ---
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
+
+// --- API Documentation (OpenAPI JSON) ---
+app.get('/api-docs', (_req, res) => res.json(swaggerSpec))
+app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec))
 
 // --- Auth роути з селективним лімітом (5 спроб за 15 хв) ---
 app.use('/api/auth', authLimiter, authRouter)
