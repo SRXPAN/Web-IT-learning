@@ -33,7 +33,15 @@ export default function LessonView() {
   const currentLang = (lang || 'EN').toUpperCase()
 
   const getLocalizedUrl = (material: { url?: string | null; urlCache?: Record<string, string> | null }) => {
-    return material.urlCache?.[currentLang] || material.urlCache?.['EN'] || material.url || ''
+    if (!material) return ''
+    if (material.urlCache && material.urlCache[currentLang]) return material.urlCache[currentLang]
+    if (material.urlCache && material.urlCache['EN']) return material.urlCache['EN']
+    return material.url || ''
+  }
+
+  const getLocalizedTitle = (material: { title?: string | null; titleCache?: Record<string, string> | null }) => {
+    if (!material) return ''
+    return material.titleCache?.[currentLang] || material.titleCache?.['EN'] || material.title || ''
   }
 
   const mockQuestion: Question = {
@@ -57,6 +65,9 @@ export default function LessonView() {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [showExplanation, setShowExplanation] = useState(false)
   const [timeLeft, setTimeLeft] = useState(120) // секунди для екзамену
+
+  const activeUrl = lesson ? getLocalizedUrl(lesson) : ''
+  const activeTitle = lesson ? getLocalizedTitle(lesson) : ''
 
   // Fetch lesson data from API
   useEffect(() => {
@@ -406,7 +417,7 @@ export default function LessonView() {
             <div className="space-y-6">
               {/* Lesson Title */}
               <h2 className="text-2xl font-display font-bold text-neutral-900 dark:text-white">
-                {lesson ? getLocalizedContent(lesson, lang).title : t('lesson.placeholder')}
+                {lesson ? activeTitle : t('lesson.placeholder')}
               </h2>
               
               {/* Lesson Content */}
@@ -423,7 +434,7 @@ export default function LessonView() {
                     <>
                       <FileText size={48} className="text-primary-600 dark:text-primary-400" />
                       <a 
-                        href={getLocalizedUrl(lesson) || lesson.url || ''} 
+                        href={activeUrl || lesson.url || ''} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="btn"
@@ -435,7 +446,7 @@ export default function LessonView() {
                     <>
                       <LinkIcon size={48} className="text-primary-600 dark:text-primary-400" />
                       <a 
-                        href={getLocalizedUrl(lesson) || lesson.url || ''} 
+                        href={activeUrl || lesson.url || ''} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="btn"
@@ -461,14 +472,14 @@ export default function LessonView() {
             <div className="space-y-6">
               {/* Lesson Title */}
               <h2 className="text-2xl font-display font-bold text-neutral-900 dark:text-white">
-                {lesson ? getLocalizedContent(lesson, lang).title : t('lesson.placeholder')}
+                {lesson ? activeTitle : t('lesson.placeholder')}
               </h2>
               
               {/* Video Player */}
-              {lesson && getLocalizedUrl(lesson) && lesson.type === 'video' ? (
+              {lesson && activeUrl && lesson.type === 'video' ? (
                 <div className="aspect-video rounded-2xl overflow-hidden bg-neutral-900">
                   {(() => {
-                    const videoUrl = getLocalizedUrl(lesson) || ''
+                    const videoUrl = activeUrl || ''
                     if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
                       return (
                         <iframe
