@@ -40,7 +40,7 @@ import {
 import { validateImageBase64 } from '../utils/imageValidation.js'
 import { logger } from '../utils/logger.js'
 import { deleteFile } from '../services/storage.service.js'
-import { compare, hash, genSalt } from 'bcryptjs';
+import bcrypt from 'bcryptjs'
 const router = Router()
 
 // ============================================
@@ -333,7 +333,7 @@ router.put('/email', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'User not found' })
     }
     
-    const isValid = await compare(password, user.password)
+    const isValid = await bcrypt.compare(password, user.password)
     if (!isValid) {
       return res.status(400).json({ error: 'Incorrect password' })
     }

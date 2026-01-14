@@ -48,12 +48,12 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       
-      # Stripe & Mail (заповни в .env файлі)
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID}
-      MAILTRAP_USER: ${MAILTRAP_USER}
-      MAILTRAP_PASS: ${MAILTRAP_PASS}
+      # Stripe & Mail (required - set in .env file)
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY?Variable 'STRIPE_SECRET_KEY' not set}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET?Variable 'STRIPE_WEBHOOK_SECRET' not set}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID?Variable 'STRIPE_PRICE_ID' not set}
+      MAILTRAP_USER: ${MAILTRAP_USER?Variable 'MAILTRAP_USER' not set}
+      MAILTRAP_PASS: ${MAILTRAP_PASS?Variable 'MAILTRAP_PASS' not set}
 
 volumes:
   postgres_data:

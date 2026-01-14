@@ -8,6 +8,7 @@ import { z } from 'zod'
 import type { Category, Lang, Status, Difficulty } from '@elearn/shared'
 import type { Prisma } from '@prisma/client'
 import { logger } from '../utils/logger.js'
+import { updateMaterialWithLocalization } from '../services/materials.service.js'
 
 const router = Router()
 
@@ -80,22 +81,15 @@ router.put('/materials/:id', requireEditor, async (req, res) => {
   } = req.body
 
   try {
-    await prisma.material.update({
-      where: { id },
-      data: {
-        type,
-        // Legacy fields (Fallback to EN)
-        title: titleEN || 'Untitled',
-        url: linkEN,
-        content: contentEN,
-
-        // JSON Cache fields (The real localization)
-        titleCache: { EN: titleEN, UA: titleUA, PL: titlePL },
-        urlCache:   { EN: linkEN,  UA: linkUA,  PL: linkPL },
-        contentCache: { EN: contentEN, UA: contentUA, PL: contentPL }
-      }
+    const updated = await updateMaterialWithLocalization(id, {
+      type,
+      titleEN, titleUA, titlePL,
+      linkEN, linkUA, linkPL,
+      contentEN, contentUA, contentPL
     })
-    res.json({ success: true })
+    
+    logger.audit(req.user?.id ?? 'unknown', 'material.update_localization', { id })
+    res.json({ success: true, material: updated })
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: 'Update failed' })

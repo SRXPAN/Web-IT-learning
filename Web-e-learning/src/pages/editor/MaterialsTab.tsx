@@ -64,9 +64,30 @@ export default function MaterialsTab({ topicId }: { topicId?: string }) {
     })
   }
 
+  // URL validation helper
+  const isValidUrl = (str: string) => {
+    if (!str) return true // Empty is OK
+    try { 
+      new URL(str)
+      return true
+    } catch(e) { 
+      return false
+    }
+  }
+
   // Save Changes: Flatten State (Form State -> API Payload)
   const handleSave = async () => {
     if (!editingId) return
+
+    // Validate URLs for all languages
+    const langs: Lang[] = ['EN', 'UA', 'PL']
+    for (const lang of langs) {
+      const url = formData[lang].url
+      if (url && !isValidUrl(url)) {
+        alert(`Invalid URL for ${lang}: ${url}`)
+        return
+      }
+    }
 
     // Construct the payload expected by the updated backend
     const payload = {
