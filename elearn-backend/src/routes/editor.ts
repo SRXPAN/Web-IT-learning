@@ -1,10 +1,13 @@
 // src/routes/editor.ts
-import { Router } from 'express'
-import { prisma } from '../db'
-import { requireAuth, requireRole } from '../middleware/auth'
-import { validateId, validateTopicId, validateTopicAndId } from '../middleware/validateParams.js'
+import { Router, Request, Response } from 'express'
+import { prisma } from '../db.js'
+import { requireAuth, requireRole } from '../middleware/auth.js'
 import { requireEditor } from '../middleware/requireEditor.js'
+import { asyncHandler, AppError } from '../middleware/errorHandler.js'
+import { validateResource } from '../middleware/validateResource.js'
+import { materialSchemas } from '../schemas/material.schema.js'
 import { z } from 'zod'
+import { ok } from '../utils/response.js'
 import type { Category, Lang, Status, Difficulty } from '@elearn/shared'
 import type { Prisma } from '@prisma/client'
 import { logger } from '../utils/logger.js'
@@ -56,20 +59,25 @@ function getParam(param: string | string[]): string {
  *       403:
  *         description: Forbidden - insufficient permissions
  */
-router.get('/topics', requireAuth, requireRole(['EDITOR','ADMIN']), async (_req, res) => {
-  const topics = await prisma.topic.findMany({
-    where: { parentId: null },
-    orderBy: { name: 'asc' },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      category: true
-    }
+router.get(
+  '/topics',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  asyncHandler(async (_req: Request, res: Response) => {
+    const topics = await prisma.topic.findMany({
+      where: { parentId: null },
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        category: true,
+      },
+    })
+    return ok(res, topics)
   })
-  res.json(topics)
-})
+)
 
 // ==================== MATERIALS ====================
 
@@ -108,44 +116,55 @@ router.get('/topics', requireAuth, requireRole(['EDITOR','ADMIN']), async (_req,
  *       403:
  *         description: Forbidden - requires EDITOR or ADMIN role
  */
-router.get('/topics/:topicId/materials', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
-  const topicId = getParam(req.params.topicId)
-  const mats = await prisma.material.findMany({
-    where: { topicId },
-    orderBy: { updatedAt: 'desc' },
+router.get(
+  '/topics/:topicId/materials',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  validateResource(z.object({ topicId: z.string().uuid() }), 'params'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const topicId = getParam(req.params.topicId)
+    const mats = await prisma.material.findMany({
+      where: { topicId },
+      orderBy: { updatedAt: 'desc' },
+    })
+    return ok(res, mats)
   })
-  res.json(mats)
-})
+)
 
-router.post('/topics/:topicId/materials', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
-  const topicId = getParam(req.params.topicId)
-  const schema = z.object({
-    title: z.string().min(2),
-    type: z.enum(['pdf','video','link','text']),
-    url: z.string().url().optional(),
-    content: z.string().optional(),
-    lang: z.enum(['UA','PL','EN']).default('EN'),
-    publish: z.boolean().optional(),
+router.post(
+  '/topics/:topicId/materials',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  validateResource(z.object({ topicId: z.string().uuid() }), 'params'),
+  validateResource(
+    z.object({
+      title: z.string().min(2),
+      type: z.enum(['pdf', 'video', 'link', 'text']),
+      url: z.string().url().optional(),
+      content: z.string().optional(),
+      lang: z.enum(['UA', 'PL', 'EN']).default('EN'),
+      publish: z.boolean().optional(),
+    }),
+    'body'
+  ),
+  asyncHandler(async (req: Request, res: Response) => {
+    const topicId = getParam(req.params.topicId)
+    const data: Prisma.MaterialCreateInput = {
+      title: req.body.title,
+      type: req.body.type,
+      url: req.body.url,
+      content: req.body.content,
+      lang: req.body.lang,
+      topic: { connect: { id: topicId } },
+      status: req.body.publish ? 'Published' : 'Draft',
+      publishedAt: req.body.publish ? new Date() : null,
+    }
+
+    const mat = await prisma.material.create({ data })
+    logger.audit(req.user?.id ?? 'unknown', 'material.create', { id: mat.id, topicId })
+    return ok(res, mat)
   })
-
-  const parsed = schema.safeParse(req.body)
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
-
-  const data: Prisma.MaterialCreateInput = {
-    title: parsed.data.title,
-    type: parsed.data.type,
-    url: parsed.data.url,
-    content: parsed.data.content,
-    lang: parsed.data.lang,
-    topic: { connect: { id: topicId } },
-    status: parsed.data.publish ? 'Published' : 'Draft',
-    publishedAt: parsed.data.publish ? new Date() : null,
-  }
-
-  const mat = await prisma.material.create({ data })
-  logger.audit(req.user?.id ?? 'unknown', 'material.create', { id: mat.id, topicId })
-  res.json(mat)
-})
+)
 
 // Manual localization update: accepts flattened EN/UA/PL fields
 /**
@@ -234,262 +253,290 @@ router.post('/topics/:topicId/materials', requireAuth, requireRole(['EDITOR','AD
  *       404:
  *         description: Material not found
  */
-router.put('/materials/:id', requireEditor, async (req, res) => {
-  const id = getParam(req.params.id)
-  const { 
-    type, 
-    titleEN, titleUA, titlePL,
-    linkEN, linkUA, linkPL,
-    contentEN, contentUA, contentPL
-  } = req.body
-
-  try {
-    const updated = await updateMaterialWithLocalization(id, {
-      type,
-      titleEN, titleUA, titlePL,
-      linkEN, linkUA, linkPL,
-      contentEN, contentUA, contentPL
-    })
-    
+router.put(
+  '/materials/:id',
+  requireEditor,
+  validateResource(materialSchemas.idParam, 'params'),
+  validateResource(materialSchemas.updateTranslations, 'body'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = getParam(req.params.id)
+    const updated = await updateMaterialWithLocalization(id, req.body)
     logger.audit(req.user?.id ?? 'unknown', 'material.update_localization', { id })
-    res.json({ success: true, material: updated })
-  } catch (e) {
-    console.error(e)
-    res.status(500).json({ error: 'Update failed' })
-  }
-})
+    return ok(res, { success: true, material: updated })
+  })
+)
 
-router.delete('/topics/:topicId/materials/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
-  const topicId = getParam(req.params.topicId)
-  const id = getParam(req.params.id)
-  await prisma.material.delete({ where: { id } })
-  logger.audit(req.user?.id ?? 'unknown', 'material.delete', { id, topicId })
-  res.json({ ok: true })
-})
+router.delete(
+  '/topics/:topicId/materials/:id',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  validateResource(z.object({ topicId: z.string().uuid(), id: z.string().uuid() }), 'params'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const topicId = getParam(req.params.topicId)
+    const id = getParam(req.params.id)
+    await prisma.material.delete({ where: { id } })
+    logger.audit(req.user?.id ?? 'unknown', 'material.delete', { id, topicId })
+    return ok(res, { ok: true })
+  })
+)
 
 // ==================== QUIZZES ====================
 
-router.get('/topics/:topicId/quizzes', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
-  const topicId = getParam(req.params.topicId)
-  const quizzes = await prisma.quiz.findMany({
-    where: { topicId },
-    orderBy: { updatedAt: 'desc' },
-    select: { id: true, title: true, durationSec: true, status: true, updatedAt: true }
+router.get(
+  '/topics/:topicId/quizzes',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  validateResource(z.object({ topicId: z.string().uuid() }), 'params'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const topicId = getParam(req.params.topicId)
+    const quizzes = await prisma.quiz.findMany({
+      where: { topicId },
+      orderBy: { updatedAt: 'desc' },
+      select: { id: true, title: true, durationSec: true, status: true, updatedAt: true },
+    })
+    return ok(res, quizzes)
   })
-  res.json(quizzes)
-})
+)
 
-router.post('/topics/:topicId/quizzes', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicId, async (req, res) => {
-  const topicId = getParam(req.params.topicId)
-  const schema = z.object({
-    title: z.string().min(2),
-    durationSec: z.number().int().min(10).max(3600),
-    publish: z.boolean().optional()
+router.post(
+  '/topics/:topicId/quizzes',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  validateResource(z.object({ topicId: z.string().uuid() }), 'params'),
+  validateResource(
+    z.object({
+      title: z.string().min(2),
+      durationSec: z.number().int().min(10).max(3600),
+      publish: z.boolean().optional(),
+    }),
+    'body'
+  ),
+  asyncHandler(async (req: Request, res: Response) => {
+    const topicId = getParam(req.params.topicId)
+    const data: Prisma.QuizCreateInput = {
+      title: req.body.title,
+      durationSec: req.body.durationSec,
+      topic: { connect: { id: topicId } },
+      createdBy: req.user?.id ? { connect: { id: req.user.id } } : undefined,
+      status: req.body.publish ? 'Published' : 'Draft',
+      publishedAt: req.body.publish ? new Date() : null,
+    }
+
+    const quiz = await prisma.quiz.create({ data })
+    logger.audit(req.user?.id ?? 'unknown', 'quiz.create', { id: quiz.id, topicId })
+    return ok(res, quiz)
   })
-  const parsed = schema.safeParse(req.body)
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
+)
 
-  const data: Prisma.QuizCreateInput = {
-    title: parsed.data.title,
-    durationSec: parsed.data.durationSec,
-    topic: { connect: { id: topicId } },
-    createdBy: req.user?.id ? { connect: { id: req.user.id } } : undefined,
-    status: parsed.data.publish ? 'Published' : 'Draft',
-    publishedAt: parsed.data.publish ? new Date() : null,
-  }
+router.put(
+  '/topics/:topicId/quizzes/:id',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  validateResource(z.object({ topicId: z.string().uuid(), id: z.string().uuid() }), 'params'),
+  validateResource(
+    z.object({
+      title: z.string().min(2).optional(),
+      durationSec: z.number().int().min(10).max(3600).optional(),
+      publish: z.boolean().optional(),
+      status: z.enum(['Draft', 'Published']).optional(),
+    }),
+    'body'
+  ),
+  asyncHandler(async (req: Request, res: Response) => {
+    const topicId = getParam(req.params.topicId)
+    const id = getParam(req.params.id)
+    const data: Prisma.QuizUpdateInput = { ...req.body }
+    if (typeof req.body.publish === 'boolean') {
+      data.status = req.body.publish ? 'Published' : 'Draft'
+      data.publishedAt = req.body.publish ? new Date() : null
+      delete (data as Record<string, unknown>).publish
+    }
 
-  const quiz = await prisma.quiz.create({ data })
-  logger.audit(req.user?.id ?? 'unknown', 'quiz.create', { id: quiz.id, topicId })
-  res.json(quiz)
-})
-
-router.put('/topics/:topicId/quizzes/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
-  const topicId = getParam(req.params.topicId)
-  const id = getParam(req.params.id)
-  const schema = z.object({
-    title: z.string().min(2).optional(),
-    durationSec: z.number().int().min(10).max(3600).optional(),
-    publish: z.boolean().optional(),
-    status: z.enum(['Draft','Published']).optional(),
+    const quiz = await prisma.quiz.update({ where: { id }, data })
+    logger.audit(req.user?.id ?? 'unknown', 'quiz.update', { id, topicId })
+    return ok(res, quiz)
   })
-  const parsed = schema.safeParse(req.body)
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
+)
 
-  const data: Prisma.QuizUpdateInput = { ...parsed.data }
-  if (typeof parsed.data.publish === 'boolean') {
-    data.status = parsed.data.publish ? 'Published' : 'Draft'
-    data.publishedAt = parsed.data.publish ? new Date() : null
-    delete (data as Record<string, unknown>).publish
-  }
-
-  const quiz = await prisma.quiz.update({ where: { id }, data })
-  logger.audit(req.user?.id ?? 'unknown', 'quiz.update', { id, topicId })
-  res.json(quiz)
-})
-
-router.delete('/topics/:topicId/quizzes/:id', requireAuth, requireRole(['EDITOR','ADMIN']), validateTopicAndId, async (req, res) => {
-  const topicId = getParam(req.params.topicId)
-  const id = getParam(req.params.id)
-  await prisma.quiz.delete({ where: { id } })
-  logger.audit(req.user?.id ?? 'unknown', 'quiz.delete', { id, topicId })
-  res.json({ ok: true })
-})
+router.delete(
+  '/topics/:topicId/quizzes/:id',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  validateResource(z.object({ topicId: z.string().uuid(), id: z.string().uuid() }), 'params'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const topicId = getParam(req.params.topicId)
+    const id = getParam(req.params.id)
+    await prisma.quiz.delete({ where: { id } })
+    logger.audit(req.user?.id ?? 'unknown', 'quiz.delete', { id, topicId })
+    return ok(res, { ok: true })
+  })
+)
 
 // ==================== QUESTIONS ====================
 
 // Get questions for a quiz
-router.get('/quizzes/:quizId/questions', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
-  const quizId = getParam(req.params.quizId)
-  const questions = await prisma.question.findMany({
-    where: { quizId },
-    orderBy: { id: 'asc' },
-    include: {
-      options: {
-        orderBy: { id: 'asc' },
-        select: { id: true, text: true, textJson: true, correct: true }
-      }
-    }
+router.get(
+  '/quizzes/:quizId/questions',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  validateResource(z.object({ quizId: z.string().uuid() }), 'params'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const quizId = getParam(req.params.quizId)
+    const questions = await prisma.question.findMany({
+      where: { quizId },
+      orderBy: { id: 'asc' },
+      include: {
+        options: {
+          orderBy: { id: 'asc' },
+          select: { id: true, text: true, textJson: true, correct: true },
+        },
+      },
+    })
+    return ok(res, questions)
   })
-  res.json(questions)
-})
+)
 
 // Create question
-router.post('/quizzes/:quizId/questions', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
-  const quizId = getParam(req.params.quizId)
-  const schema = z.object({
-    text: z.string().min(5),
-    textJson: z.object({
-      UA: z.string().optional(),
-      PL: z.string().optional(),
-      EN: z.string().optional(),
-    }).optional(),
-    explanation: z.string().optional(),
-    explanationJson: z.object({
-      UA: z.string().optional(),
-      PL: z.string().optional(),
-      EN: z.string().optional(),
-    }).optional(),
-    difficulty: z.enum(['Easy', 'Medium', 'Hard']).default('Easy'),
-    tags: z.array(z.string()).default([]),
-    options: z.array(z.object({
-      text: z.string().min(1),
-      textJson: z.object({
-        UA: z.string().optional(),
-        PL: z.string().optional(),
-        EN: z.string().optional(),
-      }).optional(),
-      correct: z.boolean().default(false)
-    })).min(2).max(6)
+router.post(
+  '/quizzes/:quizId/questions',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  validateResource(z.object({ quizId: z.string().uuid() }), 'params'),
+  validateResource(
+    z.object({
+      text: z.string().min(5),
+      textJson: z.object({ UA: z.string().optional(), PL: z.string().optional(), EN: z.string().optional() }).optional(),
+      explanation: z.string().optional(),
+      explanationJson: z.object({ UA: z.string().optional(), PL: z.string().optional(), EN: z.string().optional() }).optional(),
+      difficulty: z.enum(['Easy', 'Medium', 'Hard']).default('Easy'),
+      tags: z.array(z.string()).default([]),
+      options: z
+        .array(
+          z.object({
+            text: z.string().min(1),
+            textJson: z
+              .object({ UA: z.string().optional(), PL: z.string().optional(), EN: z.string().optional() })
+              .optional(),
+            correct: z.boolean().default(false),
+          })
+        )
+        .min(2)
+        .max(6),
+    }),
+    'body'
+  ),
+  asyncHandler(async (req: Request, res: Response) => {
+    const quizId = getParam(req.params.quizId)
+    const hasCorrect = (req.body.options as Array<{ correct: boolean }>).some((o) => o.correct)
+    if (!hasCorrect) throw AppError.badRequest('At least one option must be correct')
+
+    const question = await prisma.question.create({
+      data: {
+        text: req.body.text,
+        textJson: req.body.textJson || {},
+        explanation: req.body.explanation,
+        explanationJson: req.body.explanationJson || {},
+        difficulty: req.body.difficulty,
+        tags: req.body.tags,
+        quiz: { connect: { id: quizId } },
+        options: {
+          create: req.body.options.map((o: any) => ({
+            text: o.text,
+            textJson: o.textJson || {},
+            correct: o.correct,
+          })),
+        },
+      },
+      include: { options: true },
+    })
+
+    logger.audit(req.user?.id ?? 'unknown', 'question.create', { id: question.id, quizId })
+    return ok(res, question)
   })
-
-  const parsed = schema.safeParse(req.body)
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
-
-  // Ensure at least one correct answer
-  const hasCorrect = parsed.data.options.some(o => o.correct)
-  if (!hasCorrect) return res.status(400).json({ error: 'At least one option must be correct' })
-
-  const question = await prisma.question.create({
-    data: {
-      text: parsed.data.text,
-      textJson: parsed.data.textJson || {},
-      explanation: parsed.data.explanation,
-      explanationJson: parsed.data.explanationJson || {},
-      difficulty: parsed.data.difficulty,
-      tags: parsed.data.tags,
-      quiz: { connect: { id: quizId } },
-      options: {
-        create: parsed.data.options.map(o => ({
-          text: o.text,
-          textJson: o.textJson || {},
-          correct: o.correct
-        }))
-      }
-    },
-    include: { options: true }
-  })
-
-  logger.audit(req.user?.id ?? 'unknown', 'question.create', { id: question.id, quizId })
-  res.json(question)
-})
+)
 
 // Update question
-router.put('/quizzes/:quizId/questions/:id', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
-  const quizId = getParam(req.params.quizId)
-  const id = getParam(req.params.id)
-  const schema = z.object({
-    text: z.string().min(5).optional(),
-    textJson: z.object({
-      UA: z.string().optional(),
-      PL: z.string().optional(),
-      EN: z.string().optional(),
-    }).optional(),
-    explanation: z.string().optional(),
-    explanationJson: z.object({
-      UA: z.string().optional(),
-      PL: z.string().optional(),
-      EN: z.string().optional(),
-    }).optional(),
-    difficulty: z.enum(['Easy', 'Medium', 'Hard']).optional(),
-    tags: z.array(z.string()).optional(),
-    options: z.array(z.object({
-      id: z.string().optional(),
-      text: z.string().min(1),
-      textJson: z.object({
-        UA: z.string().optional(),
-        PL: z.string().optional(),
-        EN: z.string().optional(),
-      }).optional(),
-      correct: z.boolean().default(false)
-    })).min(2).max(6).optional()
-  })
+router.put(
+  '/quizzes/:quizId/questions/:id',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  validateResource(z.object({ quizId: z.string().uuid(), id: z.string().uuid() }), 'params'),
+  validateResource(
+    z.object({
+      text: z.string().min(5).optional(),
+      textJson: z.object({ UA: z.string().optional(), PL: z.string().optional(), EN: z.string().optional() }).optional(),
+      explanation: z.string().optional(),
+      explanationJson: z.object({ UA: z.string().optional(), PL: z.string().optional(), EN: z.string().optional() }).optional(),
+      difficulty: z.enum(['Easy', 'Medium', 'Hard']).optional(),
+      tags: z.array(z.string()).optional(),
+      options: z
+        .array(
+          z.object({
+            id: z.string().optional(),
+            text: z.string().min(1),
+            textJson: z.object({ UA: z.string().optional(), PL: z.string().optional(), EN: z.string().optional() }).optional(),
+            correct: z.boolean().default(false),
+          })
+        )
+        .min(2)
+        .max(6)
+        .optional(),
+    }),
+    'body'
+  ),
+  asyncHandler(async (req: Request, res: Response) => {
+    const quizId = getParam(req.params.quizId)
+    const id = getParam(req.params.id)
 
-  const parsed = schema.safeParse(req.body)
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
+    // Update question fields
+    const questionData: Prisma.QuestionUpdateInput = {}
+    if (req.body.text) questionData.text = req.body.text
+    if (req.body.textJson) questionData.textJson = req.body.textJson
+    if (req.body.explanation !== undefined) questionData.explanation = req.body.explanation
+    if (req.body.explanationJson) questionData.explanationJson = req.body.explanationJson
+    if (req.body.difficulty) questionData.difficulty = req.body.difficulty
+    if (req.body.tags) questionData.tags = req.body.tags
 
-  // Update question fields
-  const questionData: Prisma.QuestionUpdateInput = {}
-  if (parsed.data.text) questionData.text = parsed.data.text
-  if (parsed.data.textJson) questionData.textJson = parsed.data.textJson
-  if (parsed.data.explanation !== undefined) questionData.explanation = parsed.data.explanation
-  if (parsed.data.explanationJson) questionData.explanationJson = parsed.data.explanationJson
-  if (parsed.data.difficulty) questionData.difficulty = parsed.data.difficulty
-  if (parsed.data.tags) questionData.tags = parsed.data.tags
+    // Update options if provided
+    if (req.body.options) {
+      const hasCorrect = (req.body.options as Array<{ correct: boolean }>).some((o) => o.correct)
+      if (!hasCorrect) throw AppError.badRequest('At least one option must be correct')
 
-  // Update options if provided
-  if (parsed.data.options) {
-    const hasCorrect = parsed.data.options.some(o => o.correct)
-    if (!hasCorrect) return res.status(400).json({ error: 'At least one option must be correct' })
+      await prisma.option.deleteMany({ where: { questionId: id } })
+      await prisma.option.createMany({
+        data: req.body.options.map((o: any) => ({
+          text: o.text,
+          textJson: o.textJson || {},
+          correct: o.correct,
+          questionId: id,
+        })),
+      })
+    }
 
-    // Delete existing options and create new ones
-    await prisma.option.deleteMany({ where: { questionId: id } })
-    await prisma.option.createMany({
-      data: parsed.data.options.map(o => ({
-        text: o.text,
-        textJson: o.textJson || {},
-        correct: o.correct,
-        questionId: id
-      }))
+    const question = await prisma.question.update({
+      where: { id },
+      data: questionData,
+      include: { options: true },
     })
-  }
 
-  const question = await prisma.question.update({
-    where: { id },
-    data: questionData,
-    include: { options: true }
+    logger.audit(req.user?.id ?? 'unknown', 'question.update', { id, quizId })
+    return ok(res, question)
   })
-
-  logger.audit(req.user?.id ?? 'unknown', 'question.update', { id, quizId })
-  res.json(question)
-})
+)
 
 // Delete question
-router.delete('/quizzes/:quizId/questions/:id', requireAuth, requireRole(['EDITOR','ADMIN']), async (req, res) => {
-  const quizId = getParam(req.params.quizId)
-  const id = getParam(req.params.id)
-  await prisma.question.delete({ where: { id } })
-  logger.audit(req.user?.id ?? 'unknown', 'question.delete', { id, quizId })
-  res.json({ ok: true })
-})
+router.delete(
+  '/quizzes/:quizId/questions/:id',
+  requireAuth,
+  requireRole(['EDITOR', 'ADMIN']),
+  validateResource(z.object({ quizId: z.string().uuid(), id: z.string().uuid() }), 'params'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const quizId = getParam(req.params.quizId)
+    const id = getParam(req.params.id)
+    await prisma.question.delete({ where: { id } })
+    logger.audit(req.user?.id ?? 'unknown', 'question.delete', { id, quizId })
+    return ok(res, { ok: true })
+  })
+)
 
 export default router

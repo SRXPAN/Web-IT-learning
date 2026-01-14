@@ -76,29 +76,31 @@ async function handle<T>(res: Response, retry?: () => Promise<T>): Promise<T> {
 
   if (res.status === 401) {
     const data = await res.json().catch(() => ({}))
-    
+    // Новий формат: { success: false, error: { code, message } }
+    const code = data?.error?.code
+    const message = data?.error?.message
     // Якщо токен протермінований - спробуємо оновити (тільки один раз)
-    if (data?.code === 'TOKEN_EXPIRED' && retry) {
+    if (code === 'TOKEN_EXPIRED' && retry) {
       const refreshed = await refreshTokens()
       if (refreshed) {
-        // Затримка перед retry щоб не забити rate limit
         await delay(100)
         return retry()
       }
     }
-    
-    throw new Error('Unauthorized')
+    throw new Error(message || 'Unauthorized')
   }
   
   if (res.status === 403) {
     const text = await res.text()
     const data = text ? JSON.parse(text) : null
+    const code = data?.error?.code
+    const message = data?.error?.message
     // Якщо CSRF помилка - спробуємо оновити токен
-    if (data?.error?.includes('CSRF')) {
+    if (code === 'CSRF_INVALID') {
       await fetchCsrfToken()
       throw new Error('CSRF token expired. Please try again.')
     }
-    throw new Error(data?.error || 'Forbidden')
+    throw new Error(message || 'Forbidden')
   }
   
   const text = await res.text()

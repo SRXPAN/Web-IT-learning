@@ -1,9 +1,10 @@
 // src/routes/quiz.ts
 import { Router, Request, Response, NextFunction } from 'express'
-import { prisma } from '../db'
-import { requireAuth } from '../middleware/auth'
-import { validateId } from '../middleware/validateParams.js'
-import { z } from 'zod'
+import { prisma } from '../db.js'
+import { requireAuth } from '../middleware/auth.js'
+import { asyncHandler, AppError } from '../middleware/errorHandler.js'
+import { validateResource } from '../middleware/validateResource.js'
+import { quizSchemas } from '../schemas/quiz.schema.js'
 import type { Lang } from '@elearn/shared'
 import { logger } from '../utils/logger.js'
 import { getQuizWithToken, submitQuizAttempt, getUserQuizHistory } from '../services/quiz.service.js'
@@ -15,81 +16,67 @@ function getParam(param: string | string[]): string {
   return Array.isArray(param) ? param[0] : param
 }
 
-const submitSchema = z.object({
-  token: z.string().min(1),
-  answers: z.array(
-    z.object({
-      questionId: z.string(),
-      optionId: z.string().optional(),
-    }),
-  ),
-  lang: z.string().toUpperCase().optional().default('EN'),
-})
+// Validation moved to quizSchemas.submitQuiz
 
-router.get('/:id', requireAuth, validateId, async (req, res) => {
-  try {
+router.get(
+  '/:id',
+  requireAuth,
+  validateResource(quizSchemas.idParam, 'params'),
+  asyncHandler(async (req: Request, res: Response) => {
     const lang = req.query.lang as Lang | undefined
     const id = getParam(req.params.id)
-    
+
     const quiz = await getQuizWithToken(id, req.user!.id, lang)
-    
     if (!quiz) {
-      return res.status(404).json({ error: 'Quiz not found' })
+      throw AppError.notFound('Quiz not found')
     }
-    
-    res.json(quiz)
-  } catch (e) {
-    console.error('Error fetching quiz:', e)
-    res.status(500).json({ error: 'Internal server error' })
-  }
-})
+    return res.json(quiz)
+  })
+)
 
 router.post(
   '/:id/submit',
   requireAuth,
-  validateId,
-  async (req: Request, res: Response, next: NextFunction) => {
+  validateResource(quizSchemas.submitQuiz, { body: quizSchemas.submitQuiz, params: quizSchemas.idParam }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = getParam(req.params.id)
     try {
-      const parsed = submitSchema.safeParse(req.body)
-      if (!parsed.success)
-        return res.status(400).json({ error: parsed.error.flatten() })
-      
-      const id = getParam(req.params.id)
       const result = await submitQuizAttempt(
-        id, 
-        req.user!.id, 
-        parsed.data.token,
-        parsed.data.answers,
-        parsed.data.lang as Lang
+        id,
+        req.user!.id,
+        req.body.token,
+        req.body.answers,
+        (req.body.lang as Lang | undefined) || 'EN'
       )
-
-      res.json(result)
+      return res.json(result)
     } catch (e: any) {
-      if (e.message === 'Invalid or expired quiz token' || e.message === 'Quiz time limit exceeded' || e.message === 'Quiz token mismatch') {
-        const status = e.message === 'Invalid or expired quiz token' ? 401 : 403
-        return res.status(status).json({ error: e.message })
+      if (e.message === 'Invalid or expired quiz token') {
+        throw AppError.unauthorized(e.message)
+      }
+      if (e.message === 'Quiz time limit exceeded' || e.message === 'Quiz token mismatch') {
+        throw AppError.forbidden(e.message)
       }
       if (e.message === 'Quiz not found') {
-        return res.status(404).json({ error: e.message })
+        throw AppError.notFound(e.message)
       }
-      next(e)
+      throw e
     }
-  },
+  })
 )
 
 // GET /api/quiz/history — отримати історію спроб користувача
-router.get('/user/history', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
-  try {
+router.get(
+  '/user/history',
+  requireAuth,
+  validateResource(quizSchemas.pagination, 'query'),
+  asyncHandler(async (req: Request, res: Response) => {
     const limit = Math.min(parseInt(req.query.limit as string) || 5, 100)
     const page = Math.max(parseInt(req.query.page as string) || 1, 1)
     const lang = req.query.lang as Lang | undefined
 
     const history = await getUserQuizHistory(req.user!.id, { page, limit, lang })
-
-    res.json(history)
-  } catch (e) {
-    next(e)
-  }
-})
+    return res.json(history)
+  })
+)
 
 export default router

@@ -1,9 +1,12 @@
 // src/routes/lessons.ts
-import { Router } from 'express'
-import { prisma } from '../db'
-import { requireAuth } from '../middleware/auth'
+import { Router, Request, Response } from 'express'
+import { prisma } from '../db.js'
+import { requireAuth } from '../middleware/auth.js'
+import { asyncHandler, AppError } from '../middleware/errorHandler.js'
+import { validateResource } from '../middleware/validateResource.js'
 import { z } from 'zod'
-import { localizeObject } from '../utils/i18n'
+import { localizeObject } from '../utils/i18n.js'
+import { ok } from '../utils/response.js'
 import type { Lang } from '@elearn/shared'
 
 const router = Router()
@@ -54,105 +57,105 @@ const querySchema = z.object({
 })
 
 // GET /lessons - List all lessons/materials
-router.get('/', requireAuth, async (req, res) => {
-  const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
-  const parsed = querySchema.safeParse(req.query)
-  const lang = parsed.success ? parsed.data.lang : undefined
-  
-  const materials = await (prisma.material.findMany as any)({
-    where: isStaff ? {} : { status: 'Published' },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      topic: {
-        select: { id: true, name: true, slug: true }
-      }
-    }
+router.get(
+  '/',
+  requireAuth,
+  validateResource(querySchema, 'query'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
+    const lang = (req.query.lang as any) as Lang | undefined
+
+    const materials = await (prisma.material.findMany as any)({
+      where: isStaff ? {} : { status: 'Published' },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        topic: {
+          select: { id: true, name: true, slug: true },
+        },
+      },
+    })
+
+    const localizedMaterials = lang
+      ? materials.map((m: any) => localizeMaterial(m, lang))
+      : materials
+
+    return ok(res, { data: localizedMaterials })
   })
-  
-  const localizedMaterials = lang
-    ? materials.map((m: any) => localizeMaterial(m, lang))
-    : materials
-  
-  res.json({ data: localizedMaterials })
-})
+)
 
 // GET /lessons/:id - Get single lesson/material by ID
-router.get('/:id', requireAuth, async (req, res) => {
-  const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
-  const parsed = querySchema.safeParse(req.query)
-  const lang = parsed.success ? parsed.data.lang : undefined
-  const id = getParam(req.params.id)
-  
-  const material = await (prisma.material.findUnique as any)({
-    where: { id },
-    include: {
-      topic: {
-        select: { 
-          id: true, 
-          name: true, 
-          nameJson: true,
-          slug: true,
-        }
+router.get(
+  '/:id',
+  requireAuth,
+  validateResource(z.object({ id: z.string().uuid() }), 'params'),
+  validateResource(querySchema, 'query'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
+    const lang = (req.query.lang as any) as Lang | undefined
+    const id = getParam(req.params.id)
+
+    const material = await (prisma.material.findUnique as any)({
+      where: { id },
+      include: {
+        topic: {
+          select: { id: true, name: true, nameJson: true, slug: true },
+        },
+        file: true,
       },
-      file: true, // Include file info for pdf/video/image
+    })
+
+    if (!material) {
+      throw AppError.notFound('Lesson not found')
+    }
+
+    if (!isStaff && material.status !== 'Published') {
+      throw AppError.forbidden('Access denied')
+    }
+
+    prisma.material
+      .update({ where: { id }, data: { views: { increment: 1 } } })
+      .catch(() => {})
+
+    if (lang && ['UA', 'PL', 'EN'].includes(lang)) {
+      const localized = localizeMaterial(material, lang)
+      let localizedTopic = material.topic
+      if (material.topic?.nameJson) {
+        const topicLocalized = localizeObject(material.topic, lang, { nameJson: 'name' })
+        localizedTopic = { ...topicLocalized }
+        delete (localizedTopic as any).nameJson
+      }
+
+      return res.json({ ...localized, topic: localizedTopic })
+    } else {
+      return res.json(material)
     }
   })
-  
-  if (!material) {
-    return res.status(404).json({ error: 'Lesson not found' })
-  }
-  
-  // Check access for non-staff
-  if (!isStaff && material.status !== 'Published') {
-    return res.status(403).json({ error: 'Access denied' })
-  }
-  
-  // Increment view count (fire and forget)
-  prisma.material.update({
-    where: { id },
-    data: { views: { increment: 1 } }
-  }).catch(() => {})
-  
-  // Apply localization
-  if (lang && ['UA', 'PL', 'EN'].includes(lang)) {
-    const localized = localizeMaterial(material, lang)
-    
-    // Also localize topic name if available
-    let localizedTopic = material.topic
-    if (material.topic?.nameJson) {
-      const topicLocalized = localizeObject(material.topic, lang, { nameJson: 'name' })
-      localizedTopic = { ...topicLocalized }
-      delete (localizedTopic as any).nameJson
-    }
-    
-    res.json({
-      ...localized,
-      topic: localizedTopic,
-    })
-  } else {
-    res.json(material)
-  }
-})
+)
 
 // GET /lessons/by-topic/:topicId - Get lessons by topic
-router.get('/by-topic/:topicId', requireAuth, async (req, res) => {
-  const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
-  const parsed = querySchema.safeParse(req.query)
-  const lang = parsed.success ? parsed.data.lang : undefined
-  
-  const materials = await (prisma.material.findMany as any)({
-    where: {
-      topicId: req.params.topicId,
-      ...(isStaff ? {} : { status: 'Published' }),
-    },
-    orderBy: { createdAt: 'asc' },
+router.get(
+  '/by-topic/:topicId',
+  requireAuth,
+  validateResource(z.object({ topicId: z.string().uuid() }), 'params'),
+  validateResource(querySchema, 'query'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
+    const lang = (req.query.lang as any) as Lang | undefined
+
+    const materials = await (prisma.material.findMany as any)({
+      where: {
+        topicId: req.params.topicId,
+        ...(isStaff ? {} : { status: 'Published' }),
+      },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    const localizedMaterials = lang
+      ? materials.map((m: any) => localizeMaterial(m, lang))
+      : materials
+
+    return ok(res, { data: localizedMaterials })
   })
-  
-  const localizedMaterials = lang
-    ? materials.map((m: any) => localizeMaterial(m, lang))
-    : materials
-  
-  res.json({ data: localizedMaterials })
-})
+)
 
 export default router
