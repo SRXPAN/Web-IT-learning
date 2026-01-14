@@ -40,7 +40,7 @@ import {
 import { validateImageBase64 } from '../utils/imageValidation.js'
 import { logger } from '../utils/logger.js'
 import { deleteFile } from '../services/storage.service.js'
-
+import { compare, hash, genSalt } from 'bcryptjs';
 const router = Router()
 
 // ============================================
@@ -324,9 +324,6 @@ router.put('/email', requireAuth, async (req, res, next) => {
     const { newEmail, password } = parsed.data
     const userId = req.user!.id
     
-    // Import bcrypt for password verification
-    const bcrypt = await import('bcryptjs')
-    
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, password: true, email: true },
@@ -336,7 +333,7 @@ router.put('/email', requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: 'User not found' })
     }
     
-    const isValid = await bcrypt.compare(password, user.password)
+    const isValid = await compare(password, user.password)
     if (!isValid) {
       return res.status(400).json({ error: 'Incorrect password' })
     }
