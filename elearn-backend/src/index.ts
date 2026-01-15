@@ -141,7 +141,7 @@ app.use((err: HttpError, _req: express.Request, res: express.Response, _next: ex
   const status = typeof err?.status === 'number' ? err.status : 500
   const message = err?.message || 'Internal Server Error'
   if (process.env.NODE_ENV !== 'production') {
-    console.error(err)
+    logger.error('Unhandled error', err as Error)
   }
   res.status(status).json({ error: message })
 })

@@ -213,7 +213,7 @@ router.get('/users', async (req: Request, res: Response) => {
       },
     })
   } catch (err) {
-    console.error('List users error:', err)
+    logger.error('List users error', err as Error)
     return serverError(res, 'Failed to list users')
   }
 })
@@ -254,7 +254,7 @@ router.get('/users/:id', async (req: Request, res: Response) => {
 
     return ok(res, user)
   } catch (err) {
-    console.error('Get user error:', err)
+    logger.error('Get user error', err as Error)
     return serverError(res, 'Failed to get user')
   }
 })
@@ -300,7 +300,7 @@ router.put('/users/:id/role', async (req: Request, res: Response) => {
 
     return ok(res, user)
   } catch (err) {
-    console.error('Update role error:', err)
+    logger.error('Update role error', err as Error)
     return serverError(res, 'Failed to update role')
   }
 })
@@ -336,7 +336,7 @@ router.put('/users/:id/verify', async (req: Request, res: Response) => {
 
     return ok(res, updated)
   } catch (err) {
-    console.error('Verify user error:', err)
+    logger.error('Verify user error', err as Error)
     return serverError(res, 'Failed to verify user')
   }
 })
@@ -390,7 +390,7 @@ router.post('/users', async (req: Request, res: Response) => {
 
     return created(res, user)
   } catch (err) {
-    console.error('Create user error:', err)
+    logger.error('Create user error', err as Error)
     return serverError(res, 'Failed to create user')
   }
 })
@@ -434,7 +434,7 @@ router.delete('/users/:id', async (req: Request, res: Response) => {
 
     return ok(res, { deleted: true })
   } catch (err) {
-    console.error('Delete user error:', err)
+    logger.error('Delete user error', err as Error)
     return serverError(res, 'Failed to delete user')
   }
 })
@@ -495,7 +495,7 @@ router.get('/audit-logs', async (req: Request, res: Response) => {
       },
     })
   } catch (err) {
-    console.error('List audit logs error:', err)
+    logger.error('List audit logs error', err as Error)
     return serverError(res, 'Failed to list audit logs')
   }
 })
@@ -546,7 +546,7 @@ router.get('/content/topics', async (req: Request, res: Response) => {
 
     return ok(res, { topics: rootTopics, total: topics.length })
   } catch (err) {
-    console.error('Get topics error:', err)
+    logger.error('Get topics error', err as Error)
     return serverError(res, 'Failed to get topics')
   }
 })
@@ -595,7 +595,7 @@ router.post('/content/topics', async (req: Request, res: Response) => {
 
     return created(res, topic)
   } catch (err) {
-    console.error('Create topic error:', err)
+    logger.error('Create topic error', err as Error)
     return serverError(res, 'Failed to create topic')
   }
 })
@@ -649,7 +649,7 @@ router.put('/content/topics/:id', async (req: Request, res: Response) => {
 
     return ok(res, topic)
   } catch (err) {
-    console.error('Update topic error:', err)
+    logger.error('Update topic error', err as Error)
     return serverError(res, 'Failed to update topic')
   }
 })
@@ -716,7 +716,7 @@ router.delete('/content/topics/:id', async (req: Request, res: Response) => {
 
     return ok(res, { deleted: true })
   } catch (err) {
-    console.error('Delete topic error:', err)
+    logger.error('Delete topic error', err as Error)
     return serverError(res, 'Failed to delete topic')
   }
 })

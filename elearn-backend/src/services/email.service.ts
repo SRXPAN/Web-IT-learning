@@ -3,6 +3,9 @@ import nodemailer from 'nodemailer'
 import { getEnv } from '../utils/env.js'
 import { logger } from '../utils/logger.js'
 
+const isDev = process.env.NODE_ENV === 'development'
+const isProd = process.env.NODE_ENV === 'production'
+
 const SMTP_HOST = getEnv('SMTP_HOST', 'smtp.gmail.com')
 const SMTP_PORT = parseInt(getEnv('SMTP_PORT', '587'))
 const SMTP_USER = getEnv('SMTP_USER', '')
@@ -10,18 +13,20 @@ const SMTP_PASS = getEnv('SMTP_PASS', '')
 const SMTP_FROM = getEnv('SMTP_FROM', 'E-Learn <noreply@elearn.com>')
 const FRONTEND_URL = getEnv('FRONTEND_URL', 'http://localhost:5173')
 
-// Production safety check: throw if SMTP not configured in prod
-const isProd = process.env.NODE_ENV === 'production'
+// === PRODUCTION SAFETY ===
+// In production: SMTP must be configured. Throw error immediately if not.
 if (isProd && (!SMTP_USER || !SMTP_PASS)) {
   throw new Error('CRITICAL: SMTP configuration required in production. Set SMTP_USER and SMTP_PASS.')
 }
 
-// Створюємо transporter тільки якщо налаштовано SMTP (production)
+// === TRANSPORTER SETUP ===
+// Production: Use nodemailer with real SMTP server
+// Development: Set to null (we'll just log instead)
 const transporter = isProd && SMTP_USER && SMTP_PASS
   ? nodemailer.createTransport({
       host: SMTP_HOST,
       port: SMTP_PORT,
-      secure: SMTP_PORT === 465,
+      secure: SMTP_PORT === 465, // true for 465, false for other ports
       auth: {
         user: SMTP_USER,
         pass: SMTP_PASS,
@@ -37,29 +42,41 @@ interface EmailOptions {
 }
 
 /**
- * Відправляє email
- * В production: використовує nodemailer + SMTP
- * В development: логує в консоль через logger
+ * Sends email via SMTP in production or logs in development.
+ * 
+ * PRODUCTION: Uses nodemailer to send actual emails via SMTP_HOST
+ * DEVELOPMENT: Logs email details via logger (no actual sending)
  */
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
-  if (!isProd || !transporter) {
-    logger.info('[EMAIL] Would send email in production:', {
+  // Development mode: log the email instead of sending
+  if (isDev) {
+    logger.info('[EMAIL] DEV MODE - Would send email', {
       to: options.to,
       subject: options.subject,
-      preview: options.text || options.html.slice(0, 100),
+      preview: (options.text || options.html).slice(0, 150),
     })
-    return true // В dev режимі вважаємо успішним
+    return true
   }
-  
+
+  // Production mode: actually send via SMTP
+  if (!transporter) {
+    logger.error('[EMAIL] SMTP transporter not configured in production')
+    return false
+  }
+
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: SMTP_FROM,
       ...options,
     })
-    logger.info('[EMAIL] Sent successfully', { to: options.to, subject: options.subject })
+    logger.info('[EMAIL] Sent successfully', { 
+      to: options.to,
+      subject: options.subject,
+      messageId: info.messageId,
+    })
     return true
   } catch (error) {
-    logger.error('[EMAIL] Failed to send', error as Error, { to: options.to })
+    logger.error('[EMAIL] Failed to send', error as Error, { to: options.to, subject: options.subject })
     return false
   }
 }
