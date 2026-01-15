@@ -4,6 +4,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
+import { logger } from './utils/logger.js'
 import cookieParser from 'cookie-parser'
 
 import authRouter from './routes/auth.js'
@@ -146,29 +147,29 @@ app.use((err: HttpError, _req: express.Request, res: express.Response, _next: ex
 })
 
 const port = Number(process.env.PORT ?? 4000)
-const server = app.listen(port, () => console.log(`API listening on http://localhost:${port}`))
+const server = app.listen(port, () => logger.info(`API listening on http://localhost:${port}`))
 
 // Graceful shutdown logic...
 async function gracefulShutdown(signal: string) {
-  console.log(`\n${signal} received. Starting graceful shutdown...`)
+  logger.warn(`${signal} received. Starting graceful shutdown...`)
   server.close(async (err) => {
     if (err) {
-      console.error('Error during server close:', err)
+      logger.error('Error during server close', err as Error)
       process.exit(1)
     }
-    console.log('HTTP server closed')
+    logger.info('HTTP server closed')
     try {
       const { prisma } = await import('./db.js')
       await prisma.$disconnect()
-      console.log('Database connection closed')
+      logger.info('Database connection closed')
     } catch (dbErr) {
-      console.error('Error closing database:', dbErr)
+      logger.error('Error closing database', dbErr as Error)
     }
-    console.log('Graceful shutdown completed')
+    logger.info('Graceful shutdown completed')
     process.exit(0)
   })
   setTimeout(() => {
-    console.error('Forced shutdown after timeout')
+    logger.error('Forced shutdown after timeout')
     process.exit(1)
   }, 10000)
 }
@@ -176,10 +177,10 @@ async function gracefulShutdown(signal: string) {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
 process.on('SIGINT', () => gracefulShutdown('SIGINT'))
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err)
+  logger.error('Uncaught Exception', err)
   gracefulShutdown('uncaughtException')
 })
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason)
+  logger.error('Unhandled Rejection', new Error(String(reason)), { promise })
 })  

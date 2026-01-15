@@ -63,13 +63,13 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
     const userId = session.client_reference_id || session.metadata?.userId
 
     if (!userId) {
-      console.error('Webhook Error: No userId in session', session.id)
+      logger.error('Webhook Error: No userId in session', new Error(String(session.id)))
       return res.sendStatus(400)
     }
 
     const user = await prisma.user.findUnique({ where: { id: userId } })
     if (!user) {
-        console.error('Webhook Error: User not found', userId)
+        logger.error('Webhook Error: User not found', new Error(String(userId)))
         return res.sendStatus(404)
     }
 

@@ -62,7 +62,10 @@ describe('requireAuth middleware', () => {
     requireAuth(mockReq as Request, mockRes as Response, mockNext);
 
     expect(statusMock).toHaveBeenCalledWith(401);
-    expect(jsonMock).toHaveBeenCalledWith({ error: 'No token' });
+    const payload = jsonMock.mock.calls[0][0];
+    expect(payload.success).toBe(false);
+    expect(payload.error.code).toBe('UNAUTHORIZED');
+    expect(payload.error.message).toBe('No token');
     expect(mockNext).not.toHaveBeenCalled();
   });
 
@@ -72,7 +75,10 @@ describe('requireAuth middleware', () => {
     requireAuth(mockReq as Request, mockRes as Response, mockNext);
 
     expect(statusMock).toHaveBeenCalledWith(401);
-    expect(jsonMock).toHaveBeenCalledWith({ error: 'Invalid token' });
+    const payload = jsonMock.mock.calls[0][0];
+    expect(payload.success).toBe(false);
+    expect(payload.error.code).toBe('TOKEN_INVALID');
+    expect(payload.error.message).toBe('Invalid token');
     expect(mockNext).not.toHaveBeenCalled();
   });
 
@@ -87,7 +93,10 @@ describe('requireAuth middleware', () => {
     requireAuth(mockReq as Request, mockRes as Response, mockNext);
 
     expect(statusMock).toHaveBeenCalledWith(401);
-    expect(jsonMock).toHaveBeenCalledWith({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
+    const payload = jsonMock.mock.calls[0][0];
+    expect(payload.success).toBe(false);
+    expect(payload.error.code).toBe('TOKEN_EXPIRED');
+    expect(payload.error.message).toBe('Token expired');
   });
 
   it('should prefer cookie over Authorization header', () => {
@@ -152,7 +161,10 @@ describe('requireRole middleware', () => {
     middleware(mockReq as Request, mockRes as Response, mockNext);
 
     expect(statusMock).toHaveBeenCalledWith(401);
-    expect(jsonMock).toHaveBeenCalledWith({ error: 'Unauthorized' });
+    const payload = jsonMock.mock.calls[0][0];
+    expect(payload.success).toBe(false);
+    expect(payload.error.code).toBe('UNAUTHORIZED');
+    expect(payload.error.message).toBe('Unauthorized');
     expect(mockNext).not.toHaveBeenCalled();
   });
 
@@ -163,7 +175,10 @@ describe('requireRole middleware', () => {
     middleware(mockReq as Request, mockRes as Response, mockNext);
 
     expect(statusMock).toHaveBeenCalledWith(403);
-    expect(jsonMock).toHaveBeenCalledWith({ error: 'Forbidden' });
+    const payload = jsonMock.mock.calls[0][0];
+    expect(payload.success).toBe(false);
+    expect(payload.error.code).toBe('FORBIDDEN');
+    expect(payload.error.message).toBe('Forbidden');
     expect(mockNext).not.toHaveBeenCalled();
   });
 });

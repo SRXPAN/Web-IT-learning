@@ -1,5 +1,21 @@
 import { vi } from 'vitest';
 
+// Mock logger to suppress test output
+vi.mock('../utils/logger.js', () => ({
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+  default: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 // Mock Prisma client
 vi.mock('../db.js', () => ({
   prisma: {

@@ -39,8 +39,8 @@ const requireAdminOrEditor = requireRole(['ADMIN', 'EDITOR'])
  * Accessible to ADMIN and EDITOR (dashboard view only)
  */
 router.get('/stats', requireRole(['ADMIN', 'EDITOR']), async (req: Request, res: Response) => {
-  console.log('Admin stats endpoint called')
-  console.log('User:', req.user)
+  logger.info('Admin stats endpoint called')
+  logger.info('User context', { user: req.user })
   try {
     const [
       totalUsers,
@@ -107,10 +107,10 @@ router.get('/stats', requireRole(['ADMIN', 'EDITOR']), async (req: Request, res:
       },
     }
 
-    console.log('Stats result:', JSON.stringify(result, null, 2))
+    logger.info('Stats result', result)
     return ok(res, result)
   } catch (err) {
-    console.error('Get stats error:', err)
+    logger.error('Get stats error', err as Error)
     return serverError(res, 'Failed to get stats')
   }
 })

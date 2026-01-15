@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import type { Role } from '@elearn/shared'
 import { getJwtSecret, getEnv } from '../utils/env.js'
+import { sendError, ErrorCodes } from '../utils/response.js'
 
 export interface JwtPayload {
   id: string
@@ -35,21 +36,21 @@ function readToken(req: Request): string | null {
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const token = readToken(req)
-  if (!token) return res.status(401).json({ error: 'No token' })
+  if (!token) return sendError(res, ErrorCodes.UNAUTHORIZED, 'No token', 401)
   try {
     const decoded = jwt.verify(token, SECRET) as JwtPayload
     // Перевіряємо що це access токен (якщо є type)
     if (decoded.type && decoded.type !== 'access') {
-      return res.status(401).json({ error: 'Invalid token type' })
+      return sendError(res, ErrorCodes.TOKEN_INVALID, 'Invalid token type', 401)
     }
     req.user = decoded
     next()
   } catch (err: any) {
     // Детальніші помилки для клієнта
     if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' })
+      return sendError(res, ErrorCodes.TOKEN_EXPIRED, 'Token expired', 401)
     }
-    return res.status(401).json({ error: 'Invalid token' })
+    return sendError(res, ErrorCodes.TOKEN_INVALID, 'Invalid token', 401)
   }
 }
 
@@ -73,8 +74,8 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
 
 export function requireRole(roles: Role[]) {
   return function (req: Request, res: Response, next: NextFunction) {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
-    if (!roles.includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' })
+    if (!req.user) return sendError(res, ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401)
+    if (!roles.includes(req.user.role)) return sendError(res, ErrorCodes.FORBIDDEN, 'Forbidden', 403)
     next()
   }
 }

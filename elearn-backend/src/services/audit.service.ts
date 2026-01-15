@@ -3,6 +3,7 @@
  * Tracks all important actions in the system
  */
 import { prisma } from '../db.js'
+import { logger } from '../utils/logger.js'
 
 // Sensitive fields to redact from audit logs
 const SENSITIVE_FIELDS = [
@@ -73,7 +74,7 @@ export async function auditLog(entry: AuditLogEntry): Promise<void> {
     })
   } catch (error) {
     // Don't throw - audit logging shouldn't break main functionality
-    console.error('Audit log error:', error)
+    logger.error('Audit log error', error as Error)
   }
 }
 
