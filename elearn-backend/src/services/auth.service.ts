@@ -84,6 +84,7 @@ export async function registerUser(
       email: email.toLowerCase().trim(), 
       password: hash, 
       role: 'STUDENT',
+      isPremium: true,
       emailVerified: false,
     },
     select: { 

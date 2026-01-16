@@ -60,7 +60,12 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 
   // Production mode: actually send via SMTP
   if (!transporter) {
-    logger.error('[EMAIL] SMTP transporter not configured in production')
+    logger.error('[EMAIL] SMTP transporter not configured in production, logging email instead')
+    logger.info('[EMAIL] FALLBACK LOG', {
+      to: options.to,
+      subject: options.subject,
+      preview: (options.text || options.html).slice(0, 150),
+    })
     return false
   }
 
@@ -77,6 +82,12 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     return true
   } catch (error) {
     logger.error('[EMAIL] Failed to send', error as Error, { to: options.to, subject: options.subject })
+    // Fallback log so we can still verify the link in environments without working SMTP
+    logger.info('[EMAIL] FALLBACK LOG', {
+      to: options.to,
+      subject: options.subject,
+      preview: (options.text || options.html).slice(0, 150),
+    })
     return false
   }
 }
