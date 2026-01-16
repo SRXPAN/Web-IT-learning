@@ -404,6 +404,7 @@ export async function resendVerificationEmail(email: string): Promise<boolean> {
 /**
  * Видалення акаунту користувача (GDPR Right to be Forgotten)
  * Каскадно видаляє всі дані користувача
+ * Soft-deletes user by renaming email to free it up for future registration
  */
 export async function deleteUser(userId: string): Promise<boolean> {
   // Перевіряємо існування користувача
@@ -415,6 +416,10 @@ export async function deleteUser(userId: string): Promise<boolean> {
   if (!user) {
     throw AppError.notFound('User not found')
   }
+  
+  // Generate deleted email to free up the original email for future registration
+  const timestamp = Date.now()
+  const deletedEmail = `deleted_${timestamp}_${user.email}`
   
   // Використовуємо транзакцію для каскадного видалення
   await prisma.$transaction(async (tx) => {
@@ -450,8 +455,16 @@ export async function deleteUser(userId: string): Promise<boolean> {
       }
     })
     
-    // Нарешті видаляємо користувача
-    await tx.user.delete({ where: { id: userId } })
+    // Soft-delete: rename email to free up original for future registration + set deletedAt
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        email: deletedEmail,
+        deletedAt: new Date(),
+        // Optional: clear password for security
+        password: `deleted_${timestamp}`,
+      }
+    })
   })
   
   return true

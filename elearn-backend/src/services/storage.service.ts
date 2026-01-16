@@ -114,9 +114,9 @@ export const allowedMimeTypes: Record<FileCategory, string[]> = {
 // Max file sizes per category (in bytes)
 export const maxFileSizes: Record<FileCategory, number> = {
   avatars: 2 * 1024 * 1024, // 2MB
-  materials: 100 * 1024 * 1024, // 100MB
-  attachments: 50 * 1024 * 1024, // 50MB
-  temp: 100 * 1024 * 1024, // 100MB
+  materials: 15 * 1024 * 1024, // 15MB (reduced from 100MB to prevent server OOM)
+  attachments: 15 * 1024 * 1024, // 15MB (reduced from 50MB to prevent server OOM)
+  temp: 15 * 1024 * 1024, // 15MB (reduced from 100MB)
 }
 
 // Validate file

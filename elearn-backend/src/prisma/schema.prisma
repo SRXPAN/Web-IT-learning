@@ -17,6 +17,8 @@ model User {
   role             Role           @default(STUDENT)
   xp               Int            @default(0)
   emailVerified    Boolean        @default(false)
+  isPremium        Boolean        @default(true) // All users are premium (free version)
+  deletedAt        DateTime?      // For soft delete - freed email when deleted
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @default(now()) @updatedAt
   answers          Answer[]
@@ -32,6 +34,7 @@ model User {
   @@index([role])
   @@index([createdAt])
   @@index([email])
+  @@index([deletedAt])
 }
 
 enum Role {

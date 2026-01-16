@@ -41,7 +41,7 @@ const uploadLimiter = rateLimit({
 const uploadPresignSchema = z.object({
   filename: z.string().min(1),
   mimeType: z.string().regex(/^[-\w.]+\/[-\w.]+$/),
-  size: z.number().positive().max(50 * 1024 * 1024), // 50MB limit
+  size: z.number().positive().max(15 * 1024 * 1024), // 15MB limit - prevent server OOM
   category: z.enum(['avatars', 'materials', 'attachments']).optional()
 })
 
