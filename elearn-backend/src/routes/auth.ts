@@ -249,6 +249,22 @@ router.post(
     const { userAgent, ip } = getClientInfo(req)
     const result = await registerUser(req.body, userAgent, ip)
 
+    // SECURITY: Check if this is a fake response (empty tokens = user already exists)
+    if (!result.tokens.accessToken || !result.tokens.refreshToken) {
+      // Don't set cookies, but still return success to prevent user enumeration
+      return ok(res, {
+        user: {
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          role: result.user.role,
+          xp: result.user.xp,
+          emailVerified: result.user.emailVerified
+        },
+        message: 'Registration successful. Please verify your email.',
+      })
+    }
+
     setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken)
     return ok(res, {
       user: result.user,

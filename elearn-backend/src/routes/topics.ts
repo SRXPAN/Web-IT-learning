@@ -26,7 +26,8 @@ router.get(
   optionalAuth,
   validateResource(topicSchemas.pagination, 'query'),
   asyncHandler(async (req: Request, res) => {
-    const { page, limit, category, lang, search } = req.query as any
+    const query = req.query as { page?: string; limit?: string; category?: string; lang?: string; search?: string }
+    const { page = '1', limit = '20', category, lang = 'EN', search } = query
 
     // Check if user is staff (ADMIN or EDITOR)
     const isStaff = req.user?.role === 'ADMIN' || req.user?.role === 'EDITOR'
@@ -36,7 +37,7 @@ router.get(
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 20,
       category: category as any,
-      lang: (lang as string).toUpperCase(),
+      lang: lang.toUpperCase(),
       isStaff,
     })
 

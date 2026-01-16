@@ -4,10 +4,13 @@
  */
 import { Router, Request, Response } from 'express'
 import { Prisma } from '@prisma/client'
+import { z } from 'zod'
+import rateLimit from 'express-rate-limit'
 import { prisma } from '../db.js'
 import { requireAuth } from '../middleware/auth'
 import { requireRole } from '../middleware/roles'
 import { asyncHandler } from '../middleware/errorHandler.js'
+import { validateResource } from '../middleware/validateResource.js'
 import {
   generateFileKey,
   getPresignedUploadUrl,
@@ -27,16 +30,27 @@ function getParam(param: string | string[]): string {
   return Array.isArray(param) ? param[0] : param
 }
 
+// Rate limiter for file uploads
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 година
+  max: 20, // Максимум 20 файлів на годину від одного IP
+  message: 'Too many file uploads, please try again after an hour'
+})
+
+// Define Zod Schema for presign upload
+const uploadPresignSchema = z.object({
+  filename: z.string().min(1),
+  mimeType: z.string().regex(/^[-\w.]+\/[-\w.]+$/),
+  size: z.number().positive().max(50 * 1024 * 1024), // 50MB limit
+  category: z.enum(['avatars', 'materials', 'attachments']).optional()
+})
+
 /**
  * POST /files/presign-upload
  * Get presigned URL for direct upload to S3/R2
  */
-router.post('/presign-upload', requireAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post('/presign-upload', requireAuth, uploadLimiter, validateResource(uploadPresignSchema, 'body'), asyncHandler(async (req: Request, res: Response) => {
   const { filename, mimeType, size, category = 'attachments' } = req.body
-
-  if (!filename || !mimeType || !size) {
-    return badRequest(res, 'filename, mimeType, and size are required')
-  }
 
   // Validate category
   const validCategories: FileCategory[] = ['avatars', 'materials', 'attachments']
@@ -230,13 +244,18 @@ router.delete('/:id', requireAuth, asyncHandler(async (req: Request, res: Respon
     return forbidden(res, 'Not authorized')
   }
 
-  // Delete from S3
-  await deleteFile(file.key)
-
-  // Delete from database
+  // Transactional logic pattern:
+  // 1. Delete from DB first
   await prisma.file.delete({
     where: { id },
   })
+
+  // 2. Try to delete from S3 (if fails, we have a cron job for cleanup later)
+  try {
+    await deleteFile(file.key)
+  } catch (err) {
+    logger.error(`Failed to delete file from S3 after DB deletion: ${file.key}`, err)
+  }
 
   // Audit log
   await auditLog({

@@ -59,7 +59,19 @@ export async function registerUser(
   // Перевірка на існуючого користувача
   const exists = await prisma.user.findUnique({ where: { email } })
   if (exists) {
-    throw AppError.conflict('User with this email already exists', { field: 'email' })
+    // SECURITY: Повертаємо успіх, щоб не розкривати існування email.
+    // Опціонально: можна відправити email власнику "Хтось намагався зареєструватися..."
+    return { 
+      user: { 
+        id: exists.id,
+        name: exists.name,
+        email: exists.email,
+        role: exists.role as Role,
+        xp: exists.xp,
+        emailVerified: exists.emailVerified
+      }, 
+      tokens: { accessToken: '', refreshToken: '' } // Повертаємо пусті токени або dummy об'єкт
+    }
   }
   
   // Хешуємо пароль

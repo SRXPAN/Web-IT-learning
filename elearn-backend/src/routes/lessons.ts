@@ -32,11 +32,17 @@ function localizeMaterial<T extends MaterialWithI18n>(
   lang: Lang
 ): Omit<T, 'titleJson' | 'contentJson'> {
   const result: Record<string, unknown> = { ...material }
+  let contentLang: string = 'EN'; // Default
   
   // Localize title from titleJson
   if (material.titleJson) {
     const localized = localizeObject(material as Record<string, unknown>, lang, { titleJson: 'title' })
     result.title = localized.title
+    
+    // Check if translation exists for requested language
+    if (material.titleJson && typeof material.titleJson === 'object' && (material.titleJson as any)[lang]) {
+      contentLang = lang;
+    }
   }
   
   // Localize content from contentJson
@@ -49,12 +55,18 @@ function localizeMaterial<T extends MaterialWithI18n>(
   delete result.titleJson
   delete result.contentJson
   
+  // Add metadata for frontend
+  result.meta = {
+    requestedLang: lang,
+    contentLang: contentLang
+  };
+  
   return result as Omit<T, 'titleJson' | 'contentJson'>
 }
 
 // Schema for query params
 const querySchema = z.object({
-  lang: z.nativeEnum(Lang).optional(),
+  lang: z.enum(['UA', 'PL', 'EN']).optional(),
   page: z.string().regex(/^\d+$/).optional().default('1'),
   limit: z.string().regex(/^\d+$/).optional().default('10'),
 })
@@ -65,9 +77,10 @@ router.get(
   requireAuth,
   validateResource(querySchema, 'query'),
   asyncHandler(async (req: Request, res: Response) => {
-    const { lang, page, limit } = req.query as unknown as z.infer<typeof querySchema>;
-    const take = parseInt(limit || '10');
-    const skip = (parseInt(page || '1') - 1) * take;
+    const query = req.query as unknown as z.infer<typeof querySchema>;
+    const { lang, page = '1', limit = '10' } = query;
+    const take = parseInt(limit);
+    const skip = (parseInt(page) - 1) * take;
     const isStaff = ['ADMIN', 'EDITOR'].includes(req.user!.role);
 
     const [materials, total] = await Promise.all([
@@ -85,10 +98,10 @@ router.get(
     ])
 
     const localizedMaterials = lang
-      ? materials.map((m: any) => localizeMaterial(m, lang))
+      ? materials.map((m: any) => localizeMaterial(m, lang as Lang))
       : materials
 
-    return ok(res, { data: localizedMaterials, pagination: { page: parseInt(page || '1'), limit: parseInt(limit || '10'), total } })
+    return ok(res, { data: localizedMaterials, pagination: { page: parseInt(page), limit: parseInt(limit), total } })
   })
 )
 
@@ -100,7 +113,8 @@ router.get(
   validateResource(querySchema, 'query'),
   asyncHandler(async (req: Request, res: Response) => {
     const isStaff = ['ADMIN', 'EDITOR'].includes(req.user!.role)
-    const { lang } = req.query as unknown as z.infer<typeof querySchema>;
+    const query = req.query as unknown as z.infer<typeof querySchema>;
+    const { lang } = query;
     const id = getParam(req.params.id)
 
     const material = await prisma.material.findUnique({
@@ -126,10 +140,10 @@ router.get(
       .catch(() => {})
 
     if (lang && ['UA', 'PL', 'EN'].includes(lang)) {
-      const localized = localizeMaterial(material, lang)
+      const localized = localizeMaterial(material, lang as Lang)
       let localizedTopic = material.topic
       if (material.topic?.nameJson) {
-        const topicLocalized = localizeObject(material.topic, lang, { nameJson: 'name' })
+        const topicLocalized = localizeObject(material.topic, lang as Lang, { nameJson: 'name' })
         localizedTopic = { ...topicLocalized }
         delete (localizedTopic as any).nameJson
       }
@@ -149,14 +163,16 @@ router.get(
   validateResource(querySchema, 'query'),
   asyncHandler(async (req: Request, res: Response) => {
     const isStaff = ['ADMIN', 'EDITOR'].includes(req.user!.role)
-    const { lang, page, limit } = req.query as unknown as z.infer<typeof querySchema>;
-    const take = parseInt(limit || '10');
-    const skip = (parseInt(page || '1') - 1) * take;
+    const query = req.query as unknown as z.infer<typeof querySchema>;
+    const { lang, page = '1', limit = '10' } = query;
+    const take = parseInt(limit);
+    const skip = (parseInt(page) - 1) * take;
+    const topicId = getParam(req.params.topicId)
 
     const [materials, total] = await Promise.all([
       prisma.material.findMany({
         where: {
-          topicId: req.params.topicId,
+          topicId: topicId,
           ...(isStaff ? {} : { status: 'Published' }),
         },
         orderBy: { createdAt: 'asc' },
@@ -164,17 +180,17 @@ router.get(
       }),
       prisma.material.count({
         where: {
-          topicId: req.params.topicId,
+          topicId: topicId,
           ...(isStaff ? {} : { status: 'Published' }),
         },
       }),
     ])
 
     const localizedMaterials = lang
-      ? materials.map((m: any) => localizeMaterial(m, lang))
+      ? materials.map((m: any) => localizeMaterial(m, lang as Lang))
       : materials
 
-    return ok(res, { data: localizedMaterials, pagination: { page: parseInt(page || '1'), limit: parseInt(limit || '10'), total } })
+    return ok(res, { data: localizedMaterials, pagination: { page: parseInt(page), limit: parseInt(limit), total } })
   })
 )
 

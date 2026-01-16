@@ -121,10 +121,17 @@ export async function submitQuizAttempt(
     throw new Error('Quiz not found')
   }
 
-  // Filter valid answers
-  const validAnswers = answers.filter(
-    (a) => typeof a.optionId === 'string' && a.optionId.length > 0,
-  )
+  // Filter valid answers AND deduplicate by questionId
+  const uniqueAnswersMap = new Map<string, { questionId: string; optionId?: string }>();
+  
+  answers.forEach((a) => {
+    if (typeof a.optionId === 'string' && a.optionId.length > 0) {
+      // Якщо відповідь на це питання вже є, ми її перезаписуємо (або ігноруємо)
+      uniqueAnswersMap.set(a.questionId, a);
+    }
+  });
+
+  const validAnswers = Array.from(uniqueAnswersMap.values());
 
   // Build correctMap and explanationMap
   const correctMap: Record<string, string> = {}

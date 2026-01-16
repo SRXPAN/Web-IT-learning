@@ -1,25 +1,31 @@
 // src/middleware/sanitize.ts
 import type { Request, Response, NextFunction } from 'express'
+import createDOMPurify from 'dompurify'
+import { JSDOM } from 'jsdom'
+
+const window = new JSDOM('').window
+const DOMPurify = createDOMPurify(window as any)
 
 /**
- * Middleware для санітизації request body
- * Logic removed to prevent breaking legitimate content (like "x < y")
- * Security is handled by Zod validation and Frontend escaping
+ * Рекурсивно очищає рядки в об'єкті від XSS
  */
-export function sanitize(req: Request, res: Response, next: NextFunction): void {
-  next()
+function cleanObject(obj: any): void {
+  for (const key in obj) {
+    if (typeof obj[key] === 'string') {
+      obj[key] = DOMPurify.sanitize(obj[key])
+    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+      cleanObject(obj[key])
+    }
+  }
 }
 
-/**
- * Middleware для санітизації query параметрів
- */
-export function sanitizeQuery(req: Request, _res: Response, next: NextFunction): void {
-  next()
-}
-
-/**
- * Middleware для санітизації body
- */
 export function sanitizeBody(req: Request, res: Response, next: NextFunction): void {
+  if (req.body) {
+    cleanObject(req.body)
+  }
   next()
 }
+
+// Залиште інші функції як alias або видаліть, якщо не використовуються
+export const sanitize = sanitizeBody
+export const sanitizeQuery = (req: Request, res: Response, next: NextFunction) => next()

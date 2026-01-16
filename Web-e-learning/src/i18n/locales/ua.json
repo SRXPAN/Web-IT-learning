@@ -220,6 +220,8 @@
   "lesson.openLink": "Відкрити посилання",
   "lesson.noContent": "Немає вмісту",
   "lesson.explanationTitle": "Пояснення",
+  "lesson.translationWarning.unavailable": "Контент недоступний вашою мовою",
+  "lesson.translationWarning.showingOriginal": "Показано оригінальну версію",
   "lesson.mock.questionText": "Яка часова складність двійкового пошуку?",
   "lesson.mock.explanation": "Оскільки ми ділимо масив навпіл на кожній ітерації, кількість ітерацій дорівнює log₂(n).",
   "editor.topics": "Теми",

@@ -24,6 +24,10 @@ export interface Lesson {
     mimeType: string
     size: number
   } | null
+  meta?: {
+    requestedLang: string
+    contentLang: string
+  }
   createdAt: string
   updatedAt: string
 }

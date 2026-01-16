@@ -249,6 +249,8 @@ export type TranslationKey =
   | 'lesson.openLink'
   | 'lesson.noContent'
   | 'lesson.noVideo'
+  | 'lesson.translationWarning.unavailable'
+  | 'lesson.translationWarning.showingOriginal'
 
   // ============================================
   // PROFILE (32 keys)
