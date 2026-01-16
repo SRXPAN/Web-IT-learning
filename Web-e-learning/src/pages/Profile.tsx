@@ -3,10 +3,12 @@ import { useAuth } from '@/auth/AuthContext'
 import { useTheme } from '@/store/theme'
 import { useTranslation } from '@/i18n/useTranslation'
 import type { Lang } from '@/store/i18n'
-import { Award, Settings, Globe, Palette, Sun, Moon, Lock, Loader2, CheckCircle, Camera, Mail, Trash2 } from 'lucide-react'
+import { Award, Settings, Globe, Palette, Sun, Moon, Lock, Loader2, CheckCircle, Camera, Mail, Trash2, AlertTriangle } from 'lucide-react'
 import { LANG_GRADIENT_COLORS, getGradientColor } from '@/utils/colors'
 import PasswordInput from '@/components/PasswordInput'
 import { http } from '@/lib/http'
+import ConfirmDialog from '@/components/ConfirmDialog'
+import { useNavigate } from 'react-router-dom'
 
 /** Language display names - constant outside component */
 const LANG_NAMES: Record<Lang, string> = {
@@ -16,10 +18,11 @@ const LANG_NAMES: Record<Lang, string> = {
 }
 
 export default function Profile(){
-  const { user, refresh } = useAuth()
+  const { user, refresh, logout } = useAuth()
   const { theme, toggle } = useTheme()
   const { t, lang, setLang } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate()
   
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('')
@@ -39,6 +42,10 @@ export default function Profile(){
   const [emailLoading, setEmailLoading] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [emailSuccess, setEmailSuccess] = useState(false)
+  
+  // Delete account state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   
   if(!user) return <div className="card">{t('common.loading')}</div>
 
@@ -161,6 +168,20 @@ export default function Profile(){
       setPasswordError(err.message || t('profile.error.passwordChangeFailed'))
     } finally {
       setPasswordLoading(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true)
+    try {
+      await http.delete('/auth/account')
+      logout()
+      navigate('/')
+    } catch (err: any) {
+      alert(err.message || t('profile.error.accountDeleteFailed'))
+    } finally {
+      setDeleteLoading(false)
+      setShowDeleteDialog(false)
     }
   }
 
@@ -486,8 +507,42 @@ export default function Profile(){
               </button>
             </form>
           </div>
+          
+          {/* Delete Account */}
+          <div className="pt-6 border-t border-neutral-200 dark:border-neutral-700">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle size={18} className="text-red-600 dark:text-red-400"/>
+              <label className="font-semibold text-neutral-900 dark:text-white">
+                {t('profile.dangerZone')}
+              </label>
+            </div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+              {t('profile.deleteAccountWarning')}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowDeleteDialog(true)}
+              className="px-6 py-3 rounded-xl font-semibold bg-red-500 hover:bg-red-600 text-white transition-all duration-300 shadow-neo hover:shadow-neo-lg flex items-center gap-2"
+            >
+              <Trash2 size={18} />
+              {t('profile.action.deleteAccount')}
+            </button>
+          </div>
         </div>
       </section>
+      
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleDeleteAccount}
+        title={t('profile.deleteConfirm.title')}
+        message={t('profile.deleteConfirm.message')}
+        confirmText={t('profile.deleteConfirm.confirm')}
+        cancelText={t('common.cancel')}
+        variant="danger"
+        loading={deleteLoading}
+      />
     </div>
   )
 }

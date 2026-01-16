@@ -42,6 +42,7 @@ export function createAccessToken(user: { id: string; name: string; email: strin
 
 /**
  * Створює refresh токен та зберігає в БД
+ * Обмежує кількість активних сесій до 3
  */
 export async function createRefreshToken(
   userId: string, 
@@ -50,6 +51,34 @@ export async function createRefreshToken(
 ): Promise<string> {
   const token = generateRandomToken(64)
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000)
+  
+  // SECURITY: Обмеження сесій - максимум 3 активні токени на користувача
+  const activeTokens = await prisma.refreshToken.count({
+    where: {
+      userId,
+      revokedAt: null,
+      expiresAt: { gt: new Date() }
+    }
+  })
+  
+  // Якщо вже є 3 активні токени, видаляємо найстаріший
+  if (activeTokens >= 3) {
+    const oldestToken = await prisma.refreshToken.findFirst({
+      where: {
+        userId,
+        revokedAt: null,
+        expiresAt: { gt: new Date() }
+      },
+      orderBy: { createdAt: 'asc' }
+    })
+    
+    if (oldestToken) {
+      await prisma.refreshToken.update({
+        where: { id: oldestToken.id },
+        data: { revokedAt: new Date() }
+      })
+    }
+  }
   
   await prisma.refreshToken.create({
     data: {

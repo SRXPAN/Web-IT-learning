@@ -11,6 +11,7 @@ export interface JwtPayload {
   name: string
   email: string
   type?: 'access' | 'refresh'
+  emailVerified?: boolean
 }
 
 declare global {
@@ -34,7 +35,7 @@ function readToken(req: Request): string | null {
   return fromHeader || null
 }
 
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const token = readToken(req)
   if (!token) return sendError(res, ErrorCodes.UNAUTHORIZED, 'No token', 401)
   try {

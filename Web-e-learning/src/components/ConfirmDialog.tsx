@@ -11,10 +11,12 @@ interface ConfirmDialogProps {
   onConfirm: () => void | Promise<void>
   title: string
   description?: string
+  message?: string
   confirmText?: string
   cancelText?: string
   variant?: DialogVariant
   isLoading?: boolean
+  loading?: boolean
 }
 
 const variantConfig: Record<DialogVariant, {
@@ -63,10 +65,12 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
+  message,
   confirmText,
   cancelText,
   variant = 'danger',
   isLoading = false,
+  loading = false,
 }: ConfirmDialogProps) {
   const { t } = useTranslation()
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -74,6 +78,8 @@ export function ConfirmDialog({
   
   const resolvedConfirmText = confirmText ?? t('dialog.confirm')
   const resolvedCancelText = cancelText ?? t('dialog.cancel')
+  const actualLoading = isLoading || loading
+  const actualDescription = message || description
   
   const config = variantConfig[variant]
   const Icon = config.icon
@@ -134,9 +140,9 @@ export function ConfirmDialog({
               <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 {title}
               </h2>
-              {description && (
+              {actualDescription && (
                 <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                  {description}
+                  {actualDescription}
                 </p>
               )}
             </div>
@@ -154,7 +160,7 @@ export function ConfirmDialog({
           <div className="flex gap-3 p-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
             <button
               onClick={onClose}
-              disabled={isLoading}
+              disabled={actualLoading}
               className="flex-1 px-4 py-2.5 rounded-xl font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors disabled:opacity-50"
             >
               {resolvedCancelText}
@@ -162,10 +168,10 @@ export function ConfirmDialog({
             <button
               ref={confirmButtonRef}
               onClick={handleConfirm}
-              disabled={isLoading}
+              disabled={actualLoading}
               className={`flex-1 px-4 py-2.5 rounded-xl font-medium text-white ${config.buttonBg} ${config.buttonHover} transition-colors disabled:opacity-50 flex items-center justify-center gap-2`}
             >
-              {isLoading ? (
+              {actualLoading ? (
                 <>
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />

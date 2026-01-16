@@ -253,7 +253,7 @@ export type TranslationKey =
   | 'lesson.translationWarning.showingOriginal'
 
   // ============================================
-  // PROFILE (32 keys)
+  // PROFILE (41 keys)
   // ============================================
   | 'profile.title'
   | 'profile.name'
@@ -277,9 +277,16 @@ export type TranslationKey =
   | 'profile.error.passwordsNotMatch'
   | 'profile.error.passwordTooShort'
   | 'profile.error.passwordChangeFailed'
+  | 'profile.error.accountDeleteFailed'
   | 'profile.action.removeAvatar'
   | 'profile.action.changeEmail'
   | 'profile.action.changePassword'
+  | 'profile.action.deleteAccount'
+  | 'profile.dangerZone'
+  | 'profile.deleteAccountWarning'
+  | 'profile.deleteConfirm.title'
+  | 'profile.deleteConfirm.message'
+  | 'profile.deleteConfirm.confirm'
   | 'profile.label.newEmail'
   | 'profile.label.currentPassword'
   | 'profile.label.newPassword'
@@ -289,7 +296,7 @@ export type TranslationKey =
   | 'profile.success.passwordChanged'
 
   // ============================================
-  // AUTH (15 keys)
+  // AUTH (23 keys)
   // ============================================
   | 'auth.login'
   | 'auth.register'
@@ -306,6 +313,18 @@ export type TranslationKey =
   | 'auth.error.loginFailed'
   | 'auth.error.registrationFailed'
   | 'auth.placeholder.email'
+  | 'auth.agreeToTerms'
+  | 'auth.termsOfService'
+  | 'auth.and'
+  | 'auth.privacyPolicy'
+
+  // ============================================
+  // COOKIES (4 keys)
+  // ============================================
+  | 'cookies.title'
+  | 'cookies.message'
+  | 'cookies.learnMore'
+  | 'cookies.accept'
 
   // ============================================
   // ERROR (5 keys)

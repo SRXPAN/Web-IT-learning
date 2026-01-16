@@ -11,6 +11,7 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const nav = useNavigate()
@@ -117,10 +118,33 @@ export default function Register() {
             )}
           </div>
           
+          {/* GDPR Consent Checkbox */}
+          <div className="mt-6">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                disabled={loading}
+                className="mt-1 w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+              />
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                {t('auth.agreeToTerms')}{' '}
+                <a href="/terms" target="_blank" className="text-primary-600 hover:text-primary-700 underline">
+                  {t('auth.termsOfService')}
+                </a>
+                {' '}{t('auth.and')}{' '}
+                <a href="/privacy" target="_blank" className="text-primary-600 hover:text-primary-700 underline">
+                  {t('auth.privacyPolicy')}
+                </a>
+              </span>
+            </label>
+          </div>
+          
           <button 
             type="submit" 
             className="btn mt-6 w-full flex items-center justify-center gap-2"
-            disabled={loading || (password.length > 0 && !passwordsMatch)}
+            disabled={loading || (password.length > 0 && !passwordsMatch) || !agreedToTerms}
           >
             {loading ? (
               <>

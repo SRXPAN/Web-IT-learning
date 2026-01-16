@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import confetti from 'canvas-confetti'
 import { fetchTopicsTree, type TopicLite } from '@/services/topics'
 import { fetchQuiz, submitQuizAttempt, type Quiz } from '@/services/quiz'
 import { useAuth } from '@/auth/AuthContext'
@@ -102,8 +103,40 @@ export default function QuizPage() {
     loadTopics(lang as Lang).catch(console.error) 
   }, [loadTopics, lang])
   
+  // Celebrate quiz completion
+  useEffect(() => {
+    if (finished && quiz) {
+      // Trigger confetti when quiz is completed
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      })
+      // Additional celebratory burst
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 }
+        })
+      }, 250)
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 }
+        })
+      }, 400)
+    }
+  }, [finished, quiz])
+  
   // Мемоізована функція вибору квізу
-  const chooseQuiz = useCallback(async (id: string) => {
+  const chooseQuiz = useCallback(async (id: string, skipIfSameId = false) => {
+    // Якщо ID той самий і skipIfSameId=true, не перезавантажуємо
+    if (skipIfSameId && id === quizId) return
+    
     setQuiz(undefined)
     setLoadingQuiz(true)
     try {
@@ -116,7 +149,7 @@ export default function QuizPage() {
     } finally {
       setLoadingQuiz(false)
     }
-  }, [loadQuiz, lang])
+  }, [loadQuiz, lang, quizId])
 
   // Оновлення списку квізів при зміні topics
   useEffect(() => {
@@ -124,7 +157,7 @@ export default function QuizPage() {
     setQuizList(list)
     // Вибрати перший квіз тільки якщо ще не вибрано
     if (!quizId && list.length > 0) {
-      chooseQuiz(list[0].id)
+      chooseQuiz(list[0].id, false)
     }
   }, [topics, quizId, chooseQuiz])
 

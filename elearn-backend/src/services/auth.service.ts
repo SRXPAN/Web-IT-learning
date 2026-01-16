@@ -399,3 +399,59 @@ export async function resendVerificationEmail(email: string): Promise<boolean> {
   await createEmailVerificationToken(email)
   return true
 }
+
+/**
+ * Видалення акаунту користувача (GDPR Right to be Forgotten)
+ * Каскадно видаляє всі дані користувача
+ */
+export async function deleteUser(userId: string): Promise<boolean> {
+  // Перевіряємо існування користувача
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true }
+  })
+  
+  if (!user) {
+    throw AppError.notFound('User not found')
+  }
+  
+  // Використовуємо транзакцію для каскадного видалення
+  await prisma.$transaction(async (tx) => {
+    // Видаляємо токени авторизації
+    await tx.refreshToken.deleteMany({ where: { userId } })
+    
+    // Видаляємо відповіді на квізи
+    await tx.answer.deleteMany({ where: { userId } })
+    
+    // Видаляємо спроби проходження квізів
+    await tx.quizAttempt.deleteMany({ where: { userId } })
+    
+    // Видаляємо токени верифікації email
+    await tx.emailVerificationToken.deleteMany({ where: { email: user.email } })
+    
+    // Видаляємо токени скидання паролю
+    await tx.passwordResetToken.deleteMany({ where: { email: user.email } })
+    
+    // Видаляємо файли користувача (опціонально можна залишити з uploadedById = null)
+    await tx.file.updateMany({
+      where: { uploadedById: userId },
+      data: { uploadedById: null }
+    })
+    
+    // Аудит лог
+    await tx.auditLog.create({
+      data: {
+        userId,
+        action: 'DELETE',
+        resource: 'user',
+        resourceId: userId,
+        metadata: { email: user.email, reason: 'User requested account deletion' }
+      }
+    })
+    
+    // Нарешті видаляємо користувача
+    await tx.user.delete({ where: { id: userId } })
+  })
+  
+  return true
+}

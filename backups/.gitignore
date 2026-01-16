@@ -1,0 +1,8 @@
+# Ignore all backup files
+*.dump
+*.sql
+*.tar.gz
+*.zip
+
+# Keep README
+!README.md

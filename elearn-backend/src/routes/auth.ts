@@ -25,6 +25,7 @@ import {
   resetPassword,
   verifyEmail,
   resendVerificationEmail,
+  deleteUser,
 } from '../services/auth.service.js'
 import { logger } from '../utils/logger.js'
 import bcrypt from 'bcryptjs'
@@ -645,6 +646,34 @@ router.delete('/avatar', requireAuth, async (req, res, next) => {
     res.json({ ok: true, user: updatedUser })
   } catch (e) { next(e) }
 })
+
+// ============================================
+// ACCOUNT MANAGEMENT
+// ============================================
+
+// DELETE /api/auth/account — видалення користувача (GDPR Right to be Forgotten)
+router.delete(
+  '/account',
+  requireAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    await deleteUser(req.user!.id)
+    
+    // Logout user after deletion
+    clearAuthCookies(res)
+    
+    await auditLog({
+      userId: req.user!.id,
+      action: AuditActions.DELETE,
+      resource: AuditResources.USER,
+      resourceId: req.user!.id,
+      metadata: { reason: 'user_request' },
+      userAgent: getClientInfo(req).userAgent,
+      ip: getClientInfo(req).ip,
+    })
+    
+    return ok(res, { message: 'Account deleted successfully' })
+  })
+)
 
 // ============================================
 // LEADERBOARD

@@ -3,6 +3,7 @@ import { useCallback, useState, lazy, Suspense } from 'react'
 import RequireAuth from './components/RequireAuth'
 import { RequireRole } from './components/RequireRole'
 import ErrorBoundary from './components/ErrorBoundary'
+import CookieBanner from './components/CookieBanner'
 import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { LayoutDashboard, BookOpen, Trophy, User, LogIn, LogOut, LucideIcon, Menu, X, Shield } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
@@ -211,6 +212,7 @@ export default function App(){
         </ErrorBoundary>
       </main>
       <Toasts />
+      <CookieBanner />
     </div>
   )
 }

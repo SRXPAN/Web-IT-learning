@@ -1,13 +1,27 @@
 // src/utils/env.ts
+import { logger } from './logger.js'
 
 /**
  * Безпечне отримання змінних середовища
- * Кидає помилку якщо обов'язкова змінна відсутня
+ * Виводить зрозуміле повідомлення та завершує процес якщо критична змінна відсутня
  */
-export function requireEnv(name: string): string {
+export function requireEnv(name: string, description?: string): string {
   const value = process.env[name]
   if (!value) {
-    throw new Error(`Environment variable ${name} is required but not set`)
+    const message = description 
+      ? `❌ Missing required environment variable: ${name}\n   Description: ${description}\n   Please set this variable in your .env file or environment.`
+      : `❌ Missing required environment variable: ${name}\n   Please set this variable in your .env file or environment.`
+    
+    logger.error(message)
+    
+    // В продакшені - завершуємо процес
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('Application cannot start without required environment variables. Exiting...')
+      process.exit(1)
+    } else {
+      // В dev режимі - кидаємо помилку для розробника
+      throw new Error(message)
+    }
   }
   return value
 }
@@ -17,7 +31,12 @@ export function requireEnv(name: string): string {
  * Використовувати ТІЛЬКИ для некритичних налаштувань
  */
 export function getEnv(name: string, fallback: string): string {
-  return process.env[name] ?? fallback
+  const value = process.env[name]
+  if (!value) {
+    logger.warn(`⚠️  Using fallback value for ${name}: "${fallback}"`)
+    return fallback
+  }
+  return value
 }
 
 /**
@@ -42,6 +61,6 @@ let _jwtSecret: string | null = null
 
 export function getJwtSecret(): string {
   if (_jwtSecret) return _jwtSecret
-  _jwtSecret = requireEnv('JWT_SECRET')
+  _jwtSecret = requireEnv('JWT_SECRET', 'Secret key for JWT token signing (use a long random string)')
   return _jwtSecret
 }

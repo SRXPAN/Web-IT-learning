@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import confetti from 'canvas-confetti'
 import { ChevronRight, Play, FileText, Video, Link as LinkIcon, Code, CheckCircle, XCircle, Timer, Lightbulb, Award, ListChecks, Loader2 } from 'lucide-react'
 import { useTranslation } from '@/i18n/useTranslation'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -151,6 +152,14 @@ export default function LessonView() {
       setShowExplanation(true)
     } else {
       // Exam mode: just move to next
+      // Celebrate completion on last question
+      if (currentQ >= 9) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        })
+      }
       setCurrentQ(q => q + 1)
       setSelectedAnswer(null)
     }
