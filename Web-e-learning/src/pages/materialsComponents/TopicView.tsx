@@ -481,7 +481,7 @@ function TopicSection({
               className="inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-purple-300 px-4 py-2 text-sm font-semibold text-purple-600 hover:border-purple-500 hover:bg-purple-50 hover:text-purple-700 dark:border-purple-700 dark:text-purple-400 dark:hover:border-purple-500 dark:hover:bg-purple-900/20 dark:hover:text-purple-300 transition-all"
             >
               <PlusCircle size={16} />
-              Add Quiz to this lesson
+              {t('editor.add_quiz')}
             </button>
           </div>
         )}

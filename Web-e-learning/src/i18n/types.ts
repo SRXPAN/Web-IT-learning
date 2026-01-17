@@ -507,6 +507,17 @@ export type TranslationKey =
   | 'editor.empty.noQuizzes'
   | 'editor.empty.noQuestions'
   | 'editor.loading.questions'
+  | 'editor.add_quiz'
+  | 'editor.edit_material'
+  | 'editor.add_material'
+  | 'editor.save_changes'
+  | 'editor.add_question'
+  | 'editor.quiz_title'
+  | 'editor.question'
+  | 'editor.options'
+  | 'editor.add_option'
+  | 'editor.delete_question'
+  | 'editor.delete_material'
 
   // ============================================
   // ADMIN PANEL (70+ keys)

@@ -7,10 +7,9 @@ import { useTranslation } from '@/i18n/useTranslation'
 import { type TranslationKey } from '@/i18n/types'
 import { useAdminContent } from '@/hooks/useAdmin'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { TopicSidebar, TopicView } from '@/pages/materialsComponents'
+import { TopicSidebar, TopicView, AdminMaterialModal } from '@/pages/materialsComponents'
 import type { TopicNode, Material } from '@/pages/materialsComponents/types'
 import { Loading } from '@/components/Loading'
-import MaterialsTab from '@/pages/editor/MaterialsTab'
 import { QuizModal } from '@/pages/materialsComponents/QuizModal'
 import {
   BookOpen,
@@ -68,6 +67,7 @@ export default function AdminContent() {
   const [showMaterialModal, setShowMaterialModal] = useState(false)
   const [materialLessonId, setMaterialLessonId] = useState<string | null>(null)
   const [materialType, setMaterialType] = useState<'VIDEO' | 'TEXT' | 'pdf' | 'link' | null>(null)
+  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
   const [showQuizModal, setShowQuizModal] = useState(false)
   const [quizTopicId, setQuizTopicId] = useState<string | null>(null)
 
@@ -163,12 +163,14 @@ export default function AdminContent() {
 
   const handleAddMaterial = useCallback((lessonId: string, type: 'VIDEO' | 'TEXT' | 'pdf' | 'link') => {
     setMaterialLessonId(lessonId)
-    setMaterialType(type)
+    setEditingMaterial(null) // Clear any existing material
     setShowMaterialModal(true)
   }, [])
 
   const handleEditMaterial = useCallback((material: Material, topic: TopicNode) => {
     setMaterialLessonId(topic.id)
+    setMaterialType(null)
+    setEditingMaterial(material) // Set the material to edit
     setMaterialType(null) // No type restriction when editing
     setShowMaterialModal(true)
   }, [])
@@ -295,35 +297,24 @@ export default function AdminContent() {
         />
       )}
 
-      {/* Material Editor Modal */}
-      {showMaterialModal && materialLessonId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {materialType 
-                  ? `Add ${materialType === 'VIDEO' ? 'Video' : materialType === 'TEXT' ? 'Text' : materialType} Material`
-                  : 'Manage Materials'
-                }
-              </h2>
-              <button
-                onClick={() => {
-                  setShowMaterialModal(false)
-                  setMaterialLessonId(null)
-                  setMaterialType(null)
-                }}
-                className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-              <MaterialsTab 
-                topicId={materialLessonId} 
-                preselectedLessonId={materialLessonId}
-                preselectedType={materialType || undefined}
-              />
-            </div>
+      {/*AdminMaterialModal
+          material={editingMaterial}
+          lessonId={materialLessonId}
+          preselectedType={materialType || undefined}
+          onClose={() => {
+            setShowMaterialModal(false)
+            setMaterialLessonId(null)
+            setMaterialType(null)
+            setEditingMaterial(null)
+          }}
+          onSave={() => {
+            setShowMaterialModal(false)
+            setMaterialLessonId(null)
+            setMaterialType(null)
+            setEditingMaterial(null)
+            fetchTopics()
+          }}
+        //div>
           </div>
         </div>
       )}

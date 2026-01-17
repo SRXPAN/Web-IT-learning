@@ -1,6 +1,7 @@
 import { memo, useState } from 'react'
 import { X, Plus, Trash2, CheckCircle2, Circle, Clock, Save } from 'lucide-react'
 import { http as api } from '@/lib/http'
+import { useTranslation } from '@/i18n/useTranslation'
 
 interface QuizModalProps {
   topicId: string
@@ -24,6 +25,7 @@ export const QuizModal = memo(function QuizModal({
   onClose,
   onSave,
 }: QuizModalProps) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [durationSec, setDurationSec] = useState(300)
   const [questions, setQuestions] = useState<Question[]>([])
@@ -150,7 +152,7 @@ export const QuizModal = memo(function QuizModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Add Quiz
+            {t('editor.add_quiz')}
           </h2>
           <button
             onClick={onClose}
@@ -173,13 +175,13 @@ export const QuizModal = memo(function QuizModal({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Quiz Title *
+                {t('editor.quiz_title')} *
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Python Basics Quiz"
+                placeholder={t('editor.placeholder.quizTitle')}
                 className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 required
               />
@@ -216,7 +218,7 @@ export const QuizModal = memo(function QuizModal({
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600 text-white hover:bg-purple-700 text-sm font-medium transition-colors"
               >
                 <Plus size={16} />
-                Add Question
+                {t('editor.add_question')}
               </button>
             </div>
 
@@ -234,7 +236,7 @@ export const QuizModal = memo(function QuizModal({
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Question {qIdx + 1} *
+                        {t('editor.question')} {qIdx + 1} *
                       </label>
                       <input
                         type="text"
@@ -275,14 +277,14 @@ export const QuizModal = memo(function QuizModal({
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
-                        Options (click circle to mark as correct) *
+                        {t('editor.options')} *
                       </label>
                       <button
                         type="button"
                         onClick={() => addOption(qIdx)}
                         className="text-xs px-2 py-1 rounded text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-medium transition-colors"
                       >
-                        + Option
+                        + {t('editor.add_option')}
                       </button>
                     </div>
 
@@ -337,7 +339,7 @@ export const QuizModal = memo(function QuizModal({
               onClick={onClose}
               className="px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -345,7 +347,7 @@ export const QuizModal = memo(function QuizModal({
               className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 font-medium transition-colors flex items-center gap-2"
             >
               <Save size={16} />
-              {loading ? 'Saving...' : 'Save Quiz'}
+              {loading ? t('common.saving') : t('editor.save_changes')}
             </button>
           </div>
         </form>
