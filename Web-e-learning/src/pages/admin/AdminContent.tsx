@@ -1,32 +1,24 @@
 /**
  * Admin Content Management Page  
- * Edit Topics, Materials, Quizzes with translations
+ * Visual editor: see what students see, but with edit controls
  */
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTranslation } from '@/i18n/useTranslation'
 import { type TranslationKey } from '@/i18n/types'
 import { useAdminContent } from '@/hooks/useAdmin'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { TopicSidebar, TopicView } from '@/pages/materialsComponents'
+import type { TopicNode, Material } from '@/pages/materialsComponents/types'
+import { Loading } from '@/components/Loading'
 import MaterialsTab from '@/pages/editor/MaterialsTab'
-import QuizzesTab from '@/pages/editor/QuizzesTab'
+import { QuizEditor } from '@/pages/materialsComponents/QuizEditor'
 import {
   BookOpen,
-  FolderTree,
-  FileText,
-  HelpCircle,
   Plus,
-  Edit2,
-  Trash2,
   Save,
   X,
-  ChevronRight,
-  ChevronDown,
-  Eye,
-  EyeOff,
   Globe,
-  RefreshCw,
 } from 'lucide-react'
-import { Loading } from '@/components/Loading'
-import { ConfirmDialog } from '@/components/ConfirmDialog'
 
 interface Topic {
   id: string
@@ -46,19 +38,13 @@ interface Topic {
   children?: Topic[]
 }
 
-type ContentTab = 'topics' | 'materials' | 'quizzes'
-
 export default function AdminContent() {
   const { t, lang } = useTranslation()
   const tx = (key: TranslationKey, fallback: string) => {
     const val = t(key)
     return val === key ? fallback : val
   }
-  const [activeTab, setActiveTab] = useState<ContentTab>('topics')
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
-  const [selectedTopicId, setSelectedTopicId] = useState<string>('')
-  
-  // Use admin content hook
+
   const {
     topics,
     loading,
@@ -67,61 +53,87 @@ export default function AdminContent() {
     createTopic,
     updateTopic,
     deleteTopic,
-    publishTopic,
-    unpublishTopic,
   } = useAdminContent()
-  
-  // Edit state
+
+  // Visual editor state
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null)
+  const [selectedSubId, setSelectedSubId] = useState<string | null>(null)
+
+  // Modals
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null)
   const [showCreateTopic, setShowCreateTopic] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<Topic | null>(null)
 
-  const flattenedTopics = useMemo(() => {
-    const result: Array<{ id: string; label: string }> = []
-    const walk = (items?: Topic[], prefix = '') => {
-      if (!items) return
-      for (const item of items) {
-        const label = prefix ? `${prefix} / ${item.name}` : item.name
-        result.push({ id: item.id, label })
-        if (item.children?.length) {
-          walk(item.children, label)
-        }
-      }
-    }
-    const roots = (topics || []).filter(t => !t.parentId)
-    walk(roots)
-    return result
+  // Material/Quiz management
+  const [showMaterialModal, setShowMaterialModal] = useState(false)
+  const [materialTopicId, setMaterialTopicId] = useState<string | null>(null)
+  const [showQuizModal, setShowQuizModal] = useState(false)
+  const [quizTopicId, setQuizTopicId] = useState<string | null>(null)
+
+  // Transform topics tree for student view
+  const topicsAsNodes = useMemo((): TopicNode[] => {
+    if (!topics) return []
+    // Filter to root (no parentId) and map to TopicNode shape
+    return topics.filter((t) => !t.parentId).map((root) => {
+      const transform = (topic: Topic): TopicNode => ({
+        id: topic.id,
+        name: topic.name,
+        nameJson: topic.nameJson,
+        description: topic.description,
+        descJson: topic.descJson,
+        slug: topic.slug,
+        category: (topic.category || 'Programming') as any,
+        materials: [], // Could fetch from server if needed
+        quizzes: [],
+        children: topic.children ? topic.children.map(transform) : []
+      })
+      return transform(root)
+    })
   }, [topics])
 
   useEffect(() => {
-    if (!selectedTopicId && flattenedTopics.length) {
-      setSelectedTopicId(flattenedTopics[0].id)
+    if (!selectedTopicId && topicsAsNodes.length) {
+      setSelectedTopicId(topicsAsNodes[0].id)
     }
-  }, [flattenedTopics, selectedTopicId])
+  }, [topicsAsNodes, selectedTopicId])
 
-  const toggleExpand = (id: string) => {
-    setExpandedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
+  const activeTopic = topicsAsNodes.find((t) => t.id === selectedTopicId) || null
+  const activeSub =
+    activeTopic?.children?.find((c) => c.id === selectedSubId) || null
+
+  // Handlers
+  const handleAddTopic = useCallback(() => {
+    setShowCreateTopic(true)
+  }, [])
+
+  const handleEditTopic = useCallback((topic: TopicNode) => {
+    // Convert TopicNode back to Topic for modal
+    setEditingTopic({
+      id: topic.id,
+      slug: topic.slug,
+      name: topic.name,
+      nameJson: topic.nameJson as any,
+      description: topic.description || '',
+      descJson: topic.descJson as any,
+      category: topic.category || 'Programming',
+      status: 'Published',
+      parentId: null,
     })
-  }
+  }, [])
 
-  const handlePublish = async (topicId: string, publish: boolean) => {
-    try {
-      if (publish) {
-        await publishTopic(topicId)
-      } else {
-        await unpublishTopic(topicId)
-      }
-    } catch (err) {
-      console.error('Failed to update status:', err)
-    }
-  }
+  const handleDeleteTopic = useCallback((topic: TopicNode) => {
+    setDeleteConfirm({
+      id: topic.id,
+      slug: topic.slug,
+      name: topic.name,
+      nameJson: topic.nameJson as any,
+      description: topic.description || '',
+      descJson: topic.descJson as any,
+      category: topic.category || 'Programming',
+      status: 'Published',
+      parentId: null,
+    })
+  }, [])
 
   const handleDelete = async () => {
     if (!deleteConfirm) return
@@ -133,106 +145,41 @@ export default function AdminContent() {
     }
   }
 
-  const renderTopicRow = (topic: Topic, level = 0) => {
-    const hasChildren = topic._count?.children && topic._count.children > 0
-    const isExpanded = expandedIds.has(topic.id)
-    
-    return (
-      <div key={topic.id}>
-        <div 
-          className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700/50`}
-          style={{ paddingLeft: `${16 + level * 24}px` }}
-        >
-          {/* Expand button */}
-          <button
-            onClick={() => toggleExpand(topic.id)}
-            className={`w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-600 ${
-              !hasChildren ? 'invisible' : ''
-            }`}
-          >
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4" />
-            ) : (
-              <ChevronRight className="w-4 h-4" />
-            )}
-          </button>
+  // Lesson/Material stubs
+  const handleAddLesson = useCallback((topic: TopicNode) => {
+    console.log('Add lesson under', topic.name)
+    // Open create sub-topic modal
+    setShowCreateTopic(true)
+  }, [])
 
-          {/* Topic info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-900 dark:text-white">
-                {topic.nameJson?.[lang as 'UA' | 'PL' | 'EN'] || topic.name}
-              </span>
-              <code className="text-xs bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-500">
-                {topic.slug}
-              </code>
-              {topic.nameJson && (
-                <span title="Has translations">
-                  <Globe className="w-3.5 h-3.5 text-blue-500" />
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
-              <span className={`px-1.5 py-0.5 rounded ${
-                topic.category === 'Programming' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
-                topic.category === 'Databases' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' :
-                'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-              }`}>
-                {topic.category}
-              </span>
-              <span>{topic._count?.materials || 0} materials</span>
-              <span>{topic._count?.quizzes || 0} quizzes</span>
-            </div>
-          </div>
+  const handleEditLesson = useCallback((topic: TopicNode) => {
+    handleEditTopic(topic)
+  }, [handleEditTopic])
 
-          {/* Status */}
-          <div className="flex items-center gap-2">
-            {topic.status === 'Published' ? (
-              <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                <Eye className="w-3.5 h-3.5" /> Published
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 text-xs text-gray-400">
-                <EyeOff className="w-3.5 h-3.5" /> Draft
-              </span>
-            )}
-          </div>
+  const handleDeleteLesson = useCallback((topic: TopicNode) => {
+    handleDeleteTopic(topic)
+  }, [handleDeleteTopic])
 
-          {/* Actions */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => handlePublish(topic.id, topic.status !== 'Published')}
-              className={`p-1.5 rounded ${
-                topic.status === 'Published' 
-                  ? 'text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' 
-                  : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
-              }`}
-              title={topic.status === 'Published' ? 'Unpublish' : 'Publish'}
-            >
-              {topic.status === 'Published' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-            <button
-              onClick={() => setEditingTopic(topic)}
-              className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
-              title="Edit"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setDeleteConfirm(topic)}
-              className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-              title="Delete"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+  const handleAddMaterial = useCallback((topic: TopicNode) => {
+    setMaterialTopicId(topic.id)
+    setShowMaterialModal(true)
+  }, [])
 
-        {/* Children */}
-        {isExpanded && topic.children?.map(child => renderTopicRow(child, level + 1))}
-      </div>
-    )
-  }
+  const handleEditMaterial = useCallback((material: Material, topic: TopicNode) => {
+    setMaterialTopicId(topic.id)
+    setShowMaterialModal(true)
+  }, [])
+
+  const handleDeleteMaterial = useCallback(async (material: Material, topic: TopicNode) => {
+    if (!confirm(`Delete "${material.title}"?`)) return
+    // TODO: Implement delete via API
+    console.log('Delete material', material.title)
+  }, [])
+
+  const handleAddQuiz = useCallback((topic: TopicNode) => {
+    setQuizTopicId(topic.id)
+    setShowQuizModal(true)
+  }, [])
 
   if (loading && (!topics || topics.length === 0)) {
     return <Loading />
@@ -245,156 +192,70 @@ export default function AdminContent() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
             <BookOpen className="w-7 h-7" />
-            {tx('admin.content', 'Контент')}
+            {tx('admin.content', 'Content Editor')}
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {tx('admin.contentDescription', 'Керування темами, матеріалами та вікторинами')}
+            {tx('admin.contentDescription', 'Edit topics, lessons, and materials as students see them')}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 justify-end">
-          <button
-            onClick={() => setShowCreateTopic(true)}
-            className="px-4 py-2 min-h-[40px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            {tx('admin.createTopic', 'Створити тему')}
-          </button>
-        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
-        {([
-          { id: 'topics', icon: FolderTree, label: tx('admin.topicsTab', 'Topics') },
-          { id: 'materials', icon: FileText, label: tx('admin.materialsTab', 'Materials') },
-          { id: 'quizzes', icon: HelpCircle, label: tx('admin.quizzesTab', 'Quizzes') },
-        ] as const).map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-3 font-medium border-b-2 transition-colors ${
-              activeTab === tab.id
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Error */}
       {error && (
         <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400">
           {error}
         </div>
       )}
 
-      {/* Topics Tree */}
-      {activeTab === 'topics' && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
-          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between gap-3">
-            <div>
-              <h3 className="font-medium text-gray-700 dark:text-gray-300">{tx('admin.topicHierarchy', 'Ієрархія тем')}</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{tx('admin.topicHierarchyHint', 'Розгортай, редагуй, публікуй теми')}</p>
-            </div>
-            <button
-              onClick={fetchTopics}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <RefreshCw className="w-4 h-4" />
-              {t('common.refresh')}
-            </button>
-          </div>
-          
-          {!topics || topics.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              {tx('admin.noTopics', 'Ще немає тем. Створи першу тему!')}
-            </div>
+      {/* Visual Editor Layout */}
+      <div className="flex h-[calc(100vh-200px)] gap-6">
+        {/* Sidebar */}
+        <div className="w-64 overflow-y-auto">
+          <TopicSidebar
+            catTopics={topicsAsNodes}
+            activeTopicId={selectedTopicId}
+            activeSubId={selectedSubId}
+            loading={loading}
+            isEditable={true}
+            onSelectTopic={setSelectedTopicId}
+            onSelectSub={(topicId, subId) => {
+              setSelectedTopicId(topicId)
+              setSelectedSubId(subId)
+            }}
+            onAddTopic={handleAddTopic}
+            onEditTopic={handleEditTopic}
+            onDeleteTopic={handleDeleteTopic}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900/40 rounded-2xl p-6">
+          {activeTopic ? (
+            <TopicView
+              activeTopic={activeTopic}
+              activeSub={activeSub}
+              tab="ALL"
+              setTab={() => {}}
+              query=""
+              setQuery={() => {}}
+              filteredMaterials={(list) => list}
+              openMaterial={(m) => console.log('Open', m.title)}
+              progressVersion={0}
+              isEditable={true}
+              onAddLesson={handleAddLesson}
+              onEditLesson={handleEditLesson}
+              onDeleteLesson={handleDeleteLesson}
+              onAddMaterial={handleAddMaterial}
+              onEditMaterial={handleEditMaterial}
+              onDeleteMaterial={handleDeleteMaterial}
+              onAddQuiz={handleAddQuiz}
+            />
           ) : (
-            <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-              {topics.filter(t => !t.parentId).map(topic => renderTopicRow(topic))}
+            <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              {tx('admin.selectTopic', 'Select a topic from the sidebar to start editing')}
             </div>
           )}
         </div>
-      )}
-
-      {/* Materials Tab */}
-      {activeTab === 'materials' && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm space-y-4">
-          <div className="flex flex-wrap gap-3 items-center">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-              <FolderTree className="w-4 h-4" />
-              {tx('admin.materialsHint', 'Оберіть тему для матеріалів')}
-            </label>
-            <select
-              value={selectedTopicId}
-              onChange={(e) => setSelectedTopicId(e.target.value)}
-              className="min-w-[220px] px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
-            >
-              {!selectedTopicId && <option value="">{tx('admin.selectTopic', 'Виберіть тему')}</option>}
-              {flattenedTopics.map((t) => (
-                <option key={t.id} value={t.id}>{t.label}</option>
-              ))}
-            </select>
-            <button
-              onClick={fetchTopics}
-              className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              {t('common.refresh')}
-            </button>
-            <button
-              onClick={() => setActiveTab('topics')}
-              className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
-            >
-              <FolderTree className="w-4 h-4" />
-              {tx('admin.openTopics', 'Відкрити теми')}
-            </button>
-          </div>
-
-          <MaterialsTab topicId={selectedTopicId || undefined} />
-        </div>
-      )}
-
-      {/* Quizzes Tab */}
-      {activeTab === 'quizzes' && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm space-y-4">
-          <div className="flex flex-wrap gap-3 items-center">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-              <HelpCircle className="w-4 h-4" />
-              {tx('admin.quizzesHint', 'Оберіть тему для вікторин')}
-            </label>
-            <select
-              value={selectedTopicId}
-              onChange={(e) => setSelectedTopicId(e.target.value)}
-              className="min-w-[220px] px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
-            >
-              {!selectedTopicId && <option value="">{tx('admin.selectTopic', 'Виберіть тему')}</option>}
-              {flattenedTopics.map((t) => (
-                <option key={t.id} value={t.id}>{t.label}</option>
-              ))}
-            </select>
-            <button
-              onClick={fetchTopics}
-              className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              {t('common.refresh')}
-            </button>
-            <button
-              onClick={() => setActiveTab('topics')}
-              className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
-            >
-              <FolderTree className="w-4 h-4" />
-              {tx('admin.openTopics', 'Відкрити теми')}
-            </button>
-          </div>
-
-          <QuizzesTab topicId={selectedTopicId || undefined} />
-        </div>
-      )}
+      </div>
 
       {/* Edit Topic Modal */}
       {editingTopic && (
@@ -428,6 +289,45 @@ export default function AdminContent() {
           onConfirm={handleDelete}
           onClose={() => setDeleteConfirm(null)}
           variant="danger"
+        />
+      )}
+
+      {/* Material Editor Modal */}
+      {showMaterialModal && materialTopicId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Manage Materials</h2>
+              <button
+                onClick={() => {
+                  setShowMaterialModal(false)
+                  setMaterialTopicId(null)
+                }}
+                className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+              <MaterialsTab topicId={materialTopicId} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quiz Editor Modal */}
+      {showQuizModal && quizTopicId && (
+        <QuizEditor
+          quizId="new"
+          topicId={quizTopicId}
+          onClose={() => {
+            setShowQuizModal(false)
+            setQuizTopicId(null)
+          }}
+          onSave={() => {
+            // Refresh topics after quiz creation
+            fetchTopics()
+          }}
         />
       )}
     </div>

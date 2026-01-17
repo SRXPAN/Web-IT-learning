@@ -115,15 +115,19 @@ async function handle<T>(res: Response, retry?: () => Promise<T>): Promise<T> {
   
   if (res.status === 403) {
     const text = await res.text()
-    const data = text ? JSON.parse(text) : null
+    let data: any = null
+    try {
+      data = text ? JSON.parse(text) : null
+    } catch {
+      data = null
+    }
     const code = data?.error?.code ?? data?.code
     const message = extractErrorMessage(data, 'Forbidden')
-    // If CSRF error - try to refresh token
-    if (code === 'CSRF_INVALID') {
-      await fetchCsrfToken()
-      const csrfMessage = 'CSRF token expired. Please try again.'
-      toast.error(csrfMessage)
-      throw new Error(csrfMessage)
+    const isCsrf = code === 'CSRF_INVALID' || /csrf/i.test(message)
+    // If CSRF error - fetch a fresh token and retry once
+    if (isCsrf && retry) {
+      await fetchCsrfToken().catch(() => null)
+      return retry()
     }
     toast.error(message)
     throw new Error(message)
@@ -178,22 +182,34 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     'Content-Type': 'application/json',
     ...(init.headers as Record<string, string> || {}),
   }
-  
-  // Додаємо CSRF токен для мутуючих запитів
-  if (init.method && !['GET', 'HEAD', 'OPTIONS'].includes(init.method)) {
-    const csrfToken = getCsrfToken()
+  const method = (init.method ?? 'GET').toUpperCase()
+  const isMutating = !['GET', 'HEAD', 'OPTIONS'].includes(method)
+  if (isMutating) {
+    let csrfToken = getCsrfToken()
+    if (!csrfToken) {
+      try {
+        csrfToken = await fetchCsrfToken()
+      } catch {
+        // If token fetch fails, let the request surface the error
+      }
+    }
     if (csrfToken) {
       headers[CSRF_HEADER] = csrfToken
     }
   }
-
+  
+  let csrfRetried = false
   const makeRequest = async (): Promise<T> => {
     const res = await fetch(`${API_URL}${path}`, {
       credentials: 'include',
       headers,
       ...init,
     })
-    return handle<T>(res, makeRequest)
+    const retry = csrfRetried ? undefined : () => {
+      csrfRetried = true
+      return makeRequest()
+    }
+    return handle<T>(res, retry)
   }
   
   return makeRequest()

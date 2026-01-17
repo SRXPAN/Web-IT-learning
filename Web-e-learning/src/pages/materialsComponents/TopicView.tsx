@@ -11,6 +11,9 @@ import {
   Sparkles,
   ArrowRight,
   Filter,
+  Pencil,
+  Trash2,
+  PlusCircle,
 } from 'lucide-react'
 import { isMaterialSeen, countSeen } from '@/utils/progress'
 import { ProgressBar } from './ProgressBar'
@@ -30,6 +33,14 @@ interface TopicViewProps {
   filteredMaterials: (list: Material[]) => Material[]
   openMaterial: (m: Material) => void
   progressVersion: number
+  isEditable?: boolean
+  onAddLesson?: (topic: TopicNode) => void
+  onEditLesson?: (topic: TopicNode) => void
+  onDeleteLesson?: (topic: TopicNode) => void
+  onAddMaterial?: (topic: TopicNode) => void
+  onEditMaterial?: (material: Material, topic: TopicNode) => void
+  onDeleteMaterial?: (material: Material, topic: TopicNode) => void
+  onAddQuiz?: (topic: TopicNode) => void
 }
 
 export function TopicView({
@@ -42,6 +53,14 @@ export function TopicView({
   filteredMaterials,
   openMaterial,
   progressVersion,
+  isEditable,
+  onAddLesson,
+  onEditLesson,
+  onDeleteLesson,
+  onAddMaterial,
+  onEditMaterial,
+  onDeleteMaterial,
+  onAddQuiz,
 }: TopicViewProps) {
   const { t, lang } = useTranslation()
 
@@ -101,6 +120,13 @@ export function TopicView({
           lang={lang as Lang}
           isMain
           progressVersion={progressVersion}
+          isEditable={isEditable}
+          onAddMaterial={onAddMaterial}
+          onEditLesson={onEditLesson}
+          onDeleteLesson={onDeleteLesson}
+          onEditMaterial={onEditMaterial}
+          onDeleteMaterial={onDeleteMaterial}
+          onAddQuiz={onAddQuiz}
         />
       ) : (
         <>
@@ -111,6 +137,14 @@ export function TopicView({
             lang={lang as Lang}
             isMain
             progressVersion={progressVersion}
+            isEditable={isEditable}
+            onAddLesson={onAddLesson}
+            onAddMaterial={onAddMaterial}
+            onEditLesson={onEditLesson}
+            onDeleteLesson={onDeleteLesson}
+            onEditMaterial={onEditMaterial}
+            onDeleteMaterial={onDeleteMaterial}
+            onAddQuiz={onAddQuiz}
           />
           {activeTopic.children?.map((child) => (
             <TopicSection
@@ -120,8 +154,26 @@ export function TopicView({
               onOpen={openMaterial}
               lang={lang as Lang}
               progressVersion={progressVersion}
+              isEditable={isEditable}
+              onAddMaterial={onAddMaterial}
+              onEditLesson={onEditLesson}
+              onDeleteLesson={onDeleteLesson}
+              onEditMaterial={onEditMaterial}
+              onDeleteMaterial={onDeleteMaterial}
+              onAddQuiz={onAddQuiz}
             />
           ))}
+          {isEditable && onAddLesson && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => onAddLesson(activeTopic)}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-3 text-sm font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 dark:border-gray-700 dark:text-gray-200 dark:hover:border-blue-400 dark:hover:text-blue-200"
+              >
+                <PlusCircle size={18} />
+                Add new lesson
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -135,6 +187,14 @@ interface TopicSectionProps {
   lang: Lang
   isMain?: boolean
   progressVersion: number
+  isEditable?: boolean
+  onAddLesson?: (topic: TopicNode) => void
+  onEditLesson?: (topic: TopicNode) => void
+  onDeleteLesson?: (topic: TopicNode) => void
+  onAddMaterial?: (topic: TopicNode) => void
+  onEditMaterial?: (material: Material, topic: TopicNode) => void
+  onDeleteMaterial?: (material: Material, topic: TopicNode) => void
+  onAddQuiz?: (topic: TopicNode) => void
 }
 
 function TopicSection({
@@ -144,6 +204,14 @@ function TopicSection({
   lang,
   isMain,
   progressVersion,
+  isEditable,
+  onAddLesson,
+  onEditLesson,
+  onDeleteLesson,
+  onAddMaterial,
+  onEditMaterial,
+  onDeleteMaterial,
+  onAddQuiz,
 }: TopicSectionProps) {
   const { t } = useTranslation()
 
@@ -161,11 +229,31 @@ function TopicSection({
   const isComplete = done === total && total > 0
 
   return (
-    <section className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+    <section className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden group relative">
       {/* Section Header */}
       <div className={`px-5 py-4 border-b border-gray-100 dark:border-gray-800 ${
         isComplete ? 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/10 dark:to-green-900/10' : 'bg-gray-50/50 dark:bg-gray-900/50'
       }`}>
+        {/* Admin Controls for lessons (child topics) */}
+        {isEditable && !isMain && (
+          <div className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 flex items-center gap-2 rounded-lg bg-white/95 px-2 py-1 text-gray-600 shadow-lg ring-1 ring-gray-200 transition-opacity dark:bg-gray-900/95 dark:text-gray-300 dark:ring-gray-700 z-10">
+            <button
+              onClick={() => onEditLesson?.(topic)}
+              className="p-1 hover:text-blue-600 transition-colors"
+              title="Edit lesson"
+            >
+              <Pencil size={16} />
+            </button>
+            <button
+              onClick={() => onDeleteLesson?.(topic)}
+              className="p-1 text-red-500 hover:text-red-600 transition-colors"
+              title="Delete lesson"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className={`p-2.5 rounded-xl ${
@@ -194,9 +282,11 @@ function TopicSection({
                     : t('materials.status.subSection')
                 }
               </span>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">
-                {topicName}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">
+                  {topicName}
+                </h2>
+              </div>
               {topicDesc && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 max-w-lg">
                   {topicDesc}
@@ -283,26 +373,55 @@ function TopicSection({
       {/* Materials Grid */}
       <div className="p-5">
         {filteredMats.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {filteredMats.map((m, index) => (
-              <MaterialCardNew
-                key={m.id}
-                material={m}
-                index={index}
-                lang={lang}
-                onOpen={onOpen}
-                progressVersion={progressVersion}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {filteredMats.map((m, index) => (
+                <MaterialCardNew
+                  key={m.id}
+                  material={m}
+                  index={index}
+                  lang={lang}
+                  onOpen={onOpen}
+                  progressVersion={progressVersion}
+                  isEditable={isEditable}
+                  onEditMaterial={onEditMaterial}
+                  onDeleteMaterial={onDeleteMaterial}
+                  topic={topic}
+                />
+              ))}
+            </div>
+            {isEditable && onAddMaterial && (
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={() => onAddMaterial(topic)}
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 dark:border-gray-700 dark:text-gray-200 dark:hover:border-blue-400 dark:hover:text-blue-200"
+                >
+                  <PlusCircle size={16} />
+                  Add material
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="py-12 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
               <FileText size={24} className="text-gray-400" />
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('materials.empty.noMaterials')}
+              {isEditable
+                ? 'No materials yet. Add your first material.'
+                : t('materials.empty.noMaterials')
+              }
             </p>
+            {isEditable && onAddMaterial && (
+              <button
+                onClick={() => onAddMaterial(topic)}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-3 text-sm font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 dark:border-gray-700 dark:text-gray-200 dark:hover:border-blue-400 dark:hover:text-blue-200"
+              >
+                <PlusCircle size={18} />
+                Add first material
+              </button>
+            )}
           </div>
         )}
 
@@ -317,6 +436,19 @@ function TopicSection({
             lang={lang}
           />
         )}
+
+        {/* Add Quiz Button (Admin/Editor Mode) */}
+        {isEditable && onAddQuiz && (
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={() => onAddQuiz(topic)}
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-purple-300 px-4 py-2 text-sm font-semibold text-purple-600 hover:border-purple-500 hover:bg-purple-50 hover:text-purple-700 dark:border-purple-700 dark:text-purple-400 dark:hover:border-purple-500 dark:hover:bg-purple-900/20 dark:hover:text-purple-300 transition-all"
+            >
+              <PlusCircle size={16} />
+              Add Quiz to this lesson
+            </button>
+          </div>
+        )}
       </div>
     </section>
   )
@@ -328,6 +460,10 @@ interface MaterialCardNewProps {
   lang: Lang
   onOpen: (m: Material) => void
   progressVersion: number
+  isEditable?: boolean
+  onEditMaterial?: (material: Material, topic: TopicNode) => void
+  onDeleteMaterial?: (material: Material, topic: TopicNode) => void
+  topic?: TopicNode
 }
 
 const MaterialCardNew = memo(function MaterialCardNew({
@@ -336,6 +472,10 @@ const MaterialCardNew = memo(function MaterialCardNew({
   lang,
   onOpen,
   progressVersion,
+  isEditable,
+  onEditMaterial,
+  onDeleteMaterial,
+  topic,
 }: MaterialCardNewProps) {
   const { t } = useTranslation()
   const isSeen = useMemo(() => isMaterialSeen(m.id), [m.id, progressVersion])
@@ -386,18 +526,42 @@ const MaterialCardNew = memo(function MaterialCardNew({
   return (
     <button
       onClick={handleOpen}
-      className={`group relative flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left hover:shadow-md ${
+      className={`group/card relative flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left hover:shadow-md ${
         isSeen
           ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800'
           : `bg-white dark:bg-gray-900 ${config.border} hover:border-blue-400 dark:hover:border-blue-500`
       }`}
     >
       {/* Status indicator */}
-      <div className="absolute top-3 right-3">
+      <div className="absolute top-3 right-3 flex items-center gap-2">
+        {isEditable && topic && (
+          <div className="opacity-0 group-hover/card:opacity-100 flex items-center gap-1 rounded-lg bg-white/95 px-2 py-1 text-gray-600 shadow-lg ring-1 ring-gray-200 transition-opacity dark:bg-gray-900/95 dark:text-gray-300 dark:ring-gray-700">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onEditMaterial?.(m, topic)
+              }}
+              className="p-1 hover:text-blue-600 transition-colors"
+              title="Edit material"
+            >
+              <Pencil size={14} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDeleteMaterial?.(m, topic)
+              }}
+              className="p-1 text-red-500 hover:text-red-600 transition-colors"
+              title="Delete material"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        )}
         {isSeen ? (
           <CheckCircle2 size={18} className="text-emerald-500" />
         ) : (
-          <Circle size={18} className="text-gray-300 dark:text-gray-600 group-hover:text-blue-400" />
+          <Circle size={18} className="text-gray-300 dark:text-gray-600 group-hover/card:text-blue-400" />
         )}
       </div>
 
@@ -416,7 +580,7 @@ const MaterialCardNew = memo(function MaterialCardNew({
             #{index + 1}
           </span>
         </div>
-        <h4 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors">
           {materialTitle}
         </h4>
         {m.tags && m.tags.length > 0 && (

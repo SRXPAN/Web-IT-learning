@@ -722,6 +722,403 @@ router.delete('/content/topics/:id', async (req: Request, res: Response) => {
 })
 
 // ============================================
+// QUIZ MANAGEMENT
+// ============================================
+
+/**
+ * POST /admin/content/topics/:id/quizzes
+ * Create a new quiz for a topic
+ */
+router.post('/content/topics/:id/quizzes', async (req: Request, res: Response) => {
+  try {
+    const topicId = getParam(req.params.id)
+    const { title, titleJson, durationSec = 300 } = req.body
+
+    if (!title) {
+      return badRequest(res, 'Quiz title is required')
+    }
+
+    // Verify topic exists
+    const topic = await prisma.topic.findUnique({ where: { id: topicId } })
+    if (!topic) {
+      return notFound(res, 'Topic not found')
+    }
+
+    const quiz = await prisma.quiz.create({
+      data: {
+        title,
+        titleJson: titleJson || {},
+        durationSec,
+        topicId,
+        status: 'Draft',
+        createdById: req.user!.id,
+      },
+      include: { questions: { include: { options: true } } },
+    })
+
+    await auditLog({
+      userId: req.user!.id,
+      action: AuditActions.CREATE,
+      resource: 'QUIZ',
+      resourceId: quiz.id,
+      metadata: { title, topicId },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    })
+
+    return created(res, quiz)
+  } catch (err) {
+    logger.error('Create quiz error', err as Error)
+    return serverError(res, 'Failed to create quiz')
+  }
+})
+
+/**
+ * GET /admin/content/quizzes/:id
+ * Get quiz with all questions and options
+ */
+router.get('/content/quizzes/:id', async (req: Request, res: Response) => {
+  try {
+    const quizId = getParam(req.params.id)
+
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      include: {
+        questions: {
+          include: { options: true },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    })
+
+    if (!quiz) {
+      return notFound(res, 'Quiz not found')
+    }
+
+    return ok(res, quiz)
+  } catch (err) {
+    logger.error('Get quiz error', err as Error)
+    return serverError(res, 'Failed to get quiz')
+  }
+})
+
+/**
+ * PUT /admin/content/quizzes/:id
+ * Update quiz settings
+ */
+router.put('/content/quizzes/:id', async (req: Request, res: Response) => {
+  try {
+    const quizId = getParam(req.params.id)
+    const { title, titleJson, durationSec, status } = req.body
+
+    const existing = await prisma.quiz.findUnique({ where: { id: quizId } })
+    if (!existing) {
+      return notFound(res, 'Quiz not found')
+    }
+
+    const quiz = await prisma.quiz.update({
+      where: { id: quizId },
+      data: {
+        ...(title && { title }),
+        ...(titleJson && { titleJson }),
+        ...(durationSec && { durationSec }),
+        ...(status && { status }),
+      },
+      include: { questions: { include: { options: true } } },
+    })
+
+    await auditLog({
+      userId: req.user!.id,
+      action: AuditActions.UPDATE,
+      resource: 'QUIZ',
+      resourceId: quizId,
+      metadata: { title: quiz.title },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    })
+
+    return ok(res, quiz)
+  } catch (err) {
+    logger.error('Update quiz error', err as Error)
+    return serverError(res, 'Failed to update quiz')
+  }
+})
+
+/**
+ * DELETE /admin/content/quizzes/:id
+ * Delete quiz and all related questions/answers
+ */
+router.delete('/content/quizzes/:id', async (req: Request, res: Response) => {
+  try {
+    const quizId = getParam(req.params.id)
+
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      include: { questions: { include: { options: true } } },
+    })
+
+    if (!quiz) {
+      return notFound(res, 'Quiz not found')
+    }
+
+    // Delete in transaction
+    await prisma.$transaction([
+      prisma.answer.deleteMany({
+        where: { question: { quizId } },
+      }),
+      prisma.option.deleteMany({
+        where: { question: { quizId } },
+      }),
+      prisma.question.deleteMany({
+        where: { quizId },
+      }),
+      prisma.quiz.delete({
+        where: { id: quizId },
+      }),
+    ])
+
+    await auditLog({
+      userId: req.user!.id,
+      action: AuditActions.DELETE,
+      resource: 'QUIZ',
+      resourceId: quizId,
+      metadata: { title: quiz.title },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    })
+
+    return ok(res, { deleted: true })
+  } catch (err) {
+    logger.error('Delete quiz error', err as Error)
+    return serverError(res, 'Failed to delete quiz')
+  }
+})
+
+/**
+ * POST /admin/content/quizzes/:id/questions
+ * Add a question to a quiz
+ */
+router.post('/content/quizzes/:id/questions', async (req: Request, res: Response) => {
+  try {
+    const quizId = getParam(req.params.id)
+    const { text, textJson, explanation, explanationJson, difficulty = 'MEDIUM', tags = [], options } = req.body
+
+    if (!text) {
+      return badRequest(res, 'Question text is required')
+    }
+
+    if (!options || !Array.isArray(options) || options.length < 2) {
+      return badRequest(res, 'At least 2 options are required')
+    }
+
+    const hasCorrectOption = options.some(opt => opt.correct === true)
+    if (!hasCorrectOption) {
+      return badRequest(res, 'At least one option must be marked as correct')
+    }
+
+    // Verify quiz exists
+    const quiz = await prisma.quiz.findUnique({ where: { id: quizId } })
+    if (!quiz) {
+      return notFound(res, 'Quiz not found')
+    }
+
+    const question = await prisma.question.create({
+      data: {
+        text,
+        textJson: textJson || {},
+        explanation: explanation || '',
+        explanationJson: explanationJson || {},
+        difficulty,
+        tags,
+        quizId,
+        options: {
+          create: options.map(opt => ({
+            text: opt.text,
+            textJson: opt.textJson || {},
+            correct: opt.correct || false,
+          })),
+        },
+      },
+      include: { options: true },
+    })
+
+    await auditLog({
+      userId: req.user!.id,
+      action: AuditActions.CREATE,
+      resource: 'QUESTION',
+      resourceId: question.id,
+      metadata: { quizId, text },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    })
+
+    return created(res, question)
+  } catch (err) {
+    logger.error('Create question error', err as Error)
+    return serverError(res, 'Failed to create question')
+  }
+})
+
+/**
+ * PUT /admin/content/questions/:id
+ * Update a question
+ */
+router.put('/content/questions/:id', async (req: Request, res: Response) => {
+  try {
+    const questionId = getParam(req.params.id)
+    const { text, textJson, explanation, explanationJson, difficulty, tags } = req.body
+
+    const existing = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: { options: true },
+    })
+
+    if (!existing) {
+      return notFound(res, 'Question not found')
+    }
+
+    const question = await prisma.question.update({
+      where: { id: questionId },
+      data: {
+        ...(text && { text }),
+        ...(textJson && { textJson }),
+        ...(explanation !== undefined && { explanation }),
+        ...(explanationJson && { explanationJson }),
+        ...(difficulty && { difficulty }),
+        ...(tags && { tags }),
+      },
+      include: { options: true },
+    })
+
+    await auditLog({
+      userId: req.user!.id,
+      action: AuditActions.UPDATE,
+      resource: 'QUESTION',
+      resourceId: questionId,
+      metadata: { text: question.text },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    })
+
+    return ok(res, question)
+  } catch (err) {
+    logger.error('Update question error', err as Error)
+    return serverError(res, 'Failed to update question')
+  }
+})
+
+/**
+ * DELETE /admin/content/questions/:id
+ * Delete a question
+ */
+router.delete('/content/questions/:id', async (req: Request, res: Response) => {
+  try {
+    const questionId = getParam(req.params.id)
+
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+    })
+
+    if (!question) {
+      return notFound(res, 'Question not found')
+    }
+
+    // Delete in transaction
+    await prisma.$transaction([
+      prisma.answer.deleteMany({
+        where: { questionId },
+      }),
+      prisma.option.deleteMany({
+        where: { questionId },
+      }),
+      prisma.question.delete({
+        where: { id: questionId },
+      }),
+    ])
+
+    await auditLog({
+      userId: req.user!.id,
+      action: AuditActions.DELETE,
+      resource: 'QUESTION',
+      resourceId: questionId,
+      metadata: { text: question.text },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    })
+
+    return ok(res, { deleted: true })
+  } catch (err) {
+    logger.error('Delete question error', err as Error)
+    return serverError(res, 'Failed to delete question')
+  }
+})
+
+/**
+ * PUT /admin/content/options/:id
+ * Update an option (mark as correct/incorrect)
+ */
+router.put('/content/options/:id', async (req: Request, res: Response) => {
+  try {
+    const optionId = getParam(req.params.id)
+    const { text, textJson, correct } = req.body
+
+    const existing = await prisma.option.findUnique({
+      where: { id: optionId },
+    })
+
+    if (!existing) {
+      return notFound(res, 'Option not found')
+    }
+
+    const option = await prisma.option.update({
+      where: { id: optionId },
+      data: {
+        ...(text && { text }),
+        ...(textJson && { textJson }),
+        ...(correct !== undefined && { correct }),
+      },
+    })
+
+    return ok(res, option)
+  } catch (err) {
+    logger.error('Update option error', err as Error)
+    return serverError(res, 'Failed to update option')
+  }
+})
+
+/**
+ * DELETE /admin/content/options/:id
+ * Delete an option
+ */
+router.delete('/content/options/:id', async (req: Request, res: Response) => {
+  try {
+    const optionId = getParam(req.params.id)
+
+    const existing = await prisma.option.findUnique({
+      where: { id: optionId },
+    })
+
+    if (!existing) {
+      return notFound(res, 'Option not found')
+    }
+
+    // Delete associated answers first
+    await prisma.answer.deleteMany({
+      where: { optionId },
+    })
+
+    await prisma.option.delete({
+      where: { id: optionId },
+    })
+
+    return ok(res, { deleted: true })
+  } catch (err) {
+    logger.error('Delete option error', err as Error)
+    return serverError(res, 'Failed to delete option')
+  }
+})
+
+// ============================================
 // I18N MANAGEMENT REMOVED
 // ============================================
 // The I18nKey/I18nValue tables have been removed.
