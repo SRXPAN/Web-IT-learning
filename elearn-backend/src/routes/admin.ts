@@ -786,7 +786,6 @@ router.get('/content/quizzes/:id', async (req: Request, res: Response) => {
       include: {
         questions: {
           include: { options: true },
-          orderBy: { createdAt: 'asc' },
         },
       },
     })

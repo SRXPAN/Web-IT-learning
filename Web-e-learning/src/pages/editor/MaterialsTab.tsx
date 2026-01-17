@@ -30,7 +30,13 @@ const ERROR_MESSAGES = {
   loadFailed: 'Failed to load materials'
 } as const
 
-export default function MaterialsTab({ topicId }: { topicId?: string }) {
+export default function MaterialsTab({ 
+  topicId, 
+  preselectedType 
+}: { 
+  topicId?: string
+  preselectedType?: 'VIDEO' | 'TEXT' | 'pdf' | 'link'
+}) {
   const [materials, setMaterials] = useState<MaterialDTO[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
@@ -43,7 +49,7 @@ export default function MaterialsTab({ topicId }: { topicId?: string }) {
     EN: { title: '', url: '', content: '' },
     UA: { title: '', url: '', content: '' },
     PL: { title: '', url: '', content: '' },
-    type: 'VIDEO'
+    type: (preselectedType as 'VIDEO' | 'TEXT') || 'VIDEO'
   })
 
   // Load materials

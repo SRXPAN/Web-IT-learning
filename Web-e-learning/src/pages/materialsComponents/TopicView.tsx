@@ -391,13 +391,30 @@ function TopicSection({
               ))}
             </div>
             {isEditable && onAddMaterial && (
-              <div className="mt-4 flex justify-center">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   onClick={() => onAddMaterial(topic)}
-                  className="inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 dark:border-gray-700 dark:text-gray-200 dark:hover:border-blue-400 dark:hover:text-blue-200"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300 text-xs font-medium transition-colors"
+                  title="Add text material"
                 >
-                  <PlusCircle size={16} />
-                  Add material
+                  <PlusCircle size={14} />
+                  Text
+                </button>
+                <button
+                  onClick={() => onAddMaterial(topic)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-pink-300 bg-pink-50 text-pink-700 hover:bg-pink-100 dark:border-pink-700 dark:bg-pink-900/20 dark:text-pink-300 text-xs font-medium transition-colors"
+                  title="Add video material"
+                >
+                  <PlusCircle size={14} />
+                  Video
+                </button>
+                <button
+                  onClick={() => onAddMaterial(topic)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300 text-xs font-medium transition-colors"
+                  title="Add PDF material"
+                >
+                  <PlusCircle size={14} />
+                  PDF
                 </button>
               </div>
             )}
@@ -414,13 +431,32 @@ function TopicSection({
               }
             </p>
             {isEditable && onAddMaterial && (
-              <button
-                onClick={() => onAddMaterial(topic)}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-3 text-sm font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 dark:border-gray-700 dark:text-gray-200 dark:hover:border-blue-400 dark:hover:text-blue-200"
-              >
-                <PlusCircle size={18} />
-                Add first material
-              </button>
+              <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                <button
+                  onClick={() => onAddMaterial(topic)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300 text-xs font-medium transition-colors"
+                  title="Add text material"
+                >
+                  <PlusCircle size={14} />
+                  Text
+                </button>
+                <button
+                  onClick={() => onAddMaterial(topic)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-pink-300 bg-pink-50 text-pink-700 hover:bg-pink-100 dark:border-pink-700 dark:bg-pink-900/20 dark:text-pink-300 text-xs font-medium transition-colors"
+                  title="Add video material"
+                >
+                  <PlusCircle size={14} />
+                  Video
+                </button>
+                <button
+                  onClick={() => onAddMaterial(topic)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300 text-xs font-medium transition-colors"
+                  title="Add PDF material"
+                >
+                  <PlusCircle size={14} />
+                  PDF
+                </button>
+              </div>
             )}
           </div>
         )}
