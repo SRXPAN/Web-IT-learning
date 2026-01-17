@@ -163,15 +163,15 @@ export default function AdminContent() {
 
   const handleAddMaterial = useCallback((lessonId: string, type: 'VIDEO' | 'TEXT' | 'pdf' | 'link') => {
     setMaterialLessonId(lessonId)
+    setMaterialType(type)
     setEditingMaterial(null) // Clear any existing material
     setShowMaterialModal(true)
   }, [])
 
   const handleEditMaterial = useCallback((material: Material, topic: TopicNode) => {
     setMaterialLessonId(topic.id)
-    setMaterialType(null)
-    setEditingMaterial(material) // Set the material to edit
-    setMaterialType(null) // No type restriction when editing
+    setMaterialType(material.type as any)
+    setEditingMaterial(material)
     setShowMaterialModal(true)
   }, [])
 
@@ -298,11 +298,12 @@ export default function AdminContent() {
       )}
 
       {/* Material Editor Modal */}
-      {showMaterialModal && materialLessonId && (
+      {materialLessonId && materialType && (
         <MaterialModal
+          isOpen={showMaterialModal}
           material={editingMaterial as any}
           lessonId={materialLessonId}
-          preselectedType={materialType || undefined}
+          type={materialType}
           onClose={() => {
             setShowMaterialModal(false)
             setMaterialLessonId(null)
