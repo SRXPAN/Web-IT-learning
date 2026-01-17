@@ -32,10 +32,12 @@ const ERROR_MESSAGES = {
 
 export default function MaterialsTab({ 
   topicId, 
-  preselectedType 
+  preselectedType,
+  preselectedLessonId
 }: { 
   topicId?: string
   preselectedType?: 'VIDEO' | 'TEXT' | 'pdf' | 'link'
+  preselectedLessonId?: string
 }) {
   const [materials, setMaterials] = useState<MaterialDTO[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -43,6 +45,9 @@ export default function MaterialsTab({
 
   // Active tab state
   const [activeLang, setActiveLang] = useState<Lang>('EN')
+
+  // Compute the effective lessonId (prefer preselected, fallback to topicId)
+  const effectiveLessonId = preselectedLessonId || topicId
 
   // Unified form state for all languages
   const [formData, setFormData] = useState<MaterialFormState>({
@@ -52,11 +57,22 @@ export default function MaterialsTab({
     type: (preselectedType as 'VIDEO' | 'TEXT') || 'VIDEO'
   })
 
+  // Auto-open create form if preselectedType is provided
+  useEffect(() => {
+    if (preselectedType && !isCreating && !editingId) {
+      setIsCreating(true)
+      setFormData(prev => ({
+        ...prev,
+        type: (preselectedType as 'VIDEO' | 'TEXT') || 'VIDEO'
+      }))
+    }
+  }, [preselectedType])
+
   // Load materials
   const fetchMaterials = async () => {
-    if (!topicId) return
+    if (!effectiveLessonId) return
     try {
-      const res = await api.get<MaterialDTO[]>(`/editor/topics/${topicId}/materials`)
+      const res = await api.get<MaterialDTO[]>(`/editor/topics/${effectiveLessonId}/materials`)
       setMaterials(res ?? [])
     } catch (e) {
       console.error(ERROR_MESSAGES.loadFailed, e)
@@ -65,7 +81,7 @@ export default function MaterialsTab({
 
   useEffect(() => {
     fetchMaterials()
-  }, [topicId])
+  }, [effectiveLessonId])
 
   // Start Editing: Unpack API data (Cache -> Form State)
   const handleEdit = (m: MaterialDTO) => {
@@ -149,8 +165,8 @@ export default function MaterialsTab({
     e.preventDefault()
     e.stopPropagation()
 
-    if (!topicId) {
-      alert('Please select a topic first')
+    if (!effectiveLessonId) {
+      alert('Error: No lesson context. Please select a lesson first.')
       return
     }
 
@@ -170,7 +186,7 @@ export default function MaterialsTab({
     }
 
     const payload = {
-      topicId,
+      topicId: effectiveLessonId,
       type: formData.type,
       titleEN: formData.EN.title,
       linkEN: formData.EN.url,
@@ -184,7 +200,7 @@ export default function MaterialsTab({
     }
 
     try {
-      await api.post(`/editor/topics/${topicId}/materials`, payload)
+      await api.post(`/editor/topics/${effectiveLessonId}/materials`, payload)
       // Reset form
       setFormData({
         EN: { title: '', url: '', content: '' },
@@ -224,7 +240,12 @@ export default function MaterialsTab({
         <form onSubmit={handleCreate} className="bg-white border rounded-xl shadow-lg overflow-hidden">
           {/* Header */}
           <div className="bg-gray-50 p-4 border-b flex justify-between items-center">
-            <h3 className="font-bold text-gray-800">Create New Material</h3>
+            <h3 className="font-bold text-gray-800">
+              {preselectedType 
+                ? `Adding ${preselectedType === 'VIDEO' ? 'Video' : preselectedType === 'TEXT' ? 'Text' : preselectedType} Material`
+                : 'Create New Material'
+              }
+            </h3>
             {/* Language Tabs */}
             <div className="flex bg-gray-200 p-1 rounded-lg">
               {(['EN', 'UA', 'PL'] as Lang[]).map(lang => (
@@ -246,17 +267,20 @@ export default function MaterialsTab({
 
           {/* Form Content */}
           <div className="p-6 space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Material Type</label>
-              <select
-                value={formData.type}
-                onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as 'VIDEO' | 'TEXT' }))}
-                className="w-full border border-gray-300 rounded-lg p-2.5"
-              >
-                <option value="VIDEO">Video</option>
-                <option value="TEXT">Text</option>
-              </select>
-            </div>
+            {/* Only show type selector if NOT preselected */}
+            {!preselectedType && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Material Type</label>
+                <select
+                  value={formData.type}
+                  onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as 'VIDEO' | 'TEXT' }))}
+                  className="w-full border border-gray-300 rounded-lg p-2.5"
+                >
+                  <option value="VIDEO">Video</option>
+                  <option value="TEXT">Text</option>
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

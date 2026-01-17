@@ -11,7 +11,7 @@ import { TopicSidebar, TopicView } from '@/pages/materialsComponents'
 import type { TopicNode, Material } from '@/pages/materialsComponents/types'
 import { Loading } from '@/components/Loading'
 import MaterialsTab from '@/pages/editor/MaterialsTab'
-import { QuizEditor } from '@/pages/materialsComponents/QuizEditor'
+import { QuizModal } from '@/pages/materialsComponents/QuizModal'
 import {
   BookOpen,
   Plus,
@@ -66,7 +66,8 @@ export default function AdminContent() {
 
   // Material/Quiz management
   const [showMaterialModal, setShowMaterialModal] = useState(false)
-  const [materialTopicId, setMaterialTopicId] = useState<string | null>(null)
+  const [materialLessonId, setMaterialLessonId] = useState<string | null>(null)
+  const [materialType, setMaterialType] = useState<'VIDEO' | 'TEXT' | 'pdf' | 'link' | null>(null)
   const [showQuizModal, setShowQuizModal] = useState(false)
   const [quizTopicId, setQuizTopicId] = useState<string | null>(null)
 
@@ -160,13 +161,15 @@ export default function AdminContent() {
     handleDeleteTopic(topic)
   }, [handleDeleteTopic])
 
-  const handleAddMaterial = useCallback((topic: TopicNode) => {
-    setMaterialTopicId(topic.id)
+  const handleAddMaterial = useCallback((lessonId: string, type: 'VIDEO' | 'TEXT' | 'pdf' | 'link') => {
+    setMaterialLessonId(lessonId)
+    setMaterialType(type)
     setShowMaterialModal(true)
   }, [])
 
   const handleEditMaterial = useCallback((material: Material, topic: TopicNode) => {
-    setMaterialTopicId(topic.id)
+    setMaterialLessonId(topic.id)
+    setMaterialType(null) // No type restriction when editing
     setShowMaterialModal(true)
   }, [])
 
@@ -293,15 +296,21 @@ export default function AdminContent() {
       )}
 
       {/* Material Editor Modal */}
-      {showMaterialModal && materialTopicId && (
+      {showMaterialModal && materialLessonId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Manage Materials</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {materialType 
+                  ? `Add ${materialType === 'VIDEO' ? 'Video' : materialType === 'TEXT' ? 'Text' : materialType} Material`
+                  : 'Manage Materials'
+                }
+              </h2>
               <button
                 onClick={() => {
                   setShowMaterialModal(false)
-                  setMaterialTopicId(null)
+                  setMaterialLessonId(null)
+                  setMaterialType(null)
                 }}
                 className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
@@ -309,7 +318,11 @@ export default function AdminContent() {
               </button>
             </div>
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-              <MaterialsTab topicId={materialTopicId} />
+              <MaterialsTab 
+                topicId={materialLessonId} 
+                preselectedLessonId={materialLessonId}
+                preselectedType={materialType || undefined}
+              />
             </div>
           </div>
         </div>
@@ -317,15 +330,15 @@ export default function AdminContent() {
 
       {/* Quiz Editor Modal */}
       {showQuizModal && quizTopicId && (
-        <QuizEditor
-          quizId="new"
+        <QuizModal
           topicId={quizTopicId}
           onClose={() => {
             setShowQuizModal(false)
             setQuizTopicId(null)
           }}
           onSave={() => {
-            // Refresh topics after quiz creation
+            setShowQuizModal(false)
+            setQuizTopicId(null)
             fetchTopics()
           }}
         />

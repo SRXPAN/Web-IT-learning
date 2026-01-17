@@ -37,7 +37,7 @@ interface TopicViewProps {
   onAddLesson?: (topic: TopicNode) => void
   onEditLesson?: (topic: TopicNode) => void
   onDeleteLesson?: (topic: TopicNode) => void
-  onAddMaterial?: (topic: TopicNode) => void
+  onAddMaterial?: (lessonId: string, type: 'VIDEO' | 'TEXT' | 'pdf' | 'link') => void
   onEditMaterial?: (material: Material, topic: TopicNode) => void
   onDeleteMaterial?: (material: Material, topic: TopicNode) => void
   onAddQuiz?: (topic: TopicNode) => void
@@ -191,7 +191,7 @@ interface TopicSectionProps {
   onAddLesson?: (topic: TopicNode) => void
   onEditLesson?: (topic: TopicNode) => void
   onDeleteLesson?: (topic: TopicNode) => void
-  onAddMaterial?: (topic: TopicNode) => void
+  onAddMaterial?: (lessonId: string, type: 'VIDEO' | 'TEXT' | 'pdf' | 'link') => void
   onEditMaterial?: (material: Material, topic: TopicNode) => void
   onDeleteMaterial?: (material: Material, topic: TopicNode) => void
   onAddQuiz?: (topic: TopicNode) => void
@@ -393,7 +393,7 @@ function TopicSection({
             {isEditable && onAddMaterial && (
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
-                  onClick={() => onAddMaterial(topic)}
+                  onClick={() => onAddMaterial(topic.id, 'TEXT')}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300 text-xs font-medium transition-colors"
                   title="Add text material"
                 >
@@ -401,7 +401,7 @@ function TopicSection({
                   Text
                 </button>
                 <button
-                  onClick={() => onAddMaterial(topic)}
+                  onClick={() => onAddMaterial(topic.id, 'VIDEO')}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-pink-300 bg-pink-50 text-pink-700 hover:bg-pink-100 dark:border-pink-700 dark:bg-pink-900/20 dark:text-pink-300 text-xs font-medium transition-colors"
                   title="Add video material"
                 >
@@ -409,7 +409,7 @@ function TopicSection({
                   Video
                 </button>
                 <button
-                  onClick={() => onAddMaterial(topic)}
+                  onClick={() => onAddMaterial(topic.id, 'pdf')}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300 text-xs font-medium transition-colors"
                   title="Add PDF material"
                 >
@@ -433,7 +433,7 @@ function TopicSection({
             {isEditable && onAddMaterial && (
               <div className="mt-4 flex flex-wrap gap-2 justify-center">
                 <button
-                  onClick={() => onAddMaterial(topic)}
+                  onClick={() => onAddMaterial(topic.id, 'TEXT')}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300 text-xs font-medium transition-colors"
                   title="Add text material"
                 >
@@ -441,7 +441,7 @@ function TopicSection({
                   Text
                 </button>
                 <button
-                  onClick={() => onAddMaterial(topic)}
+                  onClick={() => onAddMaterial(topic.id, 'VIDEO')}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-pink-300 bg-pink-50 text-pink-700 hover:bg-pink-100 dark:border-pink-700 dark:bg-pink-900/20 dark:text-pink-300 text-xs font-medium transition-colors"
                   title="Add video material"
                 >
@@ -449,7 +449,7 @@ function TopicSection({
                   Video
                 </button>
                 <button
-                  onClick={() => onAddMaterial(topic)}
+                  onClick={() => onAddMaterial(topic.id, 'pdf')}
                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300 text-xs font-medium transition-colors"
                   title="Add PDF material"
                 >
