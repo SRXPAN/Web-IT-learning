@@ -2,7 +2,6 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../db.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
-import { requireEditor } from '../middleware/requireEditor.js'
 import { asyncHandler, AppError } from '../middleware/errorHandler.js'
 import { validateResource } from '../middleware/validateResource.js'
 import { materialSchemas } from '../schemas/material.schema.js'
@@ -20,6 +19,9 @@ const router = Router()
 function getParam(param: string | string[]): string {
   return Array.isArray(param) ? param[0] : param
 }
+
+// Middleware for EDITOR role
+const requireEditor = requireRole(['EDITOR', 'ADMIN'])
 
 // ==================== TOPICS ====================
 
