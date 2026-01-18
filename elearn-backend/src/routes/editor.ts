@@ -87,7 +87,7 @@ router.post(
     const topicId = getParam(req.params.topicId)
     const { title, titleJson, type, url, urlJson, content, contentJson, lang, publish } = req.body
 
-    const data: Prisma.MaterialCreateInput = {
+    const data = {
       title,
       titleJson: titleJson || {},
       type,
@@ -100,7 +100,7 @@ router.post(
       status: publish ? 'Published' : 'Draft',
       publishedAt: publish ? new Date() : null,
       createdBy: req.user?.id ? { connect: { id: req.user.id } } : undefined,
-    }
+    } as Prisma.MaterialCreateInput
 
     const mat = await prisma.material.create({ data })
     

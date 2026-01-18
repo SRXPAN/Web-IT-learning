@@ -57,7 +57,7 @@ export async function updateMaterialWithLocalization(
   Object.keys(urlJson).forEach(k => (urlJson as any)[k] === '' && delete (urlJson as any)[k])
   // Note: Ensure your schema has 'urlJson'. If it's 'urlCache', change it back here.
   // Based on your architecture 'titleJson', it implies 'urlJson'.
-  updateData.urlJson = urlJson 
+  ;(updateData as any).urlJson = urlJson
 
   // 3. Build contentJson
   const contentJson = {

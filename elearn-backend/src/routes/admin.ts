@@ -422,7 +422,7 @@ router.delete('/users/:id', async (req: Request, res: Response) => {
         deletedAt: new Date(),
         email: `deleted_admin_${timestamp}_${user.email}`, // Звільняємо email
           // Можна також очистити пароль або сесії
-        tokens: { deleteMany: {} } 
+        refreshTokens: { deleteMany: {} } 
       }
     });
 

@@ -83,9 +83,8 @@ export async function getTopics(params: TopicQueryParams) {
               lang: true,
               titleJson: true, // FIXED
               contentJson: true, // FIXED
-              urlJson: true, // FIXED
               status: true
-            }
+            } as any
           },
           quizzes: {
             where: isStaff ? {} : { status: 'Published' },
@@ -109,9 +108,8 @@ export async function getTopics(params: TopicQueryParams) {
           lang: true,
           titleJson: true, // FIXED
           contentJson: true, // FIXED
-          urlJson: true, // FIXED
           status: true
-        }
+        } as any
       },
       quizzes: {
         where: isStaff ? {} : { status: 'Published' },
@@ -207,9 +205,8 @@ export async function getTopicByIdOrSlug(
           url: true,
           content: true,
           titleJson: true, // FIXED
-          urlJson: true, // FIXED
           contentJson: true // FIXED
-        }
+        } as any
       },
       quizzes: {
         where: isStaff ? {} : { status: 'Published' },
