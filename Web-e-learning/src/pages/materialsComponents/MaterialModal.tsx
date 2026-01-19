@@ -32,7 +32,6 @@ export const MaterialModal: React.FC<MaterialModalProps> = ({
 
   // Визначаємо тип контенту для UI
   const isText = type.toUpperCase() === 'TEXT'
-  const isUrl = ['VIDEO', 'PDF', 'LINK'].includes(type.toUpperCase())
 
   useEffect(() => {
     if (isOpen) {

@@ -235,9 +235,9 @@ export async function getUserQuizHistory(
     return {
       quizId: a.quiz.id,
       quizTitle,
-      correct: a.score,
-      total: a.total,
-      lastAttempt: a.createdAt.toISOString(),
+      score: a.score,
+      totalQuestions: a.totalQuestions,
+      createdAt: a.createdAt.toISOString(),
     }
   })
 

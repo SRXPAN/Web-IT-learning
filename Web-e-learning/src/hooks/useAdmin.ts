@@ -124,8 +124,9 @@ export function useAdminUsers(initialPage = 1, initialLimit = 20) {
       if (params?.role) query.set('role', params.role)
       if (params?.search) query.set('search', params.search)
 
-      const res = await api<PaginatedResponse<AdminUser>>(`/admin/users?${query}`, { signal: getSignal() })
-      setUsers(res.data)
+      const res = await api<{ users: AdminUser[], pagination: { page: number, limit: number, total: number, pages: number } }>(`/admin/users?${query}`, { signal: getSignal() })
+      // Backend returns { users, pagination } not { data, pagination }
+      setUsers(res.users || [])
       setPagination(res.pagination)
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return

@@ -37,7 +37,7 @@ export const QuizModal = memo(function QuizModal({
   const addQuestion = () => {
     setQuestions(prev => [...prev, {
       text: '',
-      difficulty: 'MEDIUM',
+      difficulty: 'Medium',
       options: [
         { text: '', correct: true },
         { text: '', correct: false },

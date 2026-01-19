@@ -50,6 +50,29 @@ router.get(
 )
 
 /**
+ * GET /api/topics/tree
+ * Get topics as a tree structure
+ */
+router.get(
+  '/tree',
+  optionalAuth,
+  validateResource(langQuerySchema, 'query'),
+  asyncHandler(async (req: Request, res) => {
+    const { lang } = req.query as unknown as { lang: string }
+    const isStaff = ['ADMIN', 'EDITOR'].includes(req.user?.role || '')
+
+    const result = await getTopics({
+      page: 1,
+      limit: 1000,
+      lang: lang.toUpperCase(),
+      isStaff,
+    })
+
+    return ok(res, result.topics)
+  })
+)
+
+/**
  * GET /api/topics/:slug
  * Get topic details with nested materials and quizzes
  */

@@ -16,12 +16,43 @@ const toast = {
 
 function extractErrorMessage(data: any, fallback = 'Something went wrong'): string {
   if (!data) return fallback
-  const message = data.message ?? data.error ?? fallback
-  if (typeof message === 'string' && message.trim()) return message
+  
+  // Check for validation error details first
   if (data.error && typeof data.error === 'object') {
+    // Validation errors with field details
+    if (data.error.details && typeof data.error.details === 'object') {
+      const details = data.error.details
+      // Get first field error from body validation
+      if (details.body && typeof details.body === 'object') {
+        const fieldErrors = Object.entries(details.body)
+        if (fieldErrors.length > 0) {
+          const [field, errors] = fieldErrors[0]
+          const errorMsg = Array.isArray(errors) ? errors[0] : errors
+          return `${field}: ${errorMsg}`
+        }
+      }
+      // Get first field error from direct details
+      const fieldErrors = Object.entries(details)
+      if (fieldErrors.length > 0) {
+        const [_field, errors] = fieldErrors[0]
+        if (typeof errors === 'object' && errors !== null) {
+          const innerErrors = Object.entries(errors as Record<string, unknown>)
+          if (innerErrors.length > 0) {
+            const [innerField, innerErr] = innerErrors[0]
+            const errMsg = Array.isArray(innerErr) ? innerErr[0] : innerErr
+            return `${innerField}: ${errMsg}`
+          }
+        }
+      }
+    }
+    
     const nested = data.error.message ?? data.error.error
     if (typeof nested === 'string' && nested.trim()) return nested
   }
+  
+  const message = data.message ?? data.error ?? fallback
+  if (typeof message === 'string' && message.trim()) return message
+  
   return fallback
 }
 
@@ -104,7 +135,7 @@ async function handle<T>(res: Response, retry?: () => Promise<T>): Promise<T> {
     throw new Error(message)
   }
 
-  // Auth Error (Token Expired)
+  // Auth Error (Token Expired or Invalid Credentials)
   if (res.status === 401) {
     const data = await res.json().catch(() => ({}))
     const code = data?.error?.code ?? data?.code
@@ -118,8 +149,15 @@ async function handle<T>(res: Response, retry?: () => Promise<T>): Promise<T> {
         return retry()
       }
     }
-    // Don't show toast for 401 usually, app redirects to login
-    throw new Error(message)
+    
+    // For invalid credentials (login failure), show the actual error message
+    if (code === 'INVALID_CREDENTIALS' || message.includes('Invalid credentials')) {
+      throw new Error(message)
+    }
+    
+    // For other 401s (user not authenticated), don't show toast
+    // The app will redirect to login or show appropriate UI
+    throw new Error('No token')
   }
   
   // Forbidden / CSRF Error

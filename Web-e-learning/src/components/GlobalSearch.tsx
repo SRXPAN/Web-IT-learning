@@ -48,7 +48,7 @@ export default function GlobalSearch() {
       }
 
       // Search through quizzes
-      topic.quizzes.forEach(quiz => {
+      topic.quizzes.forEach((quiz: { id: string; title: string; durationSec: number }) => {
         if (quiz.title.toLowerCase().includes(q)) {
           searchResults.push({
             id: quiz.id,

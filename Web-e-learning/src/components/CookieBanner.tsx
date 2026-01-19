@@ -11,7 +11,7 @@ export default function CookieBanner() {
     const agreed = localStorage.getItem('cookiesAccepted')
     if (!agreed) {
       const timer = setTimeout(() => setVisible(true), 1500)
-      return () =>QX clearTimeout(timer)
+      return () => clearTimeout(timer)
     }
   }, [])
 

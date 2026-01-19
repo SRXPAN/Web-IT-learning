@@ -1,22 +1,27 @@
-import type { Topic, Material, Category } from '@elearn/shared'
+import type { TopicTree, Material as BaseMaterial, Category, QuizLite, LocalizedString } from '@elearn/shared'
 
-export type { Category, Material }
+export type { Category, QuizLite, LocalizedString }
 
-// Розширюємо Topic для фронтенд-логіки (деревоподібна структура)
-export interface TopicNode extends Topic {
-  children?: TopicNode[]
-  materials?: Material[]
+// Розширюємо Material для фронтенд-логіки (відстеження переглядів)
+export interface Material extends BaseMaterial {
+  isSeen?: boolean
+}
+
+// Розширюємо TopicTree для фронтенд-логіки
+export interface TopicNode extends Omit<TopicTree, 'materials'> {
   // Ці поля має повертати API
   totalMaterials?: number
   viewedMaterials?: number
   progress?: number // 0-100
+  parentId?: string | null
+  materials: Material[]
 }
 
 export type Tab = 'ALL' | 'PDF' | 'VIDEO' | 'TEXT' | 'LINK'
 
 export const DEFAULT_CAT: Category = 'Programming'
 
-export const getCategoryLabel = (cat: Category, lang: string) => {
+export const getCategoryLabel = (cat: Category, _lang?: string) => {
   // Проста мапа, або можна використати t()
   return cat
 }

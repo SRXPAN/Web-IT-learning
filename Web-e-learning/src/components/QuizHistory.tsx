@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { http } from '@/lib/http'
-import { Trophy, Clock, CheckCircle, XCircle, History, ArrowRight } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, History, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from '@/i18n/useTranslation'
+import { useAuth } from '@/auth/AuthContext'
 import { EmptyQuizHistory } from './EmptyState'
 import { SkeletonList } from './Skeletons'
 
@@ -26,11 +27,18 @@ interface QuizHistoryResponse {
 
 export default function QuizHistory() {
   const { t, lang } = useTranslation()
+  const { user } = useAuth()
   const [history, setHistory] = useState<QuizAttempt[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Don't fetch if user is not logged in
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    
     let mounted = true
     
     async function fetchHistory() {
@@ -42,9 +50,12 @@ export default function QuizHistory() {
           setHistory(list)
         }
       } catch (e) {
-        if (mounted) {
-          setError(t('quiz.error.historyLoadFailed', 'Failed to load history'))
-          console.error(e)
+        // Don't show error for "No token" - user is just not authenticated
+        if (e instanceof Error && e.message !== 'No token') {
+          if (mounted) {
+            setError('Failed to load history')
+            console.error(e)
+          }
         }
       } finally {
         if (mounted) setLoading(false)
@@ -54,7 +65,7 @@ export default function QuizHistory() {
     fetchHistory()
     
     return () => { mounted = false }
-  }, [lang, t])
+  }, [lang, user]) // Removed 't' from dependencies - it can cause infinite loops
 
   const formatDate = (dateString: string) => {
     try {

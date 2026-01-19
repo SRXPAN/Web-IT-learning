@@ -396,6 +396,10 @@
   "leaderboard.you": "You",
 
   "admin.panel": "Admin Panel",
+  
+  "admin.backToSite": "Back to Site",
+  "admin.mainPages": "Main Pages",
+  "admin.menu": "Admin Menu",
   "admin.dashboard": "Dashboard",
   "admin.dashboardDescription": "System and user overview",
   "admin.users": "Users",
@@ -469,8 +473,9 @@
   "admin.error.passwordTooShort": "Password is too short",
   "admin.error.passwordWeak": "Password is too weak",
   "admin.error.cannotDeleteSelf": "You cannot delete yourself",
-  "admin.error.verifyFailed": "Verification failed",
-  "admin.noTopics": "No topics found",
+  "admin.error.verifyFailed": "Verification failed",  "admin.answersCount": "Answers Count",
+  "admin.topicsCreated": "Topics Created",
+  "admin.materialsCreated": "Materials Created",  "admin.noTopics": "No topics found",
   "admin.openTopics": "Open Topics",
   "admin.selectTopic": "Select a topic to manage content",
   "admin.materialsHint": "Manage materials for this topic",

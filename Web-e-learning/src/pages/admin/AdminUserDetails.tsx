@@ -7,7 +7,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from '@/i18n/useTranslation'
 import { apiGet } from '@/lib/http'
 import {
-  User,
   Mail,
   Shield,
   Trophy,
@@ -18,7 +17,7 @@ import {
   CheckCircle,
   XCircle,
 } from 'lucide-react'
-import { Loading } from '@/components/Skeleton'
+import { Loading } from '@/components/Skeletons'
 
 interface UserDetails {
   id: string

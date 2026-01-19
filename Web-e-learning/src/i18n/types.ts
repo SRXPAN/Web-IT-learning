@@ -581,6 +581,9 @@ export type TranslationKey =
   | 'admin.error.passwordWeak'
   | 'admin.error.cannotDeleteSelf'
   | 'admin.error.verifyFailed'
+  | 'admin.answersCount'
+  | 'admin.topicsCreated'
+  | 'admin.materialsCreated'
   | 'admin.createTopic'
   | 'admin.topicHierarchy'
   | 'admin.topicHierarchyHint'
@@ -623,4 +626,43 @@ export type TranslationKey =
   | 'common.download'
   | 'common.refresh'
   | 'common.retry'
-  | 'common.optional';
+  | 'common.optional'
+  | 'common.confirm'
+  | 'common.tryAgain'
+  | 'common.hidePassword'
+  | 'common.showPassword'
+  | 'common.view'
+  | 'common.updated'
+  | 'common.updatedAt'
+
+  // ============================================
+  // ERROR EXTENDED
+  // ============================================
+  | 'error.title'
+  | 'error.description'
+
+  // ============================================
+  // SEARCH EXTENDED
+  // ============================================
+  | 'search.open'
+  | 'search.results'
+
+  // ============================================
+  // PASSWORD
+  // ============================================
+  | 'password.weak'
+  | 'password.fair'
+  | 'password.good'
+  | 'password.strong'
+  | 'password.rule.length'
+  | 'password.rule.upper'
+  | 'password.rule.lower'
+  | 'password.rule.number'
+  | 'password.rule.special'
+
+  // ============================================
+  // EMPTY EXTENDED
+  // ============================================
+  | 'empty.search.for'
+  | 'empty.search.description'
+  | 'empty.search.clear';

@@ -1,6 +1,6 @@
 import { useCallback, useState, lazy, Suspense } from 'react'
 import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, BookOpen, Trophy, User, LogIn, LogOut, LucideIcon, Menu, X, Shield } from 'lucide-react'
+import { LayoutDashboard, BookOpen, Trophy, User, LogOut, LucideIcon, Menu, X, Shield } from 'lucide-react'
 
 // Components
 import RequireAuth from './components/RequireAuth'
@@ -30,7 +30,6 @@ const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 const AdminFiles = lazy(() => import('./pages/admin/AdminFiles'))
 const AdminAuditLogs = lazy(() => import('./pages/admin/AdminAuditLogs'))
 const AdminContent = lazy(() => import('./pages/admin/AdminContent'))
-// const AdminSettings = lazy(() => import('./pages/admin/AdminSettings')) // Future feature
 const AdminUserDetails = lazy(() => import('./pages/admin/AdminUserDetails'))
 
 interface NavItemProps {

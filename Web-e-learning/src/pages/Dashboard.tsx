@@ -76,6 +76,12 @@ export default function Dashboard() {
     let mounted = true
 
     async function loadDashboard() {
+      // Don't load if user is not authenticated
+      if (!user) {
+        setLoading(false)
+        return
+      }
+      
       try {
         setLoading(true)
         // В реальності ти можеш зробити один запит GET /dashboard/summary
@@ -86,8 +92,11 @@ export default function Dashboard() {
           setData(response)
         }
       } catch (err) {
-        console.error('Dashboard load failed:', err)
-        if (mounted) setError('Failed to load dashboard data')
+        // Don't log "No token" errors - user is just not authenticated
+        if (err instanceof Error && err.message !== 'No token') {
+          console.error('Dashboard load failed:', err)
+          if (mounted) setError('Failed to load dashboard data')
+        }
       } finally {
         if (mounted) setLoading(false)
       }
@@ -95,7 +104,7 @@ export default function Dashboard() {
 
     loadDashboard()
     return () => { mounted = false }
-  }, [lang]) // Перезавантажуємо при зміні мови, щоб отримати перекладені дані
+  }, [lang, user]) // Перезавантажуємо при зміні мови або user
 
   // Функція для відмітки цілі як виконаної (оптимістичний UI)
   const toggleGoal = async (goalId: string, currentState: boolean) => {
@@ -394,33 +403,6 @@ export default function Dashboard() {
 
           {/* 8. Recent History */}
           <QuizHistory />
-
-          {/* 9. Quick Links */}
-          <div className="card">
-            <h3 className="font-display font-semibold text-neutral-900 dark:text-white mb-3">
-              {t('dashboard.quickLinks', 'Quick Links')}
-            </h3>
-            <div className="space-y-2">
-              <Link to="/materials" className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center">
-                  <BookOpen size={16} />
-                </div>
-                <span className="font-medium">{t('nav.materials', 'Materials')}</span>
-              </Link>
-              <Link to="/quiz" className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center">
-                  <Trophy size={16} />
-                </div>
-                <span className="font-medium">{t('nav.quiz', 'Quizzes')}</span>
-              </Link>
-              <Link to="/community" className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-pink-100 dark:bg-pink-900/30 text-pink-600 flex items-center justify-center">
-                  <Users size={16} />
-                </div>
-                <span className="font-medium">{t('dashboard.community', 'Community')}</span>
-              </Link>
-            </div>
-          </div>
 
         </div>
       </div>

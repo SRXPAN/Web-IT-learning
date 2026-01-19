@@ -26,6 +26,9 @@ import lessonsRouter from './routes/lessons.js'
 import progressRouter from './routes/progress.js'
 import filesRouter from './routes/files.js'
 import adminRouter from './routes/admin.js'
+import i18nRouter from './routes/i18n.js'
+import dashboardRouter from './routes/dashboard.js'
+import activityRouter from './routes/activity.js'
 
 // Import Middleware
 import { generalLimiter, authLimiter } from './middleware/rateLimit.js'
@@ -100,6 +103,9 @@ app.use('/api/editor', editorRouter)
 app.use('/api/progress', progressRouter)
 app.use('/api/files', filesRouter)
 app.use('/api/admin', adminRouter)
+app.use('/api/i18n', i18nRouter)
+app.use('/api/dashboard', dashboardRouter)
+app.use('/api/activity', activityRouter)
 
 // --- Error Handling (MUST be last) ---
 app.use(notFoundHandler) // 404 Handler

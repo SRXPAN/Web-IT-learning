@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
-  Trophy, CheckCircle2, XCircle, Clock, Sparkles, ChevronRight,
-  Award, Target, Lock, Loader2, HelpCircle, ArrowRight, RotateCcw
+  Trophy, CheckCircle2, Clock, Sparkles, ChevronRight,
+  Award, Target, Lock, Loader2, ArrowRight, RotateCcw
 } from 'lucide-react'
 
 import { api } from '@/lib/http'
@@ -47,7 +47,7 @@ export function TopicQuizSection({
   // Results State
   const [showResults, setShowResults] = useState(false)
   const [score, setScore] = useState(0)
-  const [correctIds, setCorrectIds] = useState<Record<string, string>>({})
+  const [_correctIds, setCorrectIds] = useState<Record<string, string>>({})
 
   // Determine UI state
   const quizState: QuizState = useMemo(() => {

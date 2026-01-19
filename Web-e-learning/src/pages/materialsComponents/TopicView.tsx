@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import {
   Search,
   BookOpen,
@@ -17,9 +17,9 @@ import {
 } from 'lucide-react'
 
 import { TopicQuizSection } from './TopicQuizSection'
-import type { TopicNode, Tab } from './types'
+import type { TopicNode, Tab, Material } from './types'
 import { useTranslation } from '@/i18n/useTranslation'
-import type { Lang, Material, LocalizedString } from '@elearn/shared'
+import type { Lang, LocalizedString } from '@elearn/shared'
 
 // Helper for localization
 const getLocalizedText = (json: LocalizedString | undefined | null, fallback: string, lang: Lang) => {

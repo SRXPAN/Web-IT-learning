@@ -91,8 +91,10 @@ export default function AdminAuditLogs() {
       })
 
       const res = await api<LogResponse>(`/admin/audit-logs?${params.toString()}`)
-      setLogs(res.data)
-      setPagination(res.meta)
+      // API returns { logs, pagination } not { data, meta }
+      const resAny = res as any
+      setLogs(resAny.logs || resAny.data || [])
+      setPagination(resAny.pagination || resAny.meta || { page: 1, pages: 1, total: 0, limit: 20 })
     } catch (err: any) {
       // Don't show error on 404 (just empty list), show for others
       if (!err.message?.includes('404')) {

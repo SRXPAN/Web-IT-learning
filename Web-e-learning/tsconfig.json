@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
@@ -15,13 +16,14 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": false,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@elearn/shared": ["../shared/src/index.ts"] /* Add this if TS can't find shared types */
+      "@elearn/shared": ["../packages/shared/src/index.ts"]
     },
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "**/*.d.ts", "../elearn-backend/src/config/data"],
+  "include": ["src", "**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

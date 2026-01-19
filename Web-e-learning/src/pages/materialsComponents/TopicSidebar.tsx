@@ -1,4 +1,4 @@
-import { memo, useMemo, useCallback } from 'react'
+import { memo, useCallback } from 'react'
 import { ChevronRight, Layout, Pencil, Trash2, Plus } from 'lucide-react'
 import type { TopicNode } from './types'
 import { useTranslation } from '@/i18n/useTranslation'
@@ -181,7 +181,7 @@ export const TopicSidebar = memo(function TopicSidebar({
   const { t, lang } = useTranslation()
   
   return (
-    <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)] overflow-hidden flex flex-col">
+    <aside className="hidden lg:flex lg:flex-col sticky top-24 h-[calc(100vh-6rem)] overflow-hidden">
       <div className="rounded-2xl md:rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 md:p-5 shadow-sm flex flex-col h-full">
         <div className="flex items-center gap-3 mb-4 shrink-0">
           <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300">

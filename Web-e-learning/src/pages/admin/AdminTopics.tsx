@@ -4,7 +4,7 @@
  * Accessible by ADMIN and EDITOR roles
  */
 import { useState } from 'react'
-import { useAdminContent, type Topic as AdminTopic } from '@/hooks/useAdmin'
+import { useAdminContent, type AdminTopic } from '@/hooks/useAdmin'
 import { useTranslation } from '@/i18n/useTranslation'
 import {
   BookOpen,
@@ -19,7 +19,7 @@ import {
   Globe,
   Search,
 } from 'lucide-react'
-import { Loading } from '@/components/Skeleton'
+import { Loading } from '@/components/Skeletons'
 import { PageHeader } from '@/components/admin/PageHeader'
 
 type TopicWithChildren = AdminTopic & {
@@ -40,7 +40,13 @@ const CATEGORIES = ['Programming', 'Mathematics', 'Databases', 'Networks', 'Secu
 
 export default function AdminTopics() {
   const { t } = useTranslation()
-  const { topics, loading, error, fetchTopics, createTopic, updateTopic, deleteTopic, publishTopic, unpublishTopic } = useAdminContent()
+  const { topics, loading, error, deleteTopic } = useAdminContent()
+  
+  // Stub functions for features not yet implemented in useAdminContent
+  const publishTopic = async (_id: string) => { throw new Error('Not implemented') }
+  const unpublishTopic = async (_id: string) => { throw new Error('Not implemented') }
+  const createTopic = async (_data: TopicFormData) => { throw new Error('Not implemented') }
+  const updateTopic = async (_id: string, _data: TopicFormData) => { throw new Error('Not implemented') }
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [editingTopic, setEditingTopic] = useState<AdminTopic | null>(null)
@@ -346,8 +352,8 @@ function TopicEditModal({
     description: topic?.description || '',
     category: topic?.category || 'Programming',
     parentId: topic?.parentId || null,
-    nameJson: topic?.nameJson || { UA: '', PL: '', EN: '' },
-    descJson: topic?.descJson || { UA: '', PL: '', EN: '' },
+    nameJson: (topic?.nameJson || { UA: '', PL: '', EN: '' }) as Record<string, string>,
+    descJson: ((topic as any)?.descJson || { UA: '', PL: '', EN: '' }) as Record<string, string>,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {

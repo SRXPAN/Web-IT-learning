@@ -50,6 +50,8 @@ export function validateResource(
 
         if (!result.success) {
           errors[sourceName] = result.error.flatten().fieldErrors
+          // Log validation errors for debugging
+          console.log(`[Validation Error] ${sourceName}:`, JSON.stringify(result.error.flatten(), null, 2))
         }
       }
 

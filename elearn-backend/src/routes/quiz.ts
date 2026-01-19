@@ -75,8 +75,8 @@ router.post(
 // GET /api/quiz/user/history
 // Using zod schema for query validation is safer
 const historyQuerySchema = z.object({
-  page: z.string().regex(/^\d+$/).optional().default('1'),
-  limit: z.string().regex(/^\d+$/).optional().default('5'),
+  page: z.string().regex(/^\d+$/).optional().default('1').transform(Number),
+  limit: z.string().regex(/^\d+$/).optional().default('5').transform(Number),
   lang: z.enum(['UA', 'PL', 'EN']).optional()
 })
 
@@ -85,11 +85,12 @@ router.get(
   requireAuth,
   validateResource(historyQuerySchema, 'query'),
   asyncHandler(async (req: Request, res: Response) => {
-    const query = req.query as unknown as z.infer<typeof historyQuerySchema>
+    const parsed = (req as any).queryParsed as z.infer<typeof historyQuerySchema>
     
-    const limit = Math.min(parseInt(query.limit), 100)
-    const page = Math.max(parseInt(query.page), 1)
-    const lang = query.lang as Lang | undefined
+    // Use parsed values (already numbers due to .transform(Number))
+    const limit = Math.min(parsed?.limit || 5, 100)
+    const page = Math.max(parsed?.page || 1, 1)
+    const lang = parsed?.lang as Lang | undefined
 
     const history = await getUserQuizHistory(req.user!.id, { page, limit, lang })
     return res.json(history)

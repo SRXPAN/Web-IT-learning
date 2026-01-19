@@ -6,10 +6,15 @@ import { useTranslation } from '@/i18n/useTranslation'
 // Progress Bar
 // ============================================
 
-export function ProgressBar({ value }: { value: number }) {
+interface ProgressBarProps {
+  value: number
+  className?: string
+}
+
+export function ProgressBar({ value, className }: ProgressBarProps) {
   const v = Math.max(0, Math.min(100, Math.round(value)))
   return (
-    <div className="progress-bar h-2 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+    <div className={`progress-bar bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden ${className || 'h-2'}`}>
       <div 
         className="progress-fill h-full bg-gradient-to-r from-primary-600 to-accent-500 rounded-full transition-all duration-500 ease-out" 
         style={{ width: `${v}%` }} 
@@ -22,19 +27,25 @@ export function ProgressBar({ value }: { value: number }) {
 // Stat Card
 // ============================================
 
-interface StatCardProps {
+export interface StatCardProps {
   icon: LucideIcon
   label: string
   value: number | string
   sub?: string
+  color?: string
+  bgColor?: string
 }
 
-export function StatCard({ icon: Icon, label, value, sub }: StatCardProps) {
+export function StatCard({ icon: Icon, label, value, sub, color, bgColor }: StatCardProps) {
+  const defaultBg = 'bg-gradient-to-br from-primary-600 to-primary-700'
+  const iconBgClass = bgColor || defaultBg
+  const iconColorClass = color || 'text-white'
+  
   return (
     <div className="card group hover:scale-105 transition-transform duration-200">
       <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 transition-transform group-hover:scale-110 shrink-0">
-          <Icon size={20} className="text-white" />
+        <div className={`p-2.5 rounded-xl ${iconBgClass} transition-transform group-hover:scale-110 shrink-0`}>
+          <Icon size={20} className={iconColorClass} />
         </div>
         <div>
           <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{label}</div>

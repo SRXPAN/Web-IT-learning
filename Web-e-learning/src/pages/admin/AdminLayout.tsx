@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, Navigate, Link } from 'react-router-dom'
 import {
   Users,
   Activity,
@@ -11,7 +11,9 @@ import {
   BookOpen,
   Menu,
   X,
-  FileText
+  Trophy,
+  User,
+  LayoutDashboard
 } from 'lucide-react'
 
 import { useAuth } from '@/auth/AuthContext'
@@ -38,7 +40,6 @@ const navItems: NavItem[] = [
 export default function AdminLayout() {
   const { user, logout } = useAuth()
   const { t } = useTranslation()
-  const location = useLocation()
   const [isSidebarOpen, setSidebarOpen] = useState(false)
 
   // Security Check
@@ -98,8 +99,43 @@ export default function AdminLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+          {/* Quick Links to Main Pages */}
+          <div className="mb-4 pb-4 border-b border-neutral-200 dark:border-neutral-800 space-y-1">
+            <div className="mb-2 px-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+              {t('admin.mainPages', 'Main Pages')}
+            </div>
+            <Link
+              to="/"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800/50 transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>{t('nav.dashboard', 'Dashboard')}</span>
+            </Link>
+            <Link
+              to="/materials"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800/50 transition-colors"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>{t('nav.materials', 'Materials')}</span>
+            </Link>
+            <Link
+              to="/leaderboard"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800/50 transition-colors"
+            >
+              <Trophy className="w-4 h-4" />
+              <span>{t('nav.leaderboard', 'Leaderboard')}</span>
+            </Link>
+            <Link
+              to="/profile"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800/50 transition-colors"
+            >
+              <User className="w-4 h-4" />
+              <span>{t('nav.profile', 'Profile')}</span>
+            </Link>
+          </div>
+
           <div className="mb-2 px-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider">
-            Menu
+            {t('admin.menu', 'Admin Menu')}
           </div>
           {visibleNavItems.map(({ path, icon: Icon, labelKey, end, badge }) => (
             <NavLink

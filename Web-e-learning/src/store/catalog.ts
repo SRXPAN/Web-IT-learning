@@ -1,11 +1,9 @@
 import { create } from 'zustand'
 import { api } from '@/lib/http'
-import type { Topic, Quiz, Lang } from '@elearn/shared'
+import type { TopicTree, Quiz, Lang } from '@elearn/shared'
 
-// Розширюємо Topic для фронтенду, якщо потрібно (наприклад, для рекурсії, якщо вона не явна в shared)
-export interface TopicTree extends Topic {
-  children?: TopicTree[]
-}
+// Re-export TopicTree for components that import from here
+export type { TopicTree }
 
 type CatalogState = {
   topics: TopicTree[]

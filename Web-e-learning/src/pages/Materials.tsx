@@ -4,24 +4,24 @@ import { useSearchParams } from 'react-router-dom'
 import useCatalogStore from '@/store/catalog'
 import { useTranslation } from '@/i18n/useTranslation'
 import { api } from '@/lib/http'
-import type { Material, Topic, Category } from '@elearn/shared'
+import type { Category } from '@elearn/shared'
 
 import {
   DEFAULT_CAT,
-  getCategoryLabel,
   TopicSidebar,
   DashboardView,
-} from '@/pages/materialsComponents/materialsComponents'
+  TopicNode,
+  Material,
+} from '@/pages/materialsComponents'
 import { MaterialsHeader } from '@/pages/materialsComponents/MaterialsHeader'
 import { TopicView } from '@/pages/materialsComponents/TopicView'
-import { MaterialModal } from '@/pages/materialsComponents/MaterialModal'
 import { SkeletonDashboard } from '@/components/Skeletons'
 
 export type Tab = 'ALL' | 'PDF' | 'VIDEO' | 'TEXT' | 'LINK'
 
 export default function Materials() {
   const { topics: roots, loadTopics, loading } = useCatalogStore()
-  const { t, lang } = useTranslation()
+  const { lang } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   
   // State from URL or defaults
@@ -32,8 +32,8 @@ export default function Materials() {
   const [tab, setTab] = useState<Tab>('ALL')
   const [query, setQuery] = useState('')
   
-  // Modal State
-  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
+  // Reserved for text material viewer modal in the future
+  const [_selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
   
   // Load topics on mount/lang change
   useEffect(() => {
@@ -74,13 +74,15 @@ export default function Materials() {
   // --- Derived State ---
 
   const categories = useMemo(() => {
-    const map = new Map<Category, Topic[]>()
-    roots.forEach((r) => {
-      const key = (r.category ?? DEFAULT_CAT) as Category
-      const arr = map.get(key) || []
-      arr.push(r)
-      map.set(key, arr)
-    })
+    const map = new Map<Category, TopicNode[]>()
+    if (roots && roots.length > 0) {
+      roots.forEach((r) => {
+        const key = (r.category ?? DEFAULT_CAT) as Category
+        const arr = map.get(key) || []
+        arr.push(r)
+        map.set(key, arr)
+      })
+    }
     return map
   }, [roots])
 
@@ -102,7 +104,7 @@ export default function Materials() {
   )
   
   const activeSub = useMemo(
-    () => activeTopic?.children?.find((c) => c.id === activeSubId) || null,
+    () => activeTopic?.children?.find((c: TopicNode) => c.id === activeSubId) || null,
     [activeTopic, activeSubId]
   )
 
@@ -115,7 +117,7 @@ export default function Materials() {
     
     // Filter by Tab
     if (tab !== 'ALL') {
-      result = result.filter((m) => m.type === tab)
+      result = result.filter((m) => m.type.toUpperCase() === tab)
     }
     
     // Filter by Query
@@ -127,18 +129,26 @@ export default function Materials() {
     return result
   }, [tab, query])
 
-  const handleMarkComplete = useCallback(async (materialId: string) => {
+  const handleOpenMaterial = useCallback(async (material: Material) => {
+    // Mark material as seen and open it
     try {
       await api('/progress/material', {
         method: 'POST',
-        body: JSON.stringify({ materialId })
+        body: JSON.stringify({ materialId: material.id })
       })
       // Reload topics to update progress bars
-      // (Optimistic update could be implemented in store for better UX)
-      loadTopics(lang as any)
+      loadTopics(lang as 'UA' | 'PL' | 'EN')
     } catch (e) {
       console.error('Failed to mark material as complete', e)
     }
+    
+    // Open material based on type
+    const url = material.url || material.content
+    if (url && (material.type === 'link' || material.type === 'pdf' || material.type === 'video')) {
+      window.open(url, '_blank')
+    }
+    // For text materials, they can be viewed inline in TopicView
+    setSelectedMaterial(material)
   }, [loadTopics, lang])
 
   return (
@@ -176,28 +186,19 @@ export default function Materials() {
               ) : (
                 <TopicView
                   activeTopic={activeTopic}
-                  activeSub={activeSub}
+                  activeSub={activeSub as TopicNode | null}
                   tab={tab}
                   setTab={setTab}
                   query={query}
                   setQuery={setQuery}
                   filteredMaterials={filteredMaterials}
-                  openMaterial={setSelectedMaterial}
+                  openMaterial={handleOpenMaterial}
                 />
               )}
             </main>
           </div>
         </div>
       </div>
-
-      {/* Material Modal */}
-      {selectedMaterial && (
-        <MaterialModal
-          material={selectedMaterial}
-          onClose={() => setSelectedMaterial(null)}
-          onMarkComplete={handleMarkComplete}
-        />
-      )}
     </>
   )
 }

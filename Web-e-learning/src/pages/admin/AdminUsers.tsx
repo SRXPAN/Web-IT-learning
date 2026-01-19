@@ -13,8 +13,6 @@ import {
   Edit2,
   Trash2,
   Shield,
-  ChevronLeft,
-  ChevronRight,
   X,
   Check,
   AlertTriangle,
@@ -22,8 +20,8 @@ import {
   Eye,
   Mail,
 } from 'lucide-react'
-import { Loading } from '@/components/Skeleton'
-import ConfirmDialog, { ConfirmDialog as BaseConfirmDialog } from '@/components/ConfirmDialog'
+import { Loading } from '@/components/Skeletons'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import { Pagination } from '@/components/admin/Pagination'
 import { PageHeader } from '@/components/admin/PageHeader'
 
@@ -46,10 +44,12 @@ export default function AdminUsers() {
     error,
     fetchUsers,
     updateRole,
-    verifyUser,
-    createUser,
     deleteUser,
   } = useAdminUsers()
+  
+  // Stub functions for features not yet implemented
+  const verifyUser = async (_id: string) => { throw new Error('Not implemented') }
+  const createUser = async (_data: { email: string; name: string; password: string; role: Role }) => { throw new Error('Not implemented') }
 
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<string>('')
@@ -58,8 +58,7 @@ export default function AdminUsers() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null)
   const [roleChangeConfirm, setRoleChangeConfirm] = useState<{ userId: string; newRole: string; userName: string } | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
-  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
-  const [showBulkActions, setShowBulkActions] = useState(false)
+  const [viewingUser, setViewingUser] = useState<typeof users[0] | null>(null)
 
   // New user form
   const [newUser, setNewUser] = useState({
@@ -90,7 +89,7 @@ export default function AdminUsers() {
 
   const confirmRoleChange = async () => {
     if (!roleChangeConfirm) return
-    const success = await updateRole(roleChangeConfirm.userId, roleChangeConfirm.newRole)
+    const success = await updateRole(roleChangeConfirm.userId, roleChangeConfirm.newRole as Role)
     if (success) {
       setEditingRoleId(null)
       setRoleChangeConfirm(null)
@@ -128,26 +127,6 @@ export default function AdminUsers() {
       }
       await deleteUser(deleteConfirm.id)
       setDeleteConfirm(null)
-    }
-  }
-
-  const toggleUserSelection = (userId: string) => {
-    setSelectedUsers(prev => {
-      const next = new Set(prev)
-      if (next.has(userId)) {
-        next.delete(userId)
-      } else {
-        next.add(userId)
-      }
-      return next
-    })
-  }
-
-  const toggleAllUsers = () => {
-    if (selectedUsers.size === users?.length) {
-      setSelectedUsers(new Set())
-    } else {
-      setSelectedUsers(new Set(users?.map(u => u.id) || []))
     }
   }
 
@@ -359,7 +338,7 @@ export default function AdminUsers() {
                 <td className="px-6 py-4 text-right">
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     <button
-                      onClick={() => window.open(`/admin/users/${user.id}`, '_blank')}
+                      onClick={() => setViewingUser(user)}
                       className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-transparent bg-gray-50 dark:bg-gray-800 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:border-gray-200 dark:hover:border-gray-700"
                       title={t('admin.viewDetails')}
                       aria-label={t('admin.viewDetails')}
@@ -531,6 +510,157 @@ export default function AdminUsers() {
           onClose={() => setDeleteConfirm(null)}
           variant="danger"
         />
+      )}
+
+      {/* User Details Modal */}
+      {viewingUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl font-medium">
+                  {viewingUser.name?.charAt(0).toUpperCase() || '?'}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                    {viewingUser.name}
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{viewingUser.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewingUser(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  {t('common.role')}
+                </h3>
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    roleColors[viewingUser.role as Role]
+                  }`}
+                >
+                  <Shield className="w-4 h-4 mr-1" />
+                  {viewingUser.role}
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">XP</h3>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {viewingUser.xp.toLocaleString()}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  {t('common.status')}
+                </h3>
+                {viewingUser.emailVerified ? (
+                  <span className="inline-flex items-center text-green-600 dark:text-green-400">
+                    <Check className="w-4 h-4 mr-1" />
+                    {t('admin.verified')}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center text-yellow-600 dark:text-yellow-400">
+                    <AlertTriangle className="w-4 h-4 mr-1" />
+                    {t('admin.unverified')}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  {t('common.created')}
+                </h3>
+                <p className="text-gray-900 dark:text-white">
+                  {new Date(viewingUser.createdAt).toLocaleString()}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  {t('common.updated')}
+                </h3>
+                <p className="text-gray-900 dark:text-white">
+                  {new Date(viewingUser.updatedAt).toLocaleString()}
+                </p>
+              </div>
+
+              {viewingUser._count && (
+                <>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      {t('admin.answersCount')}
+                    </h3>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {viewingUser._count.answers}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      {t('admin.topicsCreated')}
+                    </h3>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {viewingUser._count.topicsCreated}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      {t('admin.materialsCreated')}
+                    </h3>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {viewingUser._count.materialsCreated}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setViewingUser(null)
+                  setEditingRoleId(viewingUser.id)
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+              >
+                <Edit2 className="w-4 h-4" />
+                {t('admin.changeRole')}
+              </button>
+              {!viewingUser.emailVerified && (
+                <button
+                  onClick={() => {
+                    handleVerify(viewingUser.id)
+                    setViewingUser(null)
+                  }}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                >
+                  <Mail className="w-4 h-4" />
+                  {t('admin.sendVerificationEmail')}
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setDeleteConfirm({ id: viewingUser.id, name: viewingUser.name })
+                  setViewingUser(null)
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                {t('common.delete')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

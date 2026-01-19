@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import confetti from 'canvas-confetti'
 import { 
@@ -8,7 +8,7 @@ import {
 
 import { useTranslation } from '@/i18n/useTranslation'
 import { api } from '@/lib/http'
-import type { Material, Lang } from '@elearn/shared'
+import type { Material } from '@elearn/shared'
 
 // --- Types ---
 
@@ -17,6 +17,7 @@ type Mode = 'practice' | 'exam'
 
 interface LessonData extends Material {
   // Додаткові поля, якщо бекенд їх повертає для детального перегляду
+  description?: string;
   nextLessonId?: string;
   prevLessonId?: string;
   topicName?: string;
@@ -259,7 +260,7 @@ export default function LessonView() {
         
         // Auto-select tab based on type
         if (data.type === 'video') setActiveTab('video')
-        else if (data.type === 'quiz') setActiveTab('quiz')
+        else if ((data as any).type === 'quiz') setActiveTab('quiz')
         else setActiveTab('text')
         
       } catch (err) {

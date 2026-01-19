@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import {
   BookOpen,
   Save,
-  Plus,
   Trash2,
   AlertTriangle
 } from 'lucide-react'
@@ -239,7 +238,6 @@ export default function AdminContent() {
                 // In admin mode, clicking opens edit modal
                 handleEditMaterial(m, activeSub || activeTopic)
               }}
-              progressVersion={0}
               isEditable={true}
               onAddLesson={handleAddLesson}
               onEditLesson={handleEditTopic}

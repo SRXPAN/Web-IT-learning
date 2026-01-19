@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Award, Settings, Globe, Palette, Sun, Moon, Lock, Camera, Mail, Trash2, AlertTriangle, User } from 'lucide-react'
+import { Settings, Globe, Palette, Sun, Moon, Lock, Camera, Trash2, AlertTriangle } from 'lucide-react'
 
 import { useAuth } from '@/auth/AuthContext'
 import { useTheme } from '@/store/theme'
@@ -112,8 +112,9 @@ export default function Profile() {
   const [passwordForm, setPasswordForm] = useState({ current: '', new: '', confirm: '' })
   const [passwordState, setPasswordState] = useState({ loading: false, error: null as string | null, success: false })
   
-  const [emailForm, setEmailForm] = useState({ email: '', password: '' })
-  const [emailState, setEmailState] = useState({ loading: false, error: null as string | null, success: false })
+  // Email form state - reserved for future email change feature
+  const [_emailForm, _setEmailForm] = useState({ email: '', password: '' })
+  const [_emailState, _setEmailState] = useState({ loading: false, error: null as string | null, success: false })
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -257,7 +258,7 @@ export default function Profile() {
           <div className="space-y-6">
             {/* Language */}
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
+              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
                 <Globe size={16} /> {t('profile.language', 'Language')}
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -279,7 +280,7 @@ export default function Profile() {
 
             {/* Theme */}
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
+              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
                 <Palette size={16} /> {t('profile.theme', 'Theme')}
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -382,7 +383,7 @@ export default function Profile() {
         message={t('profile.deleteConfirm.message', 'This action cannot be undone.')}
         confirmText={t('profile.deleteConfirm.confirm', 'Yes, Delete')}
         variant="danger"
-        loading={deleteLoading}
+        isLoading={deleteLoading}
       />
     </div>
   )

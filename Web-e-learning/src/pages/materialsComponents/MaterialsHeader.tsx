@@ -3,7 +3,6 @@ import { BookOpen, ChevronDown, ChevronLeft, ChevronRight, Check } from 'lucide-
 import { CategoryIcon } from './CategoryIcon'
 import { useTranslation } from '@/i18n/useTranslation'
 import type { Category, TopicNode } from './types'
-import type { Lang } from '@elearn/shared'
 
 interface MaterialsHeaderProps {
   activeCat: Category
@@ -16,7 +15,7 @@ export const MaterialsHeader = memo(function MaterialsHeader({
   categories,
   onCategoryChange,
 }: MaterialsHeaderProps) {
-  const { t, lang } = useTranslation()
+  const { t } = useTranslation()
   const [showDropdown, setShowDropdown] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)

@@ -270,4 +270,17 @@ router.get('/pull', requireAuth, asyncHandler(async (req, res) => {
     })
 }))
 
+/**
+ * POST /api/progress/goals/:id/toggle
+ * Toggle daily goal completion (stub)
+ */
+router.post(
+  '/goals/:id/toggle',
+  requireAuth,
+  asyncHandler(async (req: Request, res) => {
+    // Stub implementation - goals are frontend-only for now
+    return res.json({ ok: true, goalId: req.params.id })
+  })
+)
+
 export default router

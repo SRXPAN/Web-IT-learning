@@ -54,9 +54,10 @@ router.get('/stats', requireRole(['ADMIN', 'EDITOR']), async (req: Request, res:
       totalFiles,
       recentActivity,
     ] = await Promise.all([
-      prisma.user.count(),
+      prisma.user.count({ where: { deletedAt: null } }),
       prisma.user.groupBy({
         by: ['role'],
+        where: { deletedAt: null },
         _count: true,
       }),
       prisma.topic.count(),
@@ -168,7 +169,9 @@ router.get('/users', async (req: Request, res: Response) => {
 
     const { page, limit, role, search, sortBy, sortOrder } = parsed.data
 
-    const where: Prisma.UserWhereInput = {}
+    const where: Prisma.UserWhereInput = {
+      deletedAt: null // Не показувати видалених користувачів
+    }
     if (role) where.role = role
     if (search) {
       where.OR = [
@@ -1260,6 +1263,30 @@ router.get('/content/export', requireRole(['ADMIN']), asyncHandler(async (req, r
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
   res.setHeader('Content-Disposition', 'attachment; filename=content.json')
   res.send(JSON.stringify(data, null, 2))
+}))
+
+// ============================================
+// FILE MANAGEMENT (ADMIN)
+// ============================================
+
+/**
+ * GET /admin/files
+ * List uploaded files (stub - returns empty list for now)
+ */
+router.get('/files', requireAdmin, asyncHandler(async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1
+  const limit = parseInt(req.query.limit as string) || 20
+
+  // Stub response - file management is not implemented yet
+  return ok(res, {
+    items: [],
+    pagination: {
+      page,
+      limit,
+      total: 0,
+      pages: 0
+    }
+  })
 }))
 
 export default router

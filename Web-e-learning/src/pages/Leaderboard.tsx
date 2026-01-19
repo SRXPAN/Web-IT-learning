@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Trophy, Medal, Award, Crown, Star, Flame, User } from 'lucide-react'
+import { Trophy, Medal, Award, Crown, Star, Flame } from 'lucide-react'
 import { useAuth } from '@/auth/AuthContext'
 import { api } from '@/lib/http'
 import { useTranslation } from '@/i18n/useTranslation'
