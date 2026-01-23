@@ -3,10 +3,10 @@ import { api } from '@/lib/http'
 import type { 
   User, 
   Role, 
-  TopicLite, 
   Category, 
-  Status 
-} from '@elearn/shared'
+  Status,
+  LocalizedString
+} from '@packages/shared'
 
 // ============================================
 // HELPER: ABORT CONTROLLER
@@ -255,7 +255,10 @@ export function useAdminStats() {
 // CONTENT MANAGEMENT HOOK
 // ============================================
 
-export interface AdminTopic extends TopicLite {
+export interface AdminTopic {
+  id: string
+  name: string
+  nameJson?: LocalizedString
   slug: string
   description: string
   descJson?: LocalizedString

@@ -1,4 +1,4 @@
-import type { Lang } from '@elearn/shared'
+import type { Lang } from '../shared'
 
 export type DailyGoalTemplate = {
   id: string

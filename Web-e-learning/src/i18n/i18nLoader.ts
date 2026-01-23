@@ -6,7 +6,7 @@
  */
 
 import type { TranslationKey } from './types'
-import type { Lang } from '@elearn/shared'
+import type { Lang } from '@packages/shared'
 
 // Type for loaded bundle
 export type TranslationBundle = Partial<Record<TranslationKey, string>>

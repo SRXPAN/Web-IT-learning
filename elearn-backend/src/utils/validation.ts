@@ -1,6 +1,6 @@
 // src/utils/validation.ts
 import { z } from 'zod'
-import { VALIDATION } from '@elearn/shared'
+import { VALIDATION } from '../shared'
 
 /**
  * Базові схеми валідації для повторного використання

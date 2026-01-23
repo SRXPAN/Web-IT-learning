@@ -8,7 +8,7 @@ import type {
   Option,
   Difficulty,
   LocalizedString
-} from '@elearn/shared'
+} from '@packages/shared'
 
 // Editor-specific Topic type (extends shared Topic logic conceptually)
 export type Topic = { 

@@ -17,7 +17,7 @@ import {
 } from './email.service.js'
 import { AppError } from '../utils/AppError.js'
 import { auditLog, AuditActions, AuditResources } from './audit.service.js'
-import type { Role } from '@elearn/shared'
+import type { Role } from '../shared'
 
 const BCRYPT_ROUNDS = 12
 const VERIFICATION_TOKEN_EXPIRES_HOURS = 24

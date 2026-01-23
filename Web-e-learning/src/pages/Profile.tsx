@@ -6,7 +6,7 @@ import { useAuth } from '@/auth/AuthContext'
 import { useTheme } from '@/store/theme'
 import { useTranslation } from '@/i18n/useTranslation'
 import { api } from '@/lib/http'
-import type { Lang } from '@elearn/shared'
+import type { Lang } from '@packages/shared'
 
 import PasswordInput from '@/components/PasswordInput'
 import ConfirmDialog from '@/components/ConfirmDialog'

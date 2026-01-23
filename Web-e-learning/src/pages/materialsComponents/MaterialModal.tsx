@@ -3,7 +3,7 @@ import { X, AlignLeft, Link as LinkIcon, Video, FileText } from 'lucide-react'
 import { useTranslation } from '@/i18n/useTranslation'
 import { api } from '@/lib/http'
 import { LoadingButton } from '@/components/LoadingButton'
-import type { Material, Lang, LocalizedString, MaterialType } from '@elearn/shared'
+import type { Material, Lang, LocalizedString, MaterialType } from '@packages/shared'
 
 interface MaterialModalProps {
   isOpen: boolean

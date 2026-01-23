@@ -8,7 +8,7 @@ import {
 
 import { useTranslation } from '@/i18n/useTranslation'
 import { api } from '@/lib/http'
-import type { Material } from '@elearn/shared'
+import type { Material } from '@packages/shared'
 
 // --- Types ---
 

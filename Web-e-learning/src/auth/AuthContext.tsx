@@ -1,7 +1,7 @@
 // src/auth/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import { api, fetchCsrfToken } from '../lib/http'
-import type { User, AuthResponse } from '@elearn/shared'
+import type { User, AuthResponse } from '@packages/shared'
 
 // Re-export User type for convenience
 export type { User }

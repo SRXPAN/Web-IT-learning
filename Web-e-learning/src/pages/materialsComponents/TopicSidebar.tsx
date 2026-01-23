@@ -2,7 +2,7 @@ import { memo, useCallback } from 'react'
 import { ChevronRight, Layout, Pencil, Trash2, Plus } from 'lucide-react'
 import type { TopicNode } from './types'
 import { useTranslation } from '@/i18n/useTranslation'
-import type { Lang, LocalizedString } from '@elearn/shared'
+import type { Lang, LocalizedString } from '@packages/shared'
 
 interface SidebarTopicItemProps {
   topic: TopicNode

@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import { useEffect, useCallback } from 'react'
 import { api } from '@/lib/http'
 import { loadLanguageBundle, type TranslationBundle } from './i18nLoader'
-import type { Lang } from '@elearn/shared'
+import type { Lang } from '@packages/shared'
 
 // API response type
 type BundleResponse = {

@@ -17,7 +17,7 @@ import { LoadingButton } from '@/components/LoadingButton'
 import { api } from '@/lib/http'
 
 import type { TopicNode, Material } from '@/pages/materialsComponents/types'
-import type { Lang, LocalizedString, Category, MaterialType } from '@elearn/shared'
+import type { Lang, LocalizedString, Category, MaterialType } from '@packages/shared'
 
 // Temporary Topic interface for the modal (before saving)
 interface TopicForm {

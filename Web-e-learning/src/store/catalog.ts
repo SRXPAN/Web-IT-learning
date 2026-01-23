@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { api } from '@/lib/http'
-import type { TopicTree, Quiz, Lang } from '@elearn/shared'
+import type { TopicTree, Quiz, Lang } from '@packages/shared'
 
 // Re-export TopicTree for components that import from here
 export type { TopicTree }

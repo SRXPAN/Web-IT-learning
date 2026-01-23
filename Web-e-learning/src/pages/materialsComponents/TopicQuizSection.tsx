@@ -6,7 +6,7 @@ import {
 
 import { api } from '@/lib/http'
 import { useTranslation } from '@/i18n/useTranslation'
-import type { Quiz, QuizLite, Lang, LocalizedString } from '@elearn/shared'
+import type { Quiz, QuizLite, Lang, LocalizedString } from '@packages/shared'
 
 interface TopicQuizSectionProps {
   quizzes: QuizLite[]

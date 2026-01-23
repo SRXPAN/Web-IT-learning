@@ -2,7 +2,7 @@
 import { prisma } from '../db.js'
 import jwt from 'jsonwebtoken'
 import { getJwtSecret } from '../utils/env.js'
-import type { Lang } from '@elearn/shared'
+import type { Lang } from '../shared'
 import { logger } from '../utils/logger.js'
 import { updateDailyActivity } from './progress.service.js'
 

@@ -525,6 +525,9 @@ export type TranslationKey =
   // ADMIN PANEL (70+ keys)
   // ============================================
   | 'admin.panel'
+  | 'admin.backToSite'
+  | 'admin.mainPages'
+  | 'admin.menu'
   | 'admin.dashboard'
   | 'admin.dashboardDescription'
   | 'admin.users'

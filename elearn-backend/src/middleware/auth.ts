@@ -1,7 +1,7 @@
 // src/middleware/auth.ts
 import type { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
-import type { Role } from '@elearn/shared'
+import type { Role } from '../shared'
 import { prisma } from '../db.js'
 import { getJwtSecret, getEnv } from '../utils/env.js'
 import { sendError, ErrorCodes } from '../utils/response.js'

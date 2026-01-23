@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Lang } from '@elearn/shared'
+import type { Lang } from '@packages/shared'
 
 export type { Lang }
 

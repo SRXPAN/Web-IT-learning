@@ -1,7 +1,7 @@
 import { Globe, Check, ChevronDown } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from '@/i18n/useTranslation'
-import type { Lang } from '@elearn/shared'
+import type { Lang } from '@packages/shared'
 
 interface LanguageSelectorProps {
   variant?: 'dropdown' | 'pills'

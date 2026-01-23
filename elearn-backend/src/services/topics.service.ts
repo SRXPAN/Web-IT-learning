@@ -1,6 +1,6 @@
 // src/services/topics.service.ts
 import { prisma } from '../db.js'
-import type { Category } from '@elearn/shared'
+import type { Category } from '../shared'
 
 interface TopicQueryParams {
   page: number

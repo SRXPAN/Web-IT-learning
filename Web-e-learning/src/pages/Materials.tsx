@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import useCatalogStore from '@/store/catalog'
 import { useTranslation } from '@/i18n/useTranslation'
 import { api } from '@/lib/http'
-import type { Category } from '@elearn/shared'
+import type { Category } from '@packages/shared'
 
 import {
   DEFAULT_CAT,

@@ -3,7 +3,7 @@ import { X, Trash2, Save, Loader2, AlertCircle } from 'lucide-react'
 import { useTranslation } from '@/i18n/useTranslation'
 import { listQuestions, updateQuestion, deleteQuestion, listQuizzes, updateQuiz } from '@/lib/editorApi'
 import type { QuestionWithOptions, CreateQuestionRequest } from '@/lib/editorApi'
-import type { Difficulty, LocalizedString } from '@elearn/shared'
+import type { Difficulty, LocalizedString } from '@packages/shared'
 
 interface EditQuizModalProps {
   quizId: string

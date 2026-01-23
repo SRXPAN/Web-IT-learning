@@ -7,7 +7,7 @@ import { validateResource } from '../middleware/validateResource.js'
 import { z } from 'zod'
 import { localizeObject } from '../utils/i18n.js'
 import { ok } from '../utils/response.js'
-import type { Lang } from '@elearn/shared'
+import type { Lang } from '../shared'
 
 const router = Router()
 

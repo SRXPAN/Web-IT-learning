@@ -1,5 +1,5 @@
 import { Code2, Sigma, Database as DatabaseIcon, Network, Globe, Smartphone, Brain, Shield, Container, Monitor } from 'lucide-react'
-import type { Category } from '@elearn/shared'
+import type { Category } from '@packages/shared'
 
 export const CategoryIcon = ({ category }: { category: Category }) => {
   const icons: Record<Category, JSX.Element> = {

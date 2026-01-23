@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { ShieldAlert } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
 import { useTranslation } from '@/i18n/useTranslation'
-import type { Role } from '@elearn/shared'
+import type { Role } from '@packages/shared'
 import { PageLoader } from './Skeletons'
 
 interface RequireAuthProps {

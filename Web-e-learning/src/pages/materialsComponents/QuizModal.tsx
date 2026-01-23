@@ -3,7 +3,7 @@ import { X, Plus, Trash2, CheckCircle2, Circle, Clock, Save, AlertCircle } from 
 import { api } from '@/lib/http'
 import { useTranslation } from '@/i18n/useTranslation'
 import { LoadingButton } from '@/components/LoadingButton'
-import type { Difficulty } from '@elearn/shared'
+import type { Difficulty } from '@packages/shared'
 
 interface QuizModalProps {
   topicId: string

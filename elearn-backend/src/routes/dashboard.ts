@@ -8,7 +8,7 @@ import {
   getRecentActivity,
   getViewedMaterialIds,
 } from '../services/progress.service.js'
-import type { Lang } from '@elearn/shared'
+import type { Lang } from '../shared'
 
 const router = Router()
 

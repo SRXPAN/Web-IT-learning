@@ -6,7 +6,7 @@
  * - titleCache: {"UA": "...", "EN": "...", "PL": "..."}
  * - descCache, contentCache, urlCache (similar structure)
  */
-import type { Lang } from '@elearn/shared'
+import type { Lang } from '../shared'
 
 type TranslationsJson = Record<string, string> | null | undefined
 

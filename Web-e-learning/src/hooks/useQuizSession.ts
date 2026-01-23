@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useInterval } from '@/utils/useInterval'
-import type { Quiz, QuizSubmitResult } from '@elearn/shared'
+import type { Quiz, QuizSubmitResult } from '@packages/shared'
 
 type QuizMode = 'practice' | 'exam'
 

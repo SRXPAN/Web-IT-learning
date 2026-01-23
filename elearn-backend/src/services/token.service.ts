@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import jwt, { type SignOptions } from 'jsonwebtoken'
 import { prisma } from '../db.js'
 import { getJwtSecret, getEnv } from '../utils/env.js'
-import type { Role } from '@elearn/shared'
+import type { Role } from '../shared'
 
 const JWT_SECRET = getJwtSecret()
 const ACCESS_TOKEN_EXPIRES = getEnv('ACCESS_TOKEN_EXPIRES', '15m') as SignOptions['expiresIn']

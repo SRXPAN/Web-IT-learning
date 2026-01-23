@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/auth.js'
 import { asyncHandler, AppError } from '../middleware/errorHandler.js'
 import { validateResource } from '../middleware/validateResource.js'
 import { quizSchemas } from '../schemas/quiz.schema.js'
-import type { Lang } from '@elearn/shared'
+import type { Lang } from '../shared'
 import { getQuizWithToken, submitQuizAttempt, getUserQuizHistory } from '../services/quiz.service.js'
 import { z } from 'zod'
 

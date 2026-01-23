@@ -19,7 +19,7 @@ import {
 import { TopicQuizSection } from './TopicQuizSection'
 import type { TopicNode, Tab, Material } from './types'
 import { useTranslation } from '@/i18n/useTranslation'
-import type { Lang, LocalizedString, MaterialType } from '@elearn/shared'
+import type { Lang, LocalizedString, MaterialType } from '@packages/shared'
 
 // Helper for localization
 const getLocalizedText = (json: LocalizedString | undefined | null, fallback: string, lang: Lang) => {

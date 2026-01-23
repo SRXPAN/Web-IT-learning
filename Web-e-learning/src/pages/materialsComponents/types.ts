@@ -1,4 +1,4 @@
-import type { TopicTree, Material as BaseMaterial, Category, QuizLite, LocalizedString } from '@elearn/shared'
+import type { TopicTree, Material as BaseMaterial, Category, QuizLite, LocalizedString } from '@packages/shared'
 
 export type { Category, QuizLite, LocalizedString }
 
