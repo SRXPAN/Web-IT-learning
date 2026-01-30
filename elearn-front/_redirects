@@ -1,2 +1,15 @@
 # _redirects
-/* /index.html  200
+# Serve static assets directly
+/assets/*  200
+/*.js      200
+/*.css     200
+/*.png     200
+/*.jpg     200
+/*.svg     200
+/*.woff    200
+/*.woff2   200
+/*.ttf     200
+/*.ico     200
+
+# SPA fallback - all other routes to index.html
+/*  /index.html  200
