@@ -24,7 +24,7 @@ export function setCsrfToken(req: Request, res: Response): void {
   res.cookie(CSRF_COOKIE, token, {
     httpOnly: false, // JS має мати доступ для читання
     secure: isProd,
-    sameSite: 'strict',
+    sameSite: isProd ? 'none' : 'lax', // 'none' для cross-origin в production
     path: '/',
     maxAge: 24 * 60 * 60 * 1000, // 24 години
   })

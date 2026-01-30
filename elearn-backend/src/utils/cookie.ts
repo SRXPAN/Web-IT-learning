@@ -13,7 +13,7 @@ export function getAccessCookieOptions(): CookieOptions {
   return {
     httpOnly: true,           // Недоступно для JavaScript
     secure: isProd,           // HTTPS only в production
-    sameSite: 'strict',       // Захист від CSRF
+    sameSite: isProd ? 'none' : 'lax', // 'none' для cross-origin в production
     path: '/',
     maxAge: ACCESS_TOKEN_MAX_AGE,
   }
@@ -26,7 +26,7 @@ export function getRefreshCookieOptions(): CookieOptions {
   return {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'strict',
+    sameSite: isProd ? 'none' : 'lax', // 'none' для cross-origin в production
     path: '/api/auth',        // Тільки для auth endpoints
     maxAge: REFRESH_TOKEN_MAX_AGE,
   }
