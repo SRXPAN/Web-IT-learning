@@ -47,6 +47,8 @@ export function getClearCookieOptions(): CookieOptions {
   return {
     path: '/',
     httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
   }
 }
 
@@ -57,5 +59,7 @@ export function getClearRefreshCookieOptions(): CookieOptions {
   return {
     path: '/api/auth',
     httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
   }
 }

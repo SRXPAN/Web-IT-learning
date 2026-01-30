@@ -120,11 +120,14 @@ router.post(
   validateResource(authSchemas.login, 'body'),
   asyncHandler(async (req: Request, res: Response) => {
     const { userAgent, ip } = getClientInfo(req)
+    logger.info('[LOGIN] Attempt', { email: req.body.email, ip, origin: req.headers.origin })
     try {
       const result = await loginUser(req.body, userAgent, ip)
       setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken)
+      logger.info('[LOGIN] Success', { userId: result.user.id, email: result.user.email })
       return ok(res, { user: result.user, badges: getBadges(result.user.xp) })
     } catch (e) {
+      logger.error('[LOGIN] Failed', { email: req.body.email, error: e instanceof Error ? e.message : 'Unknown' })
       if (e instanceof Error && e.message === 'Invalid credentials') {
         throw AppError.unauthorized('Invalid credentials')
       }

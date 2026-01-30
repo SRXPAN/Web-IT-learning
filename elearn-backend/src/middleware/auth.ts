@@ -1,10 +1,10 @@
-// src/middleware/auth.ts
 import type { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import type { Role } from '../shared'
 import { prisma } from '../db.js'
 import { getJwtSecret, getEnv } from '../utils/env.js'
 import { sendError, ErrorCodes } from '../utils/response.js'
+import { logger } from '../utils/logger.js'
 
 export interface JwtPayload {
   id: string
@@ -38,6 +38,13 @@ function readToken(req: Request): string | null {
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const token = readToken(req)
+  logger.info('[AUTH] Check', { 
+    hasCookie: !!req.cookies?.[COOKIE_NAME], 
+    hasHeader: !!req.headers.authorization,
+    hasToken: !!token,
+    cookies: Object.keys(req.cookies || {}),
+    path: req.path
+  })
   if (!token) return sendError(res, ErrorCodes.UNAUTHORIZED, 'No token', 401)
   try {
     const decoded = jwt.verify(token, SECRET) as JwtPayload
@@ -59,8 +66,10 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       role: userExists.role as Role,
       emailVerified: userExists.emailVerified 
     }
+    logger.info('[AUTH] Success', { userId: decoded.id, email: decoded.email })
     next()
   } catch (err: any) {
+    logger.error('[AUTH] Failed', { error: err.message })
     if (err.name === 'TokenExpiredError') {
       return sendError(res, ErrorCodes.TOKEN_EXPIRED, 'Token expired', 401)
     }
