@@ -2,10 +2,11 @@
   "name": "elearn-backend",
   "private": true,
   "version": "0.0.1",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p .",
-    "start": "npx prisma migrate deploy && node dist/src/index.js",
+    "start": "npx prisma migrate deploy && node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
