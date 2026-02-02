@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useAuth } from '@/auth/AuthContext'
-import { api } from '@/lib/http'
+import { apiPost } from '@/lib/http'
 
 export function useActivityTracker() {
   const { user } = useAuth()
@@ -14,9 +14,9 @@ export function useActivityTracker() {
       if (document.visibilityState === 'hidden') return
 
       try {
-        // Відправляємо "пінг" на сервер (api() автоматично додає CSRF токен)
+        // Відправляємо "пінг" на сервер (apiPost додає CSRF токен через interceptor)
         // Бекенд сам розрахує час сесії та оновить streak.
-        await api('/activity/ping', { method: 'POST' })
+        await apiPost('/activity/ping', {})
       } catch (error) {
         // Ігноруємо помилки пінгу, щоб не спамити в консоль
       }
