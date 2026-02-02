@@ -1,19 +1,21 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
+import { dispatchToast } from '@/utils/toastEmitter'
 
-// Визначаємо URL API: використовуємо змінну середовища або дефолтний локальний
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+// Визначаємо API URL один раз
+const envUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '')
+export const API_URL = envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`
 
+// Створюємо інстанс axios
 const $api = axios.create({
   baseURL: API_URL,
-  withCredentials: true, // Важливо для Cookies!
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-// Request Interceptor
+// === Request Interceptor ===
 $api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  // Якщо є токен в localStorage (резервний варіант), додаємо його
   const token = localStorage.getItem('access_token')
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`
@@ -21,34 +23,29 @@ $api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config
 })
 
-// Response Interceptor
+// === Response Interceptor (Error Handling & Refresh) ===
 $api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
-    // Якщо помилка 401 (Unauthorized) і це не повторний запит
+    // 1. Обробка 401 (Unauthorized) - Оновлення токена
     if (error.response?.status === 401 && error.config && !originalRequest._retry) {
       originalRequest._retry = true
 
       try {
-        // Пробуємо оновити токен
         await axios.post(
-          `${API_URL}/api/auth/refresh`,
+          `${API_URL}/auth/refresh`,
           {},
-          { withCredentials: true } // Обов'язково для відправки Refresh Cookie
+          { withCredentials: true }
         )
-        
-        // Якщо успішно - повторюємо оригінальний запит
         return $api.request(originalRequest)
       } catch (refreshError) {
-        console.error('Session expired or refresh failed', refreshError)
-        
-        // Очищаємо дані
+        console.error('Session expired', refreshError)
         localStorage.removeItem('user_data')
         localStorage.removeItem('access_token')
         
-        // Даємо React трохи часу перед редіректом, щоб уникнути помилки "insertBefore"
+        // Timeout fix for React "NotFoundError" (білий екран)
         setTimeout(() => {
             window.location.href = '/login'
         }, 100)
@@ -56,13 +53,90 @@ $api.interceptors.response.use(
         return Promise.reject(refreshError)
       }
     }
-    
+
+    // 2. Глобальна обробка помилок (Toast)
+    const status = error.response?.status
+    const data = error.response?.data as any
+    const message = data?.message || data?.error || error.message || 'Something went wrong'
+
+    // Не показувати тост, якщо це 401 (бо ми перенаправляємо) або 429 (axios сам обробить якщо треба)
+    if (status !== 401 && status !== 429) {
+       // Перевіряємо, чи dispatchToast існує (щоб не ламало тести/SSR)
+       try {
+         dispatchToast(typeof message === 'string' ? message : 'Request failed', 'error')
+       } catch (e) {
+         console.error('Failed to dispatch toast', e)
+       }
+    }
+
     return Promise.reject(error)
   }
 )
 
-// Named exports for compatibility
-export const api = $api
-export const http = $api
-
 export default $api
+
+// === Fetch-style API wrapper ===
+// Для сумісності з існуючим кодом, який використовує fetch-style синтаксис
+interface FetchOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+  body?: string
+  headers?: Record<string, string>
+  signal?: AbortSignal
+}
+
+export async function api<T = any>(url: string, options: FetchOptions = {}): Promise<T> {
+  const { method = 'GET', body, headers, signal } = options
+  
+  const config = {
+    method,
+    url,
+    data: body ? JSON.parse(body) : undefined,
+    headers,
+    signal,
+  }
+  
+  const response = await $api.request<T>(config)
+  return response.data
+}
+
+// === Compatibility Layer (Для сумісності з рештою проекту) ===
+
+// Функція для отримання CSRF токена (використовується в AuthContext)
+export const fetchCsrfToken = async (): Promise<string> => {
+  try {
+    const res = await $api.get('/auth/csrf')
+    return res.data.csrfToken || ''
+  } catch (e) {
+    console.warn('CSRF Fetch Error', e)
+    return ''
+  }
+}
+
+// Обгортки для методів (щоб не міняти код у всіх файлах)
+export const apiGet = async <T>(url: string, config?: any): Promise<T> => {
+  const response = await $api.get<T>(url, config)
+  return response.data
+}
+
+export const apiPost = async <T>(url: string, data?: any, config?: any): Promise<T> => {
+  const response = await $api.post<T>(url, data, config)
+  return response.data
+}
+
+export const apiPut = async <T>(url: string, data?: any, config?: any): Promise<T> => {
+  const response = await $api.put<T>(url, data, config)
+  return response.data
+}
+
+export const apiDelete = async <T>(url: string, config?: any): Promise<T> => {
+  const response = await $api.delete<T>(url, config)
+  return response.data
+}
+
+// Об'єкт http для зручності
+export const http = {
+  get: apiGet,
+  post: apiPost,
+  put: apiPut,
+  delete: apiDelete,
+}
