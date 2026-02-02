@@ -5,6 +5,16 @@ import { dispatchToast } from '@/utils/toastEmitter'
 const envUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '')
 export const API_URL = envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`
 
+// CSRF token storage - needed for stateless CSRF protection
+let csrfToken: string | null = null
+
+// Helper to get CSRF token from cookie (backup)
+function getCsrfFromCookie(): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 // Створюємо інстанс axios
 const $api = axios.create({
   baseURL: API_URL,
@@ -16,10 +26,22 @@ const $api = axios.create({
 
 // === Request Interceptor ===
 $api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  // Add Authorization header if token exists
   const token = localStorage.getItem('access_token')
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  
+  // Add CSRF token for mutating methods (POST, PUT, PATCH, DELETE)
+  const mutatingMethods = ['POST', 'PUT', 'PATCH', 'DELETE']
+  if (mutatingMethods.includes(config.method?.toUpperCase() || '')) {
+    // Try stored token first, fallback to cookie
+    const csrf = csrfToken || getCsrfFromCookie()
+    if (csrf && config.headers) {
+      config.headers['x-csrf-token'] = csrf
+    }
+  }
+  
   return config
 })
 
@@ -102,14 +124,25 @@ export async function api<T = any>(url: string, options: FetchOptions = {}): Pro
 // === Compatibility Layer (Для сумісності з рештою проекту) ===
 
 // Функція для отримання CSRF токена (використовується в AuthContext)
+// Stores the token in memory for subsequent requests
 export const fetchCsrfToken = async (): Promise<string> => {
   try {
     const res = await $api.get('/auth/csrf')
-    return res.data.csrfToken || ''
+    const token = res.data.csrfToken || ''
+    // Store in memory for request interceptor
+    csrfToken = token
+    return token
   } catch (e) {
     console.warn('CSRF Fetch Error', e)
-    return ''
+    // Try to get from cookie as fallback
+    csrfToken = getCsrfFromCookie()
+    return csrfToken || ''
   }
+}
+
+// Force refresh CSRF token (useful after login/logout)
+export const refreshCsrfToken = async (): Promise<void> => {
+  await fetchCsrfToken()
 }
 
 // Обгортки для методів (щоб не міняти код у всіх файлах)

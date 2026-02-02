@@ -81,6 +81,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('refresh_token', response.refreshToken)
     }
     
+    // Refresh CSRF token after login (new session = new CSRF)
+    await fetchCsrfToken().catch(err => console.warn('CSRF refresh warning:', err))
+    
     setUser(response.user)
   }
 
