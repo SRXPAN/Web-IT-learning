@@ -21,7 +21,8 @@
       "@/*": ["./src/*"],
       "@packages/shared": ["./src/shared/index.ts"]
     },
-    "types": ["vite/client", "node"]
+    "types": ["vite/client", "node"],
+    "ignoreDeprecations": "6.0"
   },
   "include": ["src", "**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
