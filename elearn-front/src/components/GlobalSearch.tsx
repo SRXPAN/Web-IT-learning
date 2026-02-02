@@ -35,8 +35,9 @@ export default function GlobalSearch() {
     const q = searchQuery.toLowerCase()
     const searchResults: SearchResult[] = []
 
-    // Search through topics
-    topics.forEach(topic => {
+    // Search through topics (defensive: ensure topics is array)
+    const safeTopics = Array.isArray(topics) ? topics : []
+    safeTopics.forEach(topic => {
       if (topic.name.toLowerCase().includes(q)) {
         searchResults.push({
           id: topic.id,
@@ -47,8 +48,9 @@ export default function GlobalSearch() {
         })
       }
 
-      // Search through quizzes
-      topic.quizzes.forEach((quiz: { id: string; title: string; durationSec: number }) => {
+      // Search through quizzes (defensive: ensure quizzes is array)
+      const safeQuizzes = Array.isArray(topic.quizzes) ? topic.quizzes : []
+      safeQuizzes.forEach((quiz: { id: string; title: string; durationSec: number }) => {
         if (quiz.title.toLowerCase().includes(q)) {
           searchResults.push({
             id: quiz.id,

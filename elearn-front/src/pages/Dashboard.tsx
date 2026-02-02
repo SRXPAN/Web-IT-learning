@@ -214,7 +214,7 @@ export default function Dashboard() {
         <div className="space-y-6">
           
           {/* 2. Continue Learning */}
-          {data.recentTopics.length > 0 && (
+          {Array.isArray(data.recentTopics) && data.recentTopics.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-xl font-display font-bold text-neutral-900 dark:text-white px-1">
                 {t('dashboard.continueLearning', 'Continue Learning')}
@@ -270,7 +270,7 @@ export default function Dashboard() {
             </div>
             
             <ul className="space-y-3">
-              {data.dailyGoals.map(g => (
+              {Array.isArray(data.dailyGoals) && data.dailyGoals.map(g => (
                 <li 
                   key={g.id} 
                   className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${
@@ -307,7 +307,7 @@ export default function Dashboard() {
           </div>
 
           {/* 5. Weak Spots */}
-          {data.weakSpots.length > 0 && (
+          {Array.isArray(data.weakSpots) && data.weakSpots.length > 0 && (
             <div className="card bg-gradient-to-br from-white to-red-50/30 dark:from-neutral-900 dark:to-red-900/10 border-red-100 dark:border-red-900/20">
               <div className="flex items-center gap-2 mb-4">
                 <h3 className="text-lg font-display font-semibold text-neutral-900 dark:text-white">
@@ -315,7 +315,7 @@ export default function Dashboard() {
                 </h3>
               </div>
               <div className="space-y-3">
-                {data.weakSpots.map((spot, idx) => (
+                {Array.isArray(data.weakSpots) && data.weakSpots.map((spot, idx) => (
                   <div key={idx} className="p-4 bg-white dark:bg-neutral-900 rounded-xl border border-red-100 dark:border-red-900/30 shadow-sm">
                     <div className="flex gap-3">
                       <div className="mt-1 text-red-500">
@@ -391,7 +391,7 @@ export default function Dashboard() {
               </Link>
             </div>
             <div className="flex flex-wrap gap-2">
-              {data.achievements.slice(0, 4).map(ach => (
+              {Array.isArray(data.achievements) && data.achievements.slice(0, 4).map(ach => (
                 <span 
                   key={ach.id}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${

@@ -45,7 +45,9 @@ const useCatalogStore = create<CatalogState>((set, get) => ({
       // Використовуємо новий API клієнт
       const query = lang ? `?lang=${lang}` : ''
       const data = await api<TopicTree[]>(`/topics/tree${query}`)
-      set({ topics: data, loading: false, lang })
+      // Defensive: ensure data is array
+      const topics = Array.isArray(data) ? data : []
+      set({ topics, loading: false, lang })
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Failed to load topics'
       set({ loading: false, error: message })
