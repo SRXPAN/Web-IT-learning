@@ -43,8 +43,8 @@ export default function Materials() {
     try {
       useCatalogStore.getState().invalidateTopics()
     } catch {}
-    loadTopics(lang as 'UA' | 'PL' | 'EN')
-  }, [loadTopics, lang])
+    useCatalogStore.getState().loadTopics(lang as 'UA' | 'PL' | 'EN')
+  }, [lang])
 
   // --- Helpers for Navigation ---
 
@@ -118,7 +118,7 @@ export default function Materials() {
 
   // --- Handlers ---
 
-  const filteredMaterials = useCallback((list: Material[]) => {
+  const filteredMaterials = useCallback((list: Material[] | undefined | null) => {
     // Захист від не-масивів (API може повернути об'єкт помилки вміст undefined)
     if (!Array.isArray(list)) {
       console.warn('[Materials] Expected array, got:', typeof list, list)

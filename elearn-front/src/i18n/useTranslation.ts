@@ -145,15 +145,15 @@ export function useTranslation() {
   const { lang, setLang } = useI18n()
   const { bundles, localBundles, loading, initialized, fetchTranslations, loadLocalBundle } = useTranslationsStore()
   
-  // Load local bundle immediately for fast fallback
+  // Load local bundle immediately for fast fallback (only when lang changes)
   useEffect(() => {
     loadLocalBundle(lang as Lang)
-  }, [lang, loadLocalBundle])
+  }, [lang]) // Remove loadLocalBundle from deps to prevent re-triggers
   
-  // Load translations from API on mount and when lang changes
+  // Load translations from API on mount and when lang changes (only when lang changes)
   useEffect(() => {
     fetchTranslations(lang)
-  }, [lang, fetchTranslations])
+  }, [lang]) // Remove fetchTranslations from deps to prevent re-triggers
   
   const t = useCallback((key: TranslationKey, defaultValue?: string): string => {
     // 1. Try API bundle for current language (most up-to-date)

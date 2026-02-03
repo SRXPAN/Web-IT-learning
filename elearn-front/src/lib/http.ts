@@ -96,6 +96,15 @@ $api.interceptors.response.use(
 
 export default $api
 
+// === Helper: Extract data from API response ===
+// Backend returns { success: true, data: T } structure
+function extractResponseData<T>(responseData: any): T {
+  if (responseData && typeof responseData === 'object' && 'data' in responseData && 'success' in responseData) {
+    return responseData.data as T
+  }
+  return responseData as T
+}
+
 // === Fetch-style API wrapper ===
 // Для сумісності з існуючим кодом, який використовує fetch-style синтаксис
 interface FetchOptions {
@@ -116,8 +125,8 @@ export async function api<T = any>(url: string, options: FetchOptions = {}): Pro
     signal,
   }
   
-  const response = await $api.request<T>(config)
-  return response.data
+  const response = await $api.request<any>(config)
+  return extractResponseData<T>(response.data)
 }
 
 // === Compatibility Layer (Для сумісності з рештою проекту) ===
@@ -135,23 +144,23 @@ export const fetchCsrfToken = async (): Promise<string> => {
 
 // Обгортки для методів (щоб не міняти код у всіх файлах)
 export const apiGet = async <T>(url: string, config?: any): Promise<T> => {
-  const response = await $api.get<T>(url, config)
-  return response.data
+  const response = await $api.get<any>(url, config)
+  return extractResponseData<T>(response.data)
 }
 
 export const apiPost = async <T>(url: string, data?: any, config?: any): Promise<T> => {
-  const response = await $api.post<T>(url, data, config)
-  return response.data
+  const response = await $api.post<any>(url, data, config)
+  return extractResponseData<T>(response.data)
 }
 
 export const apiPut = async <T>(url: string, data?: any, config?: any): Promise<T> => {
-  const response = await $api.put<T>(url, data, config)
-  return response.data
+  const response = await $api.put<any>(url, data, config)
+  return extractResponseData<T>(response.data)
 }
 
 export const apiDelete = async <T>(url: string, config?: any): Promise<T> => {
-  const response = await $api.delete<T>(url, config)
-  return response.data
+  const response = await $api.delete<any>(url, config)
+  return extractResponseData<T>(response.data)
 }
 
 // Об'єкт http для зручності

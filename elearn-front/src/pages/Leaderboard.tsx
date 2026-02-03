@@ -48,7 +48,8 @@ export default function Leaderboard() {
         // Використовуємо новий api клієнт
         const data = await api<LeaderboardUser[]>('/auth/leaderboard?limit=50')
         if (mounted) {
-          setLeaderboard(data)
+          // Ensure data is an array (defensive check)
+          setLeaderboard(Array.isArray(data) ? data : [])
         }
       } catch (e) {
         if (mounted) {

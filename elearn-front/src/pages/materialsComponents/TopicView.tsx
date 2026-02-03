@@ -202,7 +202,7 @@ interface TopicSectionProps {
 
 function TopicSection({
   topic,
-  filteredMats,
+  filteredMats = [],
   onOpen,
   lang,
   isMain,
@@ -218,9 +218,11 @@ function TopicSection({
 
   // Calculate stats based on materials in this section
   const { done, total, next, progress } = useMemo(() => {
-    const total = filteredMats.length
-    const done = filteredMats.filter((m) => m.isSeen).length // Assuming API returns isSeen
-    const next = filteredMats.find((m) => !m.isSeen)
+    // Defensive: ensure filteredMats is always an array
+    const safeMats = Array.isArray(filteredMats) ? filteredMats : []
+    const total = safeMats.length
+    const done = safeMats.filter((m) => m.isSeen).length // Assuming API returns isSeen
+    const next = safeMats.find((m) => !m.isSeen)
     const progress = total > 0 ? Math.round((done / total) * 100) : 0
     return { done, total, next, progress }
   }, [filteredMats])

@@ -49,8 +49,15 @@ const useCatalogStore = create<CatalogState>((set, get) => ({
       // Логування для дебагу
       console.debug('[catalog] Received topics data:', { type: typeof data, isArray: Array.isArray(data), data })
       
-      // Defensive: ensure data is array
-      const topics = Array.isArray(data) ? data : []
+      // Defensive: ensure data is array and all topics have materials arrays
+      const topics = Array.isArray(data) ? data.map(topic => ({
+        ...topic,
+        materials: Array.isArray(topic.materials) ? topic.materials : [],
+        children: topic.children?.map(child => ({
+          ...child,
+          materials: Array.isArray(child.materials) ? child.materials : []
+        })) || []
+      })) : []
       set({ topics, loading: false, lang })
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Failed to load topics'
