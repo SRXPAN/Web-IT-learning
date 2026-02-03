@@ -15,10 +15,16 @@ const $api = axios.create({
 })
 
 // === Helper: Отримання CSRF токена з куків ===
-function getCsrfFromCookie() {
+function getCsrfFromCookie(): string | null {
   const match = document.cookie.match(new RegExp('(^| )csrf_token=([^;]+)'))
   return match ? match[2] : null
 }
+
+// === CSRF Token Promise Cache (запобігає race condition) ===
+let csrfPromise: Promise<string> | null = null
+let csrfTokenCache: string | null = null
+let csrfTokenTimestamp: number = 0
+const CSRF_TOKEN_TTL = 60 * 1000 // 1 хвилина кеш
 
 // === Request Interceptor ===
 $api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -171,14 +177,45 @@ export async function api<T = any>(url: string, options: FetchOptions = {}): Pro
 // === Compatibility Layer (Для сумісності з рештою проекту) ===
 
 // Функція для отримання CSRF токена (використовується в AuthContext)
+// Використовуємо promise cache щоб запобігти race condition
 export const fetchCsrfToken = async (): Promise<string> => {
-  try {
-    await $api.get('/auth/csrf')
-    return getCsrfFromCookie() || ''
-  } catch (e) {
-    console.warn('CSRF Fetch Error', e)
-    return ''
+  // Перевіряємо кеш спочатку
+  const cachedToken = getCsrfFromCookie()
+  const now = Date.now()
+  
+  // Якщо токен є і він свіжий - повертаємо його
+  if (cachedToken && csrfTokenCache === cachedToken && (now - csrfTokenTimestamp) < CSRF_TOKEN_TTL) {
+    return cachedToken
   }
+  
+  // Якщо запит вже йде - чекаємо на нього (запобігає race condition)
+  if (csrfPromise) {
+    return csrfPromise
+  }
+  
+  // Створюємо новий запит
+  csrfPromise = (async () => {
+    try {
+      // Використовуємо чистий axios щоб не зациклити інтерцептори
+      await axios.get(`${API_URL}/auth/csrf`, { withCredentials: true })
+      
+      // Чекаємо поки кука встановиться (невелика затримка)
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      const newToken = getCsrfFromCookie() || ''
+      csrfTokenCache = newToken
+      csrfTokenTimestamp = Date.now()
+      return newToken
+    } catch (e) {
+      console.warn('CSRF Fetch Error', e)
+      return getCsrfFromCookie() || ''
+    } finally {
+      // Очищуємо проміс через 2 секунди
+      setTimeout(() => { csrfPromise = null }, 2000)
+    }
+  })()
+  
+  return csrfPromise
 }
 
 // Обгортки для методів (щоб не міняти код у всіх файлах)
@@ -188,11 +225,14 @@ export const apiGet = async <T>(url: string, config?: any): Promise<T> => {
 }
 
 // Попередньо оновлюємо CSRF перед POST/PUT/DELETE (на випадок якщо токен застарів)
-const ensureCsrfToken = async () => {
-  const token = getCsrfFromCookie()
+const ensureCsrfToken = async (): Promise<string> => {
+  let token = getCsrfFromCookie()
+  
   if (!token) {
-    await fetchCsrfToken()
+    token = await fetchCsrfToken()
   }
+  
+  return token || ''
 }
 
 export const apiPost = async <T>(url: string, data?: any, config?: any): Promise<T> => {

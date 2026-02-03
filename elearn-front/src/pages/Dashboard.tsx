@@ -8,7 +8,7 @@ import {
 import { useAuth } from '@/auth/AuthContext'
 import { useTranslation } from '@/i18n/useTranslation'
 import { useActivityTracker } from '@/hooks/useActivityTracker'
-import { apiGet, apiPost, fetchCsrfToken } from '@/lib/http'
+import { apiGet, apiPost } from '@/lib/http'
 import { SkeletonDashboard } from '@/components/Skeletons'
 import QuizHistory from '@/components/QuizHistory'
 import { 
@@ -111,9 +111,16 @@ export default function Dashboard() {
     return () => { mounted = false }
   }, [lang, user]) // Перезавантажуємо при зміні мови або user
 
-  // Функція для відмітки цілі як виконаної (оптимістичний UI)
+  // Стан для запобігання швидким подвійним клікам
+  const [togglingGoals, setTogglingGoals] = useState<Set<string>>(new Set())
+  
+  // Функція для відмітки цілі як виконаної (оптимістичний UI з захистом від подвійних кліків)
   const toggleGoal = async (goalId: string, currentState: boolean) => {
     if (!data || !user) return
+    
+    // Захист від подвійних кліків
+    if (togglingGoals.has(goalId)) return
+    setTogglingGoals(prev => new Set(prev).add(goalId))
     
     // Optimistic update
     setData(prev => prev ? ({
@@ -124,17 +131,20 @@ export default function Dashboard() {
     try {
       await apiPost(`/progress/goals/${goalId}/toggle`, {})
     } catch {
-      try {
-        await fetchCsrfToken()
-        await apiPost(`/progress/goals/${goalId}/toggle`, {})
-        return
-      } catch {
-        // Revert if failed
-        setData(prev => prev ? ({
-          ...prev,
-          dailyGoals: prev.dailyGoals.map(g => g.id === goalId ? { ...g, isCompleted: currentState } : g)
-        }) : null)
-      }
+      // Revert if failed - apiPost вже обробляє CSRF автоматично
+      setData(prev => prev ? ({
+        ...prev,
+        dailyGoals: prev.dailyGoals.map(g => g.id === goalId ? { ...g, isCompleted: currentState } : g)
+      }) : null)
+    } finally {
+      // Знімаємо блокування через невелику затримку
+      setTimeout(() => {
+        setTogglingGoals(prev => {
+          const next = new Set(prev)
+          next.delete(goalId)
+          return next
+        })
+      }, 500)
     }
   }
 
