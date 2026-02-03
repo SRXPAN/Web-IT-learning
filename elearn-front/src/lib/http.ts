@@ -134,7 +134,11 @@ $api.interceptors.response.use(
     }
 
     // 2. Обробка 401 (Unauthorized) - Оновлення токена
-    if (error.response?.status === 401 && error.config && !originalRequest._retry) {
+    // НЕ робимо refresh для /auth/me та /auth/refresh (уникаємо зациклення)
+    const requestUrl = originalRequest.url || ''
+    const skipRefresh = requestUrl.includes('/auth/me') || requestUrl.includes('/auth/refresh')
+    
+    if (error.response?.status === 401 && error.config && !originalRequest._retry && !skipRefresh) {
       originalRequest._retry = true
 
       try {
@@ -174,12 +178,14 @@ $api.interceptors.response.use(
     // - 403 для activity/ping: це не критична помилка, не треба показувати користувачу
     // - 403 для CSRF retry: буде повторено автоматично
     // - logout помилки: користувач все одно виходить, не треба показувати помилку
-    const url = error.config?.url || ''
-    const isActivityPing = url.includes('/activity/ping')
-    const isLogout = url.includes('/auth/logout')
+    const errorUrl = error.config?.url || ''
+    const isActivityPing = errorUrl.includes('/activity/ping')
+    const isLogout = errorUrl.includes('/auth/logout')
+    const isAuthCheck = errorUrl.includes('/auth/me') || errorUrl.includes('/auth/refresh')
     const isCsrfRetry = (error.response?.data as any)?.error?.includes('CSRF')
     
-    if (status !== 401 && status !== 429 && !(status === 403 && (isActivityPing || isCsrfRetry)) && !isLogout) {
+    // Не показуємо помилки для auth перевірок (користувач просто не залогінений)
+    if (status !== 401 && status !== 429 && !(status === 403 && (isActivityPing || isCsrfRetry)) && !isLogout && !isAuthCheck) {
        // Перевіряємо, чи dispatchToast існує (щоб не ламало тести/SSR)
        try {
          dispatchToast(typeof message === 'string' ? message : 'Request failed', 'error')
