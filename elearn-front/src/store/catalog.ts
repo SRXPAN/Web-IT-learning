@@ -49,13 +49,15 @@ const useCatalogStore = create<CatalogState>((set, get) => ({
       // Логування для дебагу
       console.debug('[catalog] Received topics data:', { type: typeof data, isArray: Array.isArray(data), data })
       
-      // Defensive: ensure data is array and all topics have materials arrays
+      // Defensive: ensure data is array and all topics have materials and quizzes arrays
       const topics = Array.isArray(data) ? data.map(topic => ({
         ...topic,
         materials: Array.isArray(topic.materials) ? topic.materials : [],
+        quizzes: Array.isArray(topic.quizzes) ? topic.quizzes : [],
         children: topic.children?.map(child => ({
           ...child,
-          materials: Array.isArray(child.materials) ? child.materials : []
+          materials: Array.isArray(child.materials) ? child.materials : [],
+          quizzes: Array.isArray(child.quizzes) ? child.quizzes : []
         })) || []
       })) : []
       set({ topics, loading: false, lang })

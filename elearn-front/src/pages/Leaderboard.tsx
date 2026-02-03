@@ -197,7 +197,7 @@ export default function Leaderboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {leaderboard.filter(u => u.rank > 3).map((u) => {
+              {(Array.isArray(leaderboard) ? leaderboard : []).filter(u => u.rank > 3).map((u) => {
                 const isCurrentUser = user && u.id === user.id
                 return (
                   <tr 

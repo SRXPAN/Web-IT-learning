@@ -70,8 +70,10 @@ export function TopicQuizSection({
 
   // Filter duplicate quizzes (by ID) - defensive programming
   const uniqueQuizzes = useMemo(() => {
+    // Ensure quizzes is an array before filtering
+    const safeQuizzes = Array.isArray(quizzes) ? quizzes : []
     const seen = new Set<string>()
-    return quizzes.filter(q => {
+    return safeQuizzes.filter(q => {
       if (seen.has(q.id)) return false
       seen.add(q.id)
       return true
@@ -406,7 +408,7 @@ export function TopicQuizSection({
         )}
 
         {/* 3. In Progress */}
-        {quizState === 'in-progress' && quiz && (
+        {quizState === 'in-progress' && quiz && Array.isArray(quiz.questions) && quiz.questions.length > 0 && (
           <div className="space-y-6">
             {/* Progress & Timer */}
             <div className="flex items-center justify-between">

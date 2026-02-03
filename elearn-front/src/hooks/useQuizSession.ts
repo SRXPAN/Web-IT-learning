@@ -134,7 +134,7 @@ export function useQuizSession({ quiz, mode, userId, onSubmit }: Params) {
   }, 1000)
 
   const unansweredCount = useMemo(
-    () => (quiz ? quiz.questions.filter((q) => !selectedMap[q.id]).length : 0),
+    () => (quiz && Array.isArray(quiz.questions) ? quiz.questions.filter((q) => !selectedMap[q.id]).length : 0),
     [quiz, selectedMap]
   )
   
@@ -146,7 +146,7 @@ export function useQuizSession({ quiz, mode, userId, onSubmit }: Params) {
   }
 
   const next = () => {
-    if (!quiz) return
+    if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) return
     setShowExplanation(false)
     if (idx < quiz.questions.length - 1) {
       setIdx((i) => i + 1)
@@ -171,7 +171,7 @@ export function useQuizSession({ quiz, mode, userId, onSubmit }: Params) {
     
     try {
       if (submit) {
-        const answers = quiz.questions
+        const answers = (Array.isArray(quiz.questions) ? quiz.questions : [])
           .map((q) => ({ questionId: q.id, optionId: selectedMap[q.id] ?? '' }))
           .filter((a) => a.optionId) // Filter out unanswered if any (though usually backend handles)
         
