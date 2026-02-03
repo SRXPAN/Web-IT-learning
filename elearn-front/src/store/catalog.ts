@@ -47,7 +47,9 @@ const useCatalogStore = create<CatalogState>((set, get) => ({
       const data = await api<TopicTree[]>(`/topics/tree${query}`)
       
       // Логування для дебагу
-      console.debug('[catalog] Received topics data:', { type: typeof data, isArray: Array.isArray(data), data })
+      if (import.meta.env.DEV) {
+        console.debug('[catalog] Received topics data:', { type: typeof data, isArray: Array.isArray(data), data })
+      }
       
       // Defensive: ensure data is array and all topics have materials and quizzes arrays
       const topics = Array.isArray(data) ? data.map(topic => ({
