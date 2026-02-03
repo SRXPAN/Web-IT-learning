@@ -62,11 +62,12 @@ export function setCsrfToken(req: Request, res: Response): void {
   const token = generateCsrfToken()
   // Robust isProd detection for Render and other platforms
   const isProd = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
-  const cookieDomain = process.env.COOKIE_DOMAIN
+  // Використовуємо батьківський домен для cross-subdomain кук (www. та api.)
+  const cookieDomain = process.env.COOKIE_DOMAIN || (isProd ? '.e-learn.space' : undefined)
   
   res.cookie(CSRF_COOKIE, token, {
     httpOnly: false, // JS має мати доступ для читання
-    secure: isProd,
+    secure: isProd, // HTTPS в продакшені
     sameSite: isProd ? 'none' : 'lax', // 'none' для cross-origin в production
     path: '/',
     maxAge: 24 * 60 * 60 * 1000, // 24 години

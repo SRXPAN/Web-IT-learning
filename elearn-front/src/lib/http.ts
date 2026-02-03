@@ -34,7 +34,7 @@ const fetchCsrfToken = async (): Promise<string> => {
   const cachedToken = getCsrfFromCookie()
   const now = Date.now()
   
-  // Якщо токен є і він свіжий - повертаємо його
+  // Якщо токен є в куці і він свіжий - повертаємо його
   if (cachedToken && csrfTokenCache === cachedToken && (now - csrfTokenTimestamp) < CSRF_TOKEN_TTL) {
     return cachedToken
   }
@@ -48,15 +48,27 @@ const fetchCsrfToken = async (): Promise<string> => {
   csrfPromise = (async () => {
     try {
       // Використовуємо чистий axios щоб не зациклити інтерцептори
-      await axios.get(`${API_URL}/auth/csrf`, { withCredentials: true })
+      const response = await axios.get(`${API_URL}/auth/csrf`, { withCredentials: true })
       
-      // Чекаємо поки кука встановиться (невелика затримка)
-      await new Promise(resolve => setTimeout(resolve, 50))
+      // КРИТИЧНО: Беремо токен ПРЯМО З JSON відповіді, а не чекаємо на куку
+      const tokenFromServer = response.data?.csrfToken
       
-      const newToken = getCsrfFromCookie() || ''
-      csrfTokenCache = newToken
-      csrfTokenTimestamp = Date.now()
-      return newToken
+      if (tokenFromServer) {
+        csrfTokenCache = tokenFromServer
+        csrfTokenTimestamp = Date.now()
+        return tokenFromServer
+      }
+      
+      // Fallback: спробувати з куки (можливо вона встановилась)
+      const cookieToken = getCsrfFromCookie()
+      if (cookieToken) {
+        csrfTokenCache = cookieToken
+        csrfTokenTimestamp = Date.now()
+        return cookieToken
+      }
+      
+      console.warn('[CSRF] No token in response or cookie')
+      return ''
     } catch (e) {
       console.warn('CSRF Fetch Error', e)
       return getCsrfFromCookie() || ''
@@ -84,9 +96,10 @@ $api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   const isMutating = ['post', 'put', 'delete', 'patch'].includes(method || '')
   
   if (isMutating && config.headers) {
-    let csrfToken = getCsrfFromCookie()
+    // Спочатку пробуємо з куки, потім з кешу
+    let csrfToken = getCsrfFromCookie() || csrfTokenCache
     
-    // КРИТИЧНО: Якщо токена немає - ЧЕКАЄМО його отримання
+    // Якщо токена немає ніде - форсуємо отримання через API
     if (!csrfToken) {
       console.log('[CSRF] Token missing, fetching before request...')
       csrfToken = await fetchCsrfToken()
