@@ -113,7 +113,7 @@ export default function Dashboard() {
 
   // Функція для відмітки цілі як виконаної (оптимістичний UI)
   const toggleGoal = async (goalId: string, currentState: boolean) => {
-    if (!data) return
+    if (!data || !user) return
     
     // Optimistic update
     setData(prev => prev ? ({
