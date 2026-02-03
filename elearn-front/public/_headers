@@ -6,14 +6,6 @@
 /*.{png,jpg,jpeg,gif,svg,woff,woff2,ttf,eot,ico}
   Cache-Control: public, max-age=86400, must-revalidate
 
-# Cache HTML with revalidation
+# HTML - NO CACHE - always fetch fresh
 /*.html
-  Cache-Control: public, max-age=0, must-revalidate
-
-# API calls - no cache
-/api/*
   Cache-Control: no-cache, no-store, must-revalidate
-
-# Default cache policy
-/*
-  Cache-Control: public, max-age=3600
