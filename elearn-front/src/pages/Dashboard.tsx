@@ -347,30 +347,75 @@ export default function Dashboard() {
         <div className="space-y-6">
           
           {/* 5. Streak Calendar */}
-          <div className="card">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg text-orange-600 dark:text-orange-400">
-                <Flame size={20} />
+          <div className="card bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 border-orange-100 dark:border-orange-900/30">
+            <div className="space-y-4">
+              {/* Header with streak count */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2.5 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl text-white shadow-lg shadow-orange-500/30">
+                    <Flame size={20} className="animate-pulse" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                      {t('dashboard.currentStreak', 'Current Streak')}
+                    </div>
+                    <div className="text-3xl font-display font-bold text-orange-600 dark:text-orange-400">
+                      {data.stats.streak.current}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                      {data.stats.streak.current === 1 ? t('dashboard.day', 'Day') : t('dashboard.days', 'Days')}
+                    </div>
+                    {data.stats.streak.current > 0 && (
+                      <div className="text-xs text-orange-500 dark:text-orange-400 mt-1">
+                        {t('dashboard.keepItUp', 'Keep it up!')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Motivation message */}
+                {data.stats.streak.current === 0 && (
+                  <div className="p-3 bg-orange-100/50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800 text-sm text-orange-700 dark:text-orange-300 text-center">
+                    {t('dashboard.startStreakMsg', 'Continue learning every day to build your streak!')}
+                  </div>
+                )}
               </div>
-              <div>
-                <h3 className="text-lg font-display font-semibold text-neutral-900 dark:text-white leading-tight">
-                  {data.stats.streak.current} {t('dashboard.days', 'Day Streak')}
-                </h3>
-                <p className="text-xs text-neutral-500">
-                  {t('dashboard.keepStreak', 'Keep it up!')}
-                </p>
+
+              {/* Week Calendar */}
+              <div className="space-y-3">
+                <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider px-1">
+                  {t('dashboard.thisWeek', 'This Week')}
+                </div>
+                <div className="bg-white dark:bg-neutral-800/50 p-4 rounded-xl border border-orange-100 dark:border-orange-900/30 shadow-sm">
+                  <div className="grid grid-cols-7 gap-3">
+                    {streakLabels.map((day, idx) => (
+                      <StreakDay 
+                        key={idx} 
+                        day={day} 
+                        active={data.stats.streak.history[idx]} 
+                        isToday={idx === todayIndex}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="bg-neutral-50 dark:bg-neutral-800/50 p-3 rounded-xl">
-              <div className="grid grid-cols-7 gap-2">
-                {streakLabels.map((day, idx) => (
-                  <StreakDay 
-                    key={idx} 
-                    day={day} 
-                    active={data.stats.streak.history[idx]} 
-                    isToday={idx === todayIndex}
-                  />
-                ))}
+
+              {/* Stats Footer */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="p-2.5 bg-white dark:bg-neutral-800/50 rounded-lg border border-orange-100 dark:border-orange-900/20 text-center">
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400">Long Streak</div>
+                  <div className="text-lg font-bold text-orange-600 dark:text-orange-400 mt-1">
+                    {data.stats.streak.longest}
+                  </div>
+                </div>
+                <div className="p-2.5 bg-white dark:bg-neutral-800/50 rounded-lg border border-orange-100 dark:border-orange-900/20 text-center">
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400">Last Active</div>
+                  <div className="text-lg font-bold text-orange-600 dark:text-orange-400 mt-1">
+                    {data.stats.streak.lastActiveDate ? new Date(data.stats.streak.lastActiveDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

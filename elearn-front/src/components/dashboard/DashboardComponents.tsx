@@ -135,17 +135,42 @@ interface StreakDayProps {
 
 export function StreakDay({ active, day, isToday = false }: StreakDayProps) {
   return (
-    <div className="flex flex-col items-center gap-1 min-w-0">
+    <div className="flex flex-col items-center gap-1.5 min-w-0 group">
       <div
-        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg transition-all flex items-center justify-center ${
-          active
-            ? 'bg-gradient-to-br from-primary-600 to-primary-700 shadow-neo text-white'
-            : 'bg-neutral-200 dark:bg-neutral-800'
-        } ${isToday ? 'ring-2 ring-primary-400 ring-offset-2 ring-offset-neutral-50 dark:ring-offset-neutral-900' : ''}`}
+        className={`
+          w-7 h-7 sm:w-8 sm:h-8 rounded-lg transition-all duration-300 flex items-center justify-center 
+          relative overflow-hidden
+          ${
+            active
+              ? 'bg-gradient-to-br from-primary-600 to-primary-700 shadow-neo text-white shadow-primary-500/30'
+              : 'bg-neutral-200 dark:bg-neutral-800 shadow-sm'
+          } 
+          ${isToday ? 'ring-2 ring-primary-400 ring-offset-2 ring-offset-neutral-50 dark:ring-offset-neutral-900 scale-110 sm:scale-125' : ''}
+        `}
       >
-        {active && <div className="w-2 h-2 bg-white rounded-full" />}
+        {/* Shimmer effect for active days */}
+        {active && (
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+        )}
+        
+        {/* Pulse effect for today */}
+        {isToday && active && (
+          <div className="absolute inset-0 rounded-lg border-2 border-primary-400 animate-pulse opacity-50" />
+        )}
+        
+        {/* Checkmark or dot */}
+        {active && (
+          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+        )}
       </div>
-      <span className={`text-[11px] sm:text-xs font-medium ${isToday ? 'text-primary-600 dark:text-primary-400' : 'text-neutral-500 dark:text-neutral-400'}`}>{day}</span>
+      <span className={`
+        text-[10px] sm:text-xs font-semibold transition-all duration-200 
+        ${isToday ? 'text-primary-600 dark:text-primary-400 font-bold text-[11px] sm:text-sm' : 'text-neutral-500 dark:text-neutral-400'}
+      `}>
+        {day}
+      </span>
     </div>
   )
 }
