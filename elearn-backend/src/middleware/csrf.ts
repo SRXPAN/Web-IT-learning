@@ -36,8 +36,15 @@ function verifyCsrfToken(token: string): boolean {
     .update(timestamp)
     .digest('hex')
   
+  // КРИТИЧНО: Перевірка довжини перед Buffer.from (запобігає падінню сервера)
+  if (signature.length !== expectedSignature.length) {
+    return false
+  }
+  
   // Constant-time comparison
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+  const signatureBuffer = Buffer.from(signature)
+  const expectedBuffer = Buffer.from(expectedSignature)
+  if (!crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
     return false
   }
   
