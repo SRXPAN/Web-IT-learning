@@ -9,6 +9,7 @@ import {
   getViewedMaterialIds,
 } from '../services/progress.service.js'
 import { dailyGoalsDatabase } from '../config/dailyGoals.js'
+import { getTipOfTheDay, getWeakSpotAdvice } from '../config/weakSpots.js'
 import type { Lang } from '../shared'
 
 const router = Router()
@@ -92,7 +93,7 @@ router.get('/summary', requireAuth, asyncHandler(async (req: Request, res: Respo
       recentTopics: [],
       dailyGoals: dailyGoalsData,
       weakSpots: [],
-      tipOfTheDay: 'Practice makes perfect! Keep learning every day.',
+      tipOfTheDay: getTipOfTheDay(lang),
       achievements: [
         { id: 'first_material', name: 'First Steps', description: 'View your first material', earned: false },
         { id: 'quiz_master', name: 'Quiz Master', description: 'Complete 5 quizzes', earned: false },
@@ -175,20 +176,13 @@ router.get('/summary', requireAuth, asyncHandler(async (req: Request, res: Respo
       const score = Math.round(quiz._avg?.score ?? 0)
       weakSpotsList.push({
         topic: quizData.topic.name,
-        advice: `You scored ${score}% on average. Practice this topic more to improve your understanding.`
+        advice: getWeakSpotAdvice(score, lang)
       })
     }
   }
 
-  // Tip of the Day - rotate through tips
-  const tips = [
-    'Practice makes perfect! Keep learning every day.',
-    'Review previous topics to strengthen your foundations.',
-    'Take breaks between sessions to retain information better.',
-    'Try to score 80%+ on quizzes for maximum XP.',
-    'Focus on weak spots first to improve faster.'
-  ]
-  const tipOfTheDay = tips[Math.floor(new Date().getTime() / 86400000) % tips.length]
+  // Tip of the Day - localized
+  const tipOfTheDay = getTipOfTheDay(lang)
 
   res.json({
     userXp,

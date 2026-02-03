@@ -381,3 +381,40 @@ export const tipsDatabase: TipTemplate[] = [
     }
   },
 ]
+
+// ============ HELPER FUNCTIONS ============
+
+/**
+ * Get tip of the day based on current date (rotates through tips)
+ */
+export function getTipOfTheDay(lang: Lang): string {
+  const dayIndex = Math.floor(Date.now() / 86400000) % tipsDatabase.length
+  const tip = tipsDatabase[dayIndex]
+  return tip.translations[lang] || tip.translations.EN
+}
+
+/**
+ * Get localized weak spot advice with score
+ */
+export function getWeakSpotAdvice(score: number, lang: Lang): string {
+  const adviceTemplates: Record<Lang, string> = {
+    UA: `Ваш середній бал ${score}%. Практикуйте цю тему більше для кращого розуміння.`,
+    PL: `Twój średni wynik to ${score}%. Ćwicz ten temat więcej, aby lepiej zrozumieć.`,
+    EN: `You scored ${score}% on average. Practice this topic more to improve your understanding.`
+  }
+  return adviceTemplates[lang] || adviceTemplates.EN
+}
+
+/**
+ * Get a random weak spot advice for a specific category (optional)
+ */
+export function getRandomWeakSpotForCategory(category: WeakSpotTemplate['category'], lang: Lang): { topic: string; advice: string } | null {
+  const spots = weakSpotsDatabase.filter(s => s.category === category)
+  if (spots.length === 0) return null
+  
+  const randomSpot = spots[Math.floor(Math.random() * spots.length)]
+  return {
+    topic: randomSpot.translations.topic[lang] || randomSpot.translations.topic.EN,
+    advice: randomSpot.translations.advice[lang] || randomSpot.translations.advice.EN
+  }
+}
