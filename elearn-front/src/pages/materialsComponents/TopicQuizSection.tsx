@@ -195,7 +195,12 @@ export function TopicQuizSection({
     setError(null)
     try {
       const data = await api<Quiz & { token: string }>(`/quiz/${quizId}?lang=${lang}`)
-      setQuiz(data)
+      // Normalize quiz data to ensure questions is always an array
+      const normalizedQuiz = {
+        ...data,
+        questions: Array.isArray(data.questions) ? data.questions : []
+      }
+      setQuiz(normalizedQuiz)
       setQuizToken(data.token)
       setTimeLeft(data.durationSec)
     } catch (e) {
@@ -408,13 +413,13 @@ export function TopicQuizSection({
         )}
 
         {/* 3. In Progress */}
-        {quizState === 'in-progress' && quiz && Array.isArray(quiz.questions) && quiz.questions.length > 0 && (
+        {quizState === 'in-progress' && quiz && (
           <div className="space-y-6">
             {/* Progress & Timer */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-sm font-bold text-neutral-500 uppercase tracking-wider">
-                  {t('quiz.question', 'Question')} {currentQuestion + 1} / {quiz.questions.length}
+                  {t('quiz.question', 'Question')} {currentQuestion + 1} / {(Array.isArray(quiz.questions) ? quiz.questions.length : 0)}
                 </span>
                 {/* Draft Saved Indicator */}
                 <span className={`flex items-center gap-1 text-xs text-green-600 dark:text-green-400 transition-opacity duration-300 ${
@@ -436,12 +441,12 @@ export function TopicQuizSection({
             <div className="h-2 w-full bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-primary-500 transition-all duration-300 ease-out"
-                style={{ width: `${((currentQuestion + 1) / quiz.questions.length) * 100}%` }}
+                style={{ width: `${Array.isArray(quiz.questions) && quiz.questions.length > 0 ? ((currentQuestion + 1) / quiz.questions.length) * 100 : 0}%` }}
               />
             </div>
 
             {/* Question Card */}
-            {quiz.questions[currentQuestion] && (
+            {Array.isArray(quiz.questions) && quiz.questions[currentQuestion] && (
               <QuestionCard
                 question={quiz.questions[currentQuestion]}
                 selectedOption={answers[quiz.questions[currentQuestion].id]}
@@ -460,7 +465,7 @@ export function TopicQuizSection({
                 {t('common.back', 'Back')}
               </button>
 
-              {currentQuestion < quiz.questions.length - 1 ? (
+              {currentQuestion < (Array.isArray(quiz.questions) ? quiz.questions.length - 1 : 0) ? (
                 <button
                   onClick={() => setCurrentQuestion(p => p + 1)}
                   className="btn text-sm flex items-center gap-2"
