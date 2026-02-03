@@ -97,28 +97,32 @@ export default function App() {
   // This ensures a consistent render tree while auth status is being determined
   if (loading && !isAuthPage) {
     return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-          <p className="text-neutral-500 dark:text-neutral-400 text-sm">{t('common.loading', 'Loading...')}</p>
+      <>
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">{t('common.loading', 'Loading...')}</p>
+          </div>
         </div>
         <Toasts />
-      </div>
+      </>
     )
   }
 
   // Special layout for auth pages
   if (isAuthPage) {
     return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col">
-        <ErrorBoundary>
-          <Routes>
-            <Route path="/login" element={<Login/>} />
-            <Route path="/register" element={<Register/>} />
-          </Routes>
-        </ErrorBoundary>
+      <>
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col">
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/login" element={<Login/>} />
+              <Route path="/register" element={<Register/>} />
+            </Routes>
+          </ErrorBoundary>
+        </div>
         <Toasts />
-      </div>
+      </>
     )
   }
 

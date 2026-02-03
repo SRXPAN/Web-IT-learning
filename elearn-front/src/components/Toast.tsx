@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { memo, useEffect } from 'react'
+import { memo, useEffect, useCallback } from 'react'
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react'
 import clsx from 'clsx'
 import { subscribeToToasts, type ToastEvent } from '@/utils/toastEmitter'
@@ -114,13 +114,18 @@ const ToastItem = memo(function ToastItem({ toast, onRemove }: ToastItemProps) {
 export default function Toasts() {
   const { toasts, remove } = useToast()
   
+  // Memoize remove callback to prevent unnecessary re-renders of ToastItem
+  const handleRemove = useCallback((id: string) => {
+    remove(id)
+  }, [remove])
+  
   return (
     <div 
       aria-live="assertive" 
       className="fixed top-0 right-0 z-50 flex w-full max-w-sm flex-col items-end gap-2 p-4 sm:p-6 pointer-events-none"
     >
       {toasts.map((t) => (
-        <ToastItem key={t.id} toast={t} onRemove={() => remove(t.id)} />
+        <ToastItem key={t.id} toast={t} onRemove={() => handleRemove(t.id)} />
       ))}
     </div>
   )
