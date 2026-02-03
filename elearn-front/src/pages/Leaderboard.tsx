@@ -46,6 +46,7 @@ export default function Leaderboard() {
     async function fetchLeaderboard() {
       try {
         setLoading(true)
+        setError(null)
         // Використовуємо новий api клієнт
         const data = await api<LeaderboardUser[]>('/auth/leaderboard?limit=50', {
           signal: controller.signal,
@@ -55,9 +56,13 @@ export default function Leaderboard() {
           setLeaderboard(Array.isArray(data) ? data : [])
         }
       } catch (e) {
-        if (mounted && !controller.signal.aborted) {
-          setError(t('leaderboard.error.loadFailed', 'Failed to load leaderboard'))
-          console.error(e)
+        // Ignore AbortError (happens when component unmounts)
+        if (e instanceof Error && e.name === 'AbortError') {
+          return
+        }
+        if (mounted) {
+          setError('Failed to load leaderboard')
+          console.error('Leaderboard fetch error:', e)
         }
       } finally {
         if (mounted) setLoading(false)
@@ -69,7 +74,7 @@ export default function Leaderboard() {
       mounted = false
       controller.abort()
     }
-  }, [t])
+  }, []) // Empty dependency - fetch once on mount
 
   const getRankStyle = (rank: number) => {
     if (rank === 1) return 'bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-lg shadow-amber-500/30'

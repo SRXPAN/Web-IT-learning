@@ -88,10 +88,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function register(name: string, email: string, password: string): Promise<void> {
-    // After registration, DO NOT set user - they need to verify email first
-    // The response is returned but we don't authenticate them yet
-    await apiPost<AuthResponse>('/auth/register', { name, email, password })
-    // Keep user as null until they verify email or log in
+    // Register and get user data back
+    const response = await apiPost<AuthResponse & { accessToken?: string; refreshToken?: string }>('/auth/register', { name, email, password })
+    
+    // TEMPORARY: Store tokens in localStorage for cross-domain auth (same as login)
+    if (response.accessToken) {
+      localStorage.setItem('access_token', response.accessToken)
+    }
+    if (response.refreshToken) {
+      localStorage.setItem('refresh_token', response.refreshToken)
+    }
+    
+    // Set user - backend already set auth cookies
+    setUser(response.user)
+    
+    // Refresh CSRF token after registration
+    await new Promise(resolve => setTimeout(resolve, 100))
+    await fetchCsrfToken().catch(err => console.warn('CSRF refresh warning:', err))
   }
 
   async function logout(): Promise<void> {

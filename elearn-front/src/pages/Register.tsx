@@ -45,9 +45,8 @@ export default function Register() {
     setLoading(true)
     try {
       await register(name, email, password)
-      // After registration, redirect to login page instead of dashboard
-      // User must verify email or log in first
-      nav('/login', { replace: true })
+      // After successful registration, redirect to dashboard
+      nav('/', { replace: true })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : t('auth.error.registrationFailed', 'Registration failed')
       setErr(message)

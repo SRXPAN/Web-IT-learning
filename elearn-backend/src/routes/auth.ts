@@ -107,9 +107,12 @@ router.post(
     }
 
     setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken)
+    // TEMPORARY: Return tokens in body for cross-domain auth (same as login)
     return created(res, {
       user: result.user,
       message: 'Registration successful. Please verify your email.',
+      accessToken: result.tokens.accessToken,
+      refreshToken: result.tokens.refreshToken
     })
   })
 )
