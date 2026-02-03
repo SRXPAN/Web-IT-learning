@@ -26,6 +26,10 @@ export function useActivityTracker() {
         return
       }
 
+      if (!navigator.onLine) {
+        return
+      }
+
       try {
         // Відправляємо "пінг" на сервер (apiPost додає CSRF токен через interceptor)
         // Бекенд сам розрахує час сесії та оновить streak.
