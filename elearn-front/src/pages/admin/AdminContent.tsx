@@ -14,7 +14,7 @@ import { QuizModal } from '@/pages/materialsComponents/QuizModal'
 import EditQuizModal from '@/pages/materialsComponents/EditQuizModal'
 import { SkeletonDashboard } from '@/components/Skeletons'
 import { LoadingButton } from '@/components/LoadingButton'
-import { apiPost, apiPut } from '@/lib/http'
+import { apiPost, apiPut, apiDelete } from '@/lib/http'
 
 import type { TopicNode, Material } from '@/pages/materialsComponents/types'
 import type { Lang, LocalizedString, Category, MaterialType } from '@packages/shared'
@@ -147,7 +147,7 @@ export default function AdminContent() {
   const handleDeleteMaterial = useCallback(async (material: Material, topic: TopicNode) => {
     if (!confirm(t('dialog.deleteConfirmation', 'Delete this material?'))) return
     try {
-      await api(`/editor/topics/${topic.id}/materials/${material.id}`, { method: 'DELETE' })
+      await apiDelete(`/editor/topics/${topic.id}/materials/${material.id}`)
       fetchTopics() // Refresh list
     } catch (err) {
       console.error(err)
@@ -270,7 +270,7 @@ export default function AdminContent() {
                         <button
                           onClick={async () => {
                             try {
-                              await api(`/editor/topics/${(activeSub || activeTopic)!.id}/quizzes/${q.id}`, { method: 'DELETE' })
+                              await apiDelete(`/editor/topics/${(activeSub || activeTopic)!.id}/quizzes/${q.id}`)
                               fetchTopics()
                             } catch (err) { console.error(err) }
                           }}

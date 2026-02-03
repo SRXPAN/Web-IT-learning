@@ -68,10 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(email: string, password: string): Promise<void> {
     // Бекенд повертає { user: User, accessToken, refreshToken }
-    const response = await api<AuthResponse & { accessToken?: string; refreshToken?: string }>('/auth/login', { 
-      method: 'POST', 
-      body: JSON.stringify({ email, password }), 
-    })
+    const response = await apiPost<AuthResponse & { accessToken?: string; refreshToken?: string }>('/auth/login', { email, password })
     
     // TEMPORARY: Store tokens in localStorage for cross-domain auth
     if (response.accessToken) {
@@ -93,10 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function register(name: string, email: string, password: string): Promise<void> {
     // After registration, DO NOT set user - they need to verify email first
     // The response is returned but we don't authenticate them yet
-    await api<AuthResponse>('/auth/register', { 
-      method: 'POST', 
-      body: JSON.stringify({ name, email, password }), 
-    })
+    await apiPost<AuthResponse>('/auth/register', { name, email, password })
     // Keep user as null until they verify email or log in
   }
 

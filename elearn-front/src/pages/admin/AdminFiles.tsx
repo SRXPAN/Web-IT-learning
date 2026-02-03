@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 
 import { useTranslation } from '@/i18n/useTranslation'
-import { api } from '@/lib/http'
+import { api, apiDelete } from '@/lib/http'
 import { SkeletonList } from '@/components/Skeletons'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Pagination } from '@/components/admin/Pagination'
@@ -123,7 +123,7 @@ export default function AdminFiles() {
   const handleDelete = async () => {
     if (!deleteConfirm) return
     try {
-      await api(`/admin/files/${deleteConfirm.id}`, { method: 'DELETE' })
+      await apiDelete(`/admin/files/${deleteConfirm.id}`)
       setDeleteConfirm(null)
       fetchFiles(pagination.page, categoryFilter)
     } catch (err: any) {

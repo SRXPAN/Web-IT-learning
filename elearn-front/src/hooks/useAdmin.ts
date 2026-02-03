@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { api } from '@/lib/http'
+import { api, apiPut, apiDelete } from '@/lib/http'
 import type { 
   User, 
   Role, 
@@ -138,7 +138,7 @@ export function useAdminUsers(initialPage = 1, initialLimit = 20) {
 
   const updateRole = useCallback(async (userId: string, role: Role) => {
     try {
-      await api(`/admin/users/${userId}/role`, { method: 'PUT', body: JSON.stringify({ role }) })
+      await apiPut(`/admin/users/${userId}/role`, { role })
       fetchUsers({ page: pagination.page, limit: pagination.limit })
       return true
     } catch {
@@ -148,7 +148,7 @@ export function useAdminUsers(initialPage = 1, initialLimit = 20) {
 
   const deleteUser = useCallback(async (userId: string) => {
     try {
-      await api(`/admin/users/${userId}`, { method: 'DELETE' })
+      await apiDelete(`/admin/users/${userId}`)
       fetchUsers({ page: pagination.page, limit: pagination.limit })
       return true
     } catch {
@@ -158,7 +158,7 @@ export function useAdminUsers(initialPage = 1, initialLimit = 20) {
 
   const verifyUser = useCallback(async (userId: string) => {
     try {
-      await api(`/admin/users/${userId}/verify`, { method: 'PUT' })
+      await apiPut(`/admin/users/${userId}/verify`, {})
       fetchUsers({ page: pagination.page, limit: pagination.limit })
       return true
     } catch {
@@ -318,7 +318,7 @@ export function useAdminContent() {
 
   const deleteTopic = useCallback(async (id: string) => {
     try {
-      await api(`/admin/content/topics/${id}`, { method: 'DELETE' })
+      await apiDelete(`/admin/content/topics/${id}`)
       await fetchTopics()
       return true
     } catch {

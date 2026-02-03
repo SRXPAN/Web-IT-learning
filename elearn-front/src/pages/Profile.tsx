@@ -5,7 +5,7 @@ import { Settings, Globe, Palette, Sun, Moon, Lock, Camera, Trash2, AlertTriangl
 import { useAuth } from '@/auth/AuthContext'
 import { useTheme } from '@/store/theme'
 import { useTranslation } from '@/i18n/useTranslation'
-import { apiGet, apiPost } from '@/lib/http'
+import { apiPost, apiDelete, apiPut } from '@/lib/http'
 import type { Lang } from '@packages/shared'
 
 import PasswordInput from '@/components/PasswordInput'
@@ -179,7 +179,7 @@ export default function Profile() {
     if (!confirm(t('dialog.deleteConfirmation', 'Are you sure?'))) return
     setAvatarLoading(true)
     try {
-      await api('/auth/avatar', { method: 'DELETE' })
+      await apiDelete('/auth/avatar')
       await refresh()
     } finally {
       setAvatarLoading(false)
@@ -196,10 +196,7 @@ export default function Profile() {
     }
 
     try {
-      await api('/auth/password', { 
-        method: 'PUT', 
-        body: JSON.stringify({ currentPassword: passwordForm.current, newPassword: passwordForm.new }) 
-      })
+      await apiPut('/auth/password', { currentPassword: passwordForm.current, newPassword: passwordForm.new })
       setPasswordState({ loading: false, error: null, success: true })
       setPasswordForm({ current: '', new: '', confirm: '' })
       setTimeout(() => setPasswordState(s => ({ ...s, success: false })), 3000)
@@ -211,7 +208,7 @@ export default function Profile() {
   const handleDeleteAccount = async () => {
     setDeleteLoading(true)
     try {
-      await api('/auth/account', { method: 'DELETE' })
+      await apiDelete('/auth/account')
       logout()
       navigate('/')
     } catch (err: any) {

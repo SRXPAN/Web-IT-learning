@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X, AlignLeft, Link as LinkIcon, Video, FileText } from 'lucide-react'
 import { useTranslation } from '@/i18n/useTranslation'
-import { apiPost } from '@/lib/http'
+import { apiPost, apiPut } from '@/lib/http'
 import { LoadingButton } from '@/components/LoadingButton'
 import type { Material, Lang, LocalizedString, MaterialType } from '@packages/shared'
 
@@ -133,10 +133,7 @@ export const MaterialModal: React.FC<MaterialModalProps> = ({
           updatePayload.urlPL = normalizedUrls.PL
         }
 
-        await api(`/editor/materials/${material.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(updatePayload)
-        })
+        await apiPut(`/editor/materials/${material.id}`, updatePayload)
       } else {
         const payload: Record<string, unknown> = {
           title: fallbackTitle,
