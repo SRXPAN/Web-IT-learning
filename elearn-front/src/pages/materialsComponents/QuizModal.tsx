@@ -1,8 +1,9 @@
-import { memo, useState } from 'react'
-import { X, Plus, Trash2, CheckCircle2, Circle, Clock, Save, AlertCircle } from 'lucide-react'
+import { memo, useState, useEffect } from 'react'
+import { X, Plus, Trash2, CheckCircle2, Circle, Clock, Save, AlertCircle, Sparkles, FileText, Youtube, Type, Loader2 } from 'lucide-react'
 import { apiPost } from '@/lib/http'
 import { useTranslation } from '@/i18n/useTranslation'
 import { LoadingButton } from '@/components/LoadingButton'
+import { checkAIStatus, generateQuizWithAI, type AIContentType, type AILanguage } from '@/lib/editorApi'
 import type { Difficulty } from '@packages/shared'
 
 interface QuizModalProps {
@@ -27,12 +28,34 @@ export const QuizModal = memo(function QuizModal({
   onClose,
   onSave,
 }: QuizModalProps) {
-  const { t } = useTranslation()
+  const { t, lang } = useTranslation()
+  
+  // Mode: 'manual' or 'ai'
+  const [mode, setMode] = useState<'manual' | 'ai'>('manual')
+  
+  // AI Status
+  const [aiAvailable, setAiAvailable] = useState<boolean | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+  
+  // AI Input
+  const [aiContentType, setAiContentType] = useState<AIContentType>('text')
+  const [aiContent, setAiContent] = useState('')
+  const [aiLanguage, setAiLanguage] = useState<AILanguage>(lang.toUpperCase() as AILanguage || 'EN')
+  
+  // Manual mode state
   const [title, setTitle] = useState('')
   const [durationSec, setDurationSec] = useState(300)
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Check AI availability on mount
+  useEffect(() => {
+    checkAIStatus()
+      .then(res => setAiAvailable(res.available))
+      .catch(() => setAiAvailable(false))
+  }, [])
 
   const addQuestion = () => {
     setQuestions(prev => [...prev, {
@@ -59,6 +82,64 @@ export const QuizModal = memo(function QuizModal({
         ? { ...q, options: [...q.options, { text: '', correct: false }] }
         : q
     ))
+  }
+
+  // Handle PDF file selection
+  const handlePdfSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    if (file.type !== 'application/pdf') {
+      setAiError('Please select a PDF file')
+      return
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {
+      setAiError('PDF file is too large. Maximum 10MB allowed.')
+      return
+    }
+    
+    const reader = new FileReader()
+    reader.onload = () => {
+      const base64 = reader.result as string
+      setAiContent(base64)
+      setAiError(null)
+    }
+    reader.onerror = () => setAiError('Failed to read PDF file')
+    reader.readAsDataURL(file)
+  }
+
+  // Generate quiz with AI
+  const handleAIGenerate = async () => {
+    if (!aiContent.trim()) {
+      setAiError(aiContentType === 'youtube' 
+        ? 'Please enter a YouTube URL' 
+        : aiContentType === 'pdf' 
+          ? 'Please select a PDF file'
+          : 'Please enter text content')
+      return
+    }
+
+    setAiLoading(true)
+    setAiError(null)
+
+    try {
+      await generateQuizWithAI({
+        topicId,
+        content: aiContent,
+        type: aiContentType,
+        language: aiLanguage,
+        durationSec,
+      })
+
+      // Quiz created successfully, close modal and refresh
+      onSave?.()
+      onClose()
+    } catch (err: any) {
+      setAiError(err.message || 'Failed to generate quiz. Please try again.')
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   const updateOption = (qIndex: number, oIndex: number, field: keyof Option, value: any) => {
@@ -170,7 +251,219 @@ export const QuizModal = memo(function QuizModal({
           </button>
         </div>
 
-        {/* Body */}
+        {/* Mode Toggle Tabs */}
+        <div className="flex border-b border-neutral-200 dark:border-neutral-700 px-6 bg-neutral-50/30 dark:bg-neutral-800/30">
+          <button
+            type="button"
+            onClick={() => setMode('manual')}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              mode === 'manual'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Type size={16} />
+              {t('editor.manual_mode', 'Manual')}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('ai')}
+            disabled={aiAvailable === false}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              mode === 'ai'
+                ? 'border-primary-600 text-primary-600'
+                : aiAvailable === false
+                  ? 'border-transparent text-neutral-300 dark:text-neutral-600 cursor-not-allowed'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Sparkles size={16} />
+              {t('editor.ai_mode', '✨ Generate with AI (Free)')}
+              {aiAvailable === null && <Loader2 size={14} className="animate-spin" />}
+            </span>
+          </button>
+        </div>
+
+        {/* Body - AI Mode */}
+        {mode === 'ai' ? (
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {aiError && (
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl text-red-700 dark:text-red-400 text-sm flex items-start gap-3">
+                <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                {aiError}
+              </div>
+            )}
+
+            {/* AI Info Banner */}
+            <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800/50 rounded-xl">
+              <div className="flex items-start gap-3">
+                <Sparkles className="text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" size={20} />
+                <div>
+                  <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-1">
+                    {t('editor.ai_title', 'AI-Powered Quiz Generation')}
+                  </h4>
+                  <p className="text-sm text-purple-700 dark:text-purple-300">
+                    {t('editor.ai_description', 'Automatically generate 5 questions from your content using Google Gemini AI. Supports text, PDF documents, and YouTube videos with captions.')}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content Type Selection */}
+            <div>
+              <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
+                {t('editor.content_type', 'Content Type')}
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setAiContentType('text'); setAiContent(''); }}
+                  className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                    aiContentType === 'text'
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <Type size={24} className={aiContentType === 'text' ? 'text-primary-600' : 'text-neutral-400'} />
+                  <span className={`text-sm font-medium ${aiContentType === 'text' ? 'text-primary-600' : 'text-neutral-600 dark:text-neutral-400'}`}>
+                    {t('editor.type_text', 'Text')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAiContentType('pdf'); setAiContent(''); }}
+                  className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                    aiContentType === 'pdf'
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <FileText size={24} className={aiContentType === 'pdf' ? 'text-primary-600' : 'text-neutral-400'} />
+                  <span className={`text-sm font-medium ${aiContentType === 'pdf' ? 'text-primary-600' : 'text-neutral-600 dark:text-neutral-400'}`}>
+                    PDF
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAiContentType('youtube'); setAiContent(''); }}
+                  className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                    aiContentType === 'youtube'
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <Youtube size={24} className={aiContentType === 'youtube' ? 'text-primary-600' : 'text-neutral-400'} />
+                  <span className={`text-sm font-medium ${aiContentType === 'youtube' ? 'text-primary-600' : 'text-neutral-600 dark:text-neutral-400'}`}>
+                    YouTube
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Content Input */}
+            <div>
+              <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                {aiContentType === 'text' 
+                  ? t('editor.text_content', 'Text Content')
+                  : aiContentType === 'pdf'
+                    ? t('editor.pdf_file', 'PDF File')
+                    : t('editor.youtube_url', 'YouTube URL')}
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              
+              {aiContentType === 'text' && (
+                <textarea
+                  value={aiContent}
+                  onChange={(e) => setAiContent(e.target.value)}
+                  placeholder={t('editor.placeholder.textContent', 'Paste your educational content here (minimum 50 characters)...')}
+                  className="w-full h-48 px-4 py-3 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all resize-none"
+                  disabled={aiLoading}
+                />
+              )}
+
+              {aiContentType === 'pdf' && (
+                <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl p-8 text-center hover:border-primary-400 transition-colors">
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handlePdfSelect}
+                    className="hidden"
+                    id="pdf-upload"
+                    disabled={aiLoading}
+                  />
+                  <label htmlFor="pdf-upload" className="cursor-pointer">
+                    <FileText size={40} className="mx-auto mb-3 text-neutral-400" />
+                    {aiContent ? (
+                      <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                        ✓ {t('editor.pdf_selected', 'PDF file selected')}
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 font-medium mb-1">
+                          {t('editor.drop_pdf', 'Click to select PDF')}
+                        </p>
+                        <p className="text-xs text-neutral-400">
+                          {t('editor.max_size', 'Maximum 10MB')}
+                        </p>
+                      </>
+                    )}
+                  </label>
+                </div>
+              )}
+
+              {aiContentType === 'youtube' && (
+                <input
+                  type="url"
+                  value={aiContent}
+                  onChange={(e) => setAiContent(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="w-full px-4 py-3 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                  disabled={aiLoading}
+                />
+              )}
+            </div>
+
+            {/* Settings */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                  {t('editor.quiz_language', 'Quiz Language')}
+                </label>
+                <select
+                  value={aiLanguage}
+                  onChange={(e) => setAiLanguage(e.target.value as AILanguage)}
+                  className="w-full px-3 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                  disabled={aiLoading}
+                >
+                  <option value="EN">English</option>
+                  <option value="UA">Українська</option>
+                  <option value="PL">Polski</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                  <span className="flex items-center gap-2">
+                    <Clock size={16} />
+                    {t('editor.label.duration', 'Duration (seconds)')}
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  value={durationSec}
+                  onChange={(e) => setDurationSec(parseInt(e.target.value) || 300)}
+                  min="30"
+                  max="3600"
+                  className="w-full px-3 py-2.5 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                  disabled={aiLoading}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+        /* Body - Manual Mode */
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-8">
           {error && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl text-red-700 dark:text-red-400 text-sm flex items-start gap-3">
@@ -342,25 +635,38 @@ export const QuizModal = memo(function QuizModal({
             )}
           </div>
         </form>
+        )}
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50">
           <button
             type="button"
             onClick={onClose}
-            disabled={loading}
+            disabled={loading || aiLoading}
             className="px-4 py-2 rounded-xl text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 font-medium transition-colors text-sm"
           >
             {t('common.cancel', 'Cancel')}
           </button>
-          <LoadingButton
-            onClick={handleSubmit}
-            loading={loading}
-            icon={<Save size={16} />}
-            className="px-6 py-2 text-sm"
-          >
-            {t('editor.save_changes', 'Save Quiz')}
-          </LoadingButton>
+          
+          {mode === 'ai' ? (
+            <LoadingButton
+              onClick={handleAIGenerate}
+              loading={aiLoading}
+              icon={<Sparkles size={16} />}
+              className="px-6 py-2 text-sm bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              {t('editor.generate_quiz', 'Generate Quiz')}
+            </LoadingButton>
+          ) : (
+            <LoadingButton
+              onClick={handleSubmit}
+              loading={loading}
+              icon={<Save size={16} />}
+              className="px-6 py-2 text-sm"
+            >
+              {t('editor.save_changes', 'Save Quiz')}
+            </LoadingButton>
+          )}
         </div>
       </div>
     </div>

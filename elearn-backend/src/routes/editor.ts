@@ -11,6 +11,7 @@ import type { Prisma } from '@prisma/client'
 import { auditLog, AuditActions, AuditResources } from '../services/audit.service.js'
 import { updateMaterialWithLocalization } from '../services/materials.service.js'
 import { title } from 'process'
+import { aiService, type ContentSourceType, type QuizLanguage } from '../services/ai.service.js'
 
 const router = Router()
 
@@ -496,6 +497,138 @@ router.delete(
       userAgent: req.headers['user-agent'],
     })
     return ok(res, { ok: true })
+  })
+)
+
+// ==================== AI QUIZ GENERATION ====================
+
+// Schema for AI quiz generation request
+const aiGenerateQuizSchema = z.object({
+  topicId: z.string().cuid('Invalid topic ID'),
+  content: z.string().min(1, 'Content is required'),
+  type: z.enum(['text', 'pdf', 'youtube']),
+  language: z.enum(['UA', 'EN', 'PL']).default('EN'),
+  durationSec: z.number().int().min(30).max(3600).default(300),
+})
+
+/**
+ * POST /api/editor/ai/generate-quiz
+ * Generate a quiz using AI from provided content
+ * 
+ * @body topicId - The topic to associate the quiz with
+ * @body content - Text content, base64 PDF, or YouTube URL
+ * @body type - Content type: 'text', 'pdf', or 'youtube'
+ * @body language - Target language: 'UA', 'EN', or 'PL' (default: 'EN')
+ * @body durationSec - Quiz duration in seconds (default: 300)
+ * 
+ * @returns Created quiz ID and title
+ */
+router.post(
+  '/ai/generate-quiz',
+  requireAuth,
+  requireEditor,
+  validateResource(aiGenerateQuizSchema, 'body'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { topicId, content, type, language, durationSec } = req.body
+
+    // Check if AI service is available
+    if (!aiService.isAvailable()) {
+      throw AppError.internal('AI service is not configured. Please contact administrator.')
+    }
+
+    // Verify topic exists
+    const topic = await prisma.topic.findUnique({
+      where: { id: topicId },
+      select: { id: true, name: true },
+    })
+    if (!topic) {
+      throw AppError.notFound('Topic not found')
+    }
+
+    // Extract text from the provided content
+    const extractedText = await aiService.extractText(content, type as ContentSourceType)
+
+    // Generate quiz using AI
+    const generatedQuiz = await aiService.generateQuiz(extractedText, language as QuizLanguage)
+
+    // Save quiz to database with Draft status
+    const quiz = await prisma.quiz.create({
+      data: {
+        title: generatedQuiz.title,
+        titleJson: { [language]: generatedQuiz.title },
+        durationSec,
+        topic: { connect: { id: topicId } },
+        createdBy: req.user?.id ? { connect: { id: req.user.id } } : undefined,
+        status: 'Draft',
+        questions: {
+          create: generatedQuiz.questions.map((q) => ({
+            text: q.text,
+            textJson: { [language]: q.text },
+            explanation: q.explanation,
+            explanationJson: { [language]: q.explanation },
+            difficulty: q.difficulty,
+            tags: [],
+            options: {
+              create: q.options.map((opt) => ({
+                text: opt.text,
+                textJson: { [language]: opt.text },
+                correct: opt.isCorrect,
+              })),
+            },
+          })),
+        },
+      },
+      include: {
+        questions: {
+          include: { options: true },
+        },
+      },
+    })
+
+    // Audit log
+    await auditLog({
+      userId: req.user!.id,
+      action: AuditActions.CREATE,
+      resource: AuditResources.QUIZ,
+      resourceId: quiz.id,
+      metadata: { 
+        topicId, 
+        generatedByAI: true, 
+        sourceType: type,
+        language,
+        questionsCount: generatedQuiz.questions.length,
+      },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    })
+
+    return ok(res, {
+      quizId: quiz.id,
+      title: quiz.title,
+      questionsCount: quiz.questions.length,
+      status: quiz.status,
+      message: 'Quiz generated successfully. Review and publish when ready.',
+    })
+  })
+)
+
+/**
+ * GET /api/editor/ai/status
+ * Check if AI features are available
+ */
+router.get(
+  '/ai/status',
+  requireAuth,
+  requireEditor,
+  asyncHandler(async (_req: Request, res: Response) => {
+    return ok(res, {
+      available: aiService.isAvailable(),
+      features: {
+        quizGeneration: aiService.isAvailable(),
+        supportedTypes: ['text', 'pdf', 'youtube'],
+        supportedLanguages: ['UA', 'EN', 'PL'],
+      },
+    })
   })
 )
 

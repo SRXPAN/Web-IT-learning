@@ -100,3 +100,42 @@ export const updateQuestion = (quizId: string, id: string, data: Partial<CreateQ
   soft(apiPut<QuestionWithOptions>(`/editor/quizzes/${quizId}/questions/${id}`, data))
 export const deleteQuestion = (quizId: string, id: string) =>
   soft(apiDelete<{ok: true}>(`/editor/quizzes/${quizId}/questions/${id}`))
+
+// ==========================================
+// AI QUIZ GENERATION - Gemini Free API
+// ==========================================
+
+export type AIContentType = 'text' | 'pdf' | 'youtube'
+export type AILanguage = 'UA' | 'EN' | 'PL'
+
+export interface AIGenerateQuizRequest {
+  topicId: string
+  content: string
+  type: AIContentType
+  language?: AILanguage
+  durationSec?: number
+}
+
+export interface AIGenerateQuizResponse {
+  quizId: string
+  title: string
+  questionsCount: number
+  status: string
+  message: string
+}
+
+export interface AIStatusResponse {
+  available: boolean
+  features: {
+    quizGeneration: boolean
+    supportedTypes: string[]
+    supportedLanguages: string[]
+  }
+}
+
+/** Check if AI features are available */
+export const checkAIStatus = () => soft(apiGet<AIStatusResponse>('/editor/ai/status'))
+
+/** Generate quiz using AI (Gemini) from text, PDF, or YouTube URL */
+export const generateQuizWithAI = (data: AIGenerateQuizRequest) =>
+  soft(apiPost<AIGenerateQuizResponse>('/editor/ai/generate-quiz', data))

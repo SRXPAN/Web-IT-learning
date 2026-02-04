@@ -51,12 +51,14 @@ export default function Register() {
     setLoading(true)
     try {
       await register(name, email, password)
-      // After successful registration, redirect to dashboard
-      nav('/', { replace: true })
+      // Don't navigate immediately - wait a bit to ensure state is updated
+      // This prevents the error boundary from catching during navigation
+      setTimeout(() => {
+        nav('/', { replace: true })
+      }, 150)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : t('auth.error.registrationFailed', 'Registration failed')
       setErr(message)
-    } finally {
       setLoading(false)
     }
   }

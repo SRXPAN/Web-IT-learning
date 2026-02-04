@@ -1,113 +1,130 @@
 # 🎓 E-Learn Platform
 
-> Повнофункціональна платформа електронного навчання з мультимовною системою контенту, адмін-панеллю та просунутою системою управління матеріалами.
+> Повнофункціональна платформа електронного навчання з мультимовною підтримкою (UA/PL/EN), системою прогресу, інтерактивними квізами та адміністративною панеллю.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.2-61dafb.svg)](https://reactjs.org/)
 [![Express](https://img.shields.io/badge/Express-4.19-green.svg)](https://expressjs.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-5.19-2D3748.svg)](https://www.prisma.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
-[![Vite](https://img.shields.io/badge/Vite-7.1-646CFF.svg)](https://vitejs.dev/)
+[![Vite](https://img.shields.io/badge/Vite-5.1-646CFF.svg)](https://vitejs.dev/)
 
 ## 🌟 Основні можливості
 
 ### 👨‍🎓 Для студентів
-- 📚 **Структурований навчальний контент** - ієрархічні теми з підтемами та матеріалами (PDF, відео, текст, посилання)
-- 🌍 **Мультимовна система** - UA/PL/EN з окремими матеріалами для кожної мови
-- 🎯 **Інтерактивні квізи** - практичні та екзаменаційні режими з миттєвим зворотнім зв'язком
-- 🏆 **Система прогресу** - XP, рівні, streak, досягнення, відстеження переглянутих матеріалів
-- 📊 **Персональна статистика** - детальна аналітика прогресу, слабких місць, активності
-- 🔍 **Глобальний пошук** - швидкий пошук матеріалів по всьому контенту
-- 📱 **Повністю адаптивний дизайн** - оптимізований для всіх пристроїв
+- 📚 **Структурований навчальний контент** — ієрархічні теми з підтемами та матеріалами (PDF, відео, текст, посилання)
+- 🌍 **Мультимовна підтримка** — UA/PL/EN з локалізованим контентом для кожної мови
+- 🎯 **Інтерактивні квізи** — тестування знань з миттєвим зворотнім зв'язком
+- 🏆 **Система прогресу** — XP, рівні, досягнення, відстеження переглянутих матеріалів
+- 📊 **Персональна статистика** — детальна аналітика прогресу та активності
+- 🔍 **Глобальний пошук** — швидкий пошук по всьому контенту
+- 🏅 **Таблиця лідерів** — змагання між студентами
 
 ### 👨‍💼 Для редакторів контенту
-- ✏️ **Вбудований редактор матеріалів** - створення та редагування з підтримкою трьох мов одночасно
-- 🌐 **Мультимовне управління контентом**:
-  - Окремі заголовки (titleUA, titleEN, titlePL)
-  - Окремий контент для кожної мови
-  - Різні URL посилань/PDF для різних мов
-  - JSON кеш система (titleCache, contentCache, urlCache) для швидкого доступу
-- 📤 **Завантаження файлів** - підтримка PDF, відео з валідацією
-- 🔄 **Контроль статусу** - Draft/Published для поетапної публікації
-- 🎨 **Категорії та теги** - організація контенту за тематиками
-- 📝 **Управління квізами** - створення питань з локалізованими текстами
+- ✏️ **Редактор матеріалів** — створення та редагування контенту
+- 🌐 **Мультимовне управління** — окремі заголовки та контент для кожної мови
+- 📤 **Завантаження файлів** — підтримка PDF, відео через S3/R2 storage
+- 🔄 **Контроль статусу** — Draft/Published для поетапної публікації
+- 📝 **Управління квізами** — створення питань з локалізованими текстами
 
 ### 👨‍💻 Для адміністраторів
-- 👥 **Управління користувачами** - ролі (STUDENT, EDITOR, ADMIN), верифікація email, статистика
-- 📈 **Детальна аналітика системи**:
-  - Загальна статистика (користувачі, матеріали, теми, квізи)
-  - Активність користувачів (реєстрації, візити, прогрес)
-  - Top користувачі по XP та streak
-- 🗂️ **Управління контентом**:
-  - Повне дерево тем з ієрархічною структурою
-  - Масове оновлення статусів
-  - Перегляд та видалення файлів
-- 📝 **Журнал аудиту** - детальне логування всіх операцій
-- 🔐 **Безпека** - CSRF захист, rate limiting, role-based access control
-- 🌐 **i18n система** - управління системними перекладами через UI
+- 👥 **Управління користувачами** — ролі (STUDENT, EDITOR, ADMIN), статистика
+- 📈 **Системна аналітика** — статистика користувачів, контенту, активності
+- 🗂️ **Управління контентом** — теми, матеріали, квізи, файли
+- 📝 **Журнал аудиту** — логування всіх критичних операцій
+- 🔐 **Безпека** — CSRF захист, rate limiting, role-based access control
 
-## 🏗️ Архітектура
+## 🏗️ Архітектура проекту
 
 ```
-elearn-platform/
+elearn-monorepo/
 ├── packages/
-│   └── shared/              # Спільні TypeScript типи і інтерфейси
-│       ├── src/types/       # API контракти, моделі даних
-│       └── package.json
+│   └── shared/                 # Спільні TypeScript типи
+│       └── src/types/          # API контракти, моделі даних
 │
-├── elearn-backend/          # Express + Prisma API сервер
-│   ├── src/
-│   │   ├── routes/          # API endpoints (auth, admin, content, i18n)
-│   │   ├── middleware/      # Auth, CSRF, validation, sanitization
-│   │   ├── services/        # Бізнес-логіка (audit, email, storage)
-│   │   ├── prisma/          # Schema, migrations, seeds
-│   │   └── __tests__/       # Unit та integration тести
-│   └── scripts/             # DB утиліти, міграції даних
+├── elearn-backend/             # Express + Prisma API сервер
+│   └── src/
+│       ├── routes/             # API endpoints
+│       │   ├── auth.ts         # Автентифікація
+│       │   ├── admin.ts        # Адмін-панель
+│       │   ├── topics.ts       # Теми
+│       │   ├── lessons.ts      # Уроки
+│       │   ├── quiz.ts         # Квізи
+│       │   ├── progress.ts     # Прогрес користувача
+│       │   ├── editor.ts       # Редактор контенту
+│       │   ├── files.ts        # Файли (S3/R2)
+│       │   ├── i18n.ts         # Переклади
+│       │   ├── dashboard.ts    # Dashboard API
+│       │   └── activity.ts     # Активність
+│       ├── middleware/         # Auth, CSRF, validation
+│       ├── services/           # Бізнес-логіка
+│       ├── schemas/            # Zod валідація
+│       ├── prisma/             # Schema, migrations, seeds
+│       └── utils/              # Утиліти
 │
-├── Web-e-learning/          # React + Vite SPA
-│   ├── src/
-│   │   ├── pages/           # Сторінки додатку
-│   │   │   ├── admin/       # Адмін-панель (users, content, audit)
-│   │   │   └── editor/      # Редактор контенту
-│   │   ├── components/      # Перевикористовувані UI компоненти
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── auth/            # Контекст автентифікації
-│   │   ├── i18n/            # Система інтернаціоналізації
-│   │   ├── store/           # Zustand стейт менеджмент
-│   │   └── __tests__/       # Frontend тести
-│   └── vite.config.ts
+├── elearn-front/               # React + Vite SPA
+│   └── src/
+│       ├── pages/              # Сторінки
+│       │   ├── Dashboard.tsx   # Головна панель
+│       │   ├── Materials.tsx   # Перегляд матеріалів
+│       │   ├── LessonView.tsx  # Перегляд уроків
+│       │   ├── Leaderboard.tsx # Таблиця лідерів
+│       │   ├── Profile.tsx     # Профіль користувача
+│       │   ├── Login.tsx       # Вхід
+│       │   ├── Register.tsx    # Реєстрація
+│       │   └── admin/          # Адмін-панель
+│       │       ├── AdminDashboard.tsx
+│       │       ├── AdminUsers.tsx
+│       │       ├── AdminContent.tsx
+│       │       ├── AdminTopics.tsx
+│       │       ├── AdminFiles.tsx
+│       │       └── AdminAuditLogs.tsx
+│       ├── components/         # UI компоненти
+│       ├── hooks/              # Custom React hooks
+│       ├── auth/               # Контекст автентифікації
+│       ├── i18n/               # Інтернаціоналізація
+│       ├── store/              # Zustand state management
+│       └── lib/                # HTTP клієнт, API
 │
-└── package.json             # Monorepo root (workspaces)
+└── package.json                # Monorepo root (workspaces)
 ```
 
 ## 🛠️ Технологічний стек
 
 ### Frontend
-- **React 18.2** - UI бібліотека
-- **TypeScript 5.6** - Type safety
-- **Vite 7.1** - Швидкий build tool
-- **React Router 6** - Client-side routing
-- **Zustand** - Легкий state management
-- **Tailwind CSS 3.4** - Utility-first CSS
-- **Lucide React** - Іконки
+| Технологія | Версія | Призначення |
+|------------|--------|-------------|
+| React | 18.2 | UI бібліотека |
+| TypeScript | 5.3 | Type safety |
+| Vite | 5.1 | Build tool |
+| React Router | 6.22 | Client-side routing |
+| Zustand | 4.5 | State management |
+| Tailwind CSS | 3.4 | Styling |
+| Lucide React | 0.344 | Іконки |
+| Axios | 1.13 | HTTP клієнт |
 
 ### Backend
-- **Node.js 20+** - Runtime
-- **Express 4.19** - Web framework
-- **TypeScript 5.6** - Type safety
-- **Prisma 5.19** - ORM
-- **PostgreSQL 16** - База даних
-- **JWT** - Автентифікація
-- **Zod** - Runtime validation
-- **Helmet** - Security headers
-- **Express Rate Limit** - DDoS захист
+| Технологія | Версія | Призначення |
+|------------|--------|-------------|
+| Node.js | 20+ | Runtime |
+| Express | 4.19 | Web framework |
+| TypeScript | 5.6 | Type safety |
+| Prisma | 5.19 | ORM |
+| PostgreSQL | 16 | База даних |
+| JWT | - | Автентифікація |
+| Zod | 3.23 | Валідація |
+| Helmet | 7.1 | Security headers |
+| Winston | 3.19 | Логування |
+| AWS SDK | 3.958 | S3/R2 storage |
 
 ### DevOps & Tools
-- **Vitest** - Unit тестування
-- **npm workspaces** - Monorepo менеджмент
-- **tsx** - TypeScript execution
-- **AWS S3** - File storage (опціонально)
-- **Stripe** - Payments (опціонально)
+| Технологія | Призначення |
+|------------|-------------|
+| Vitest | Тестування |
+| npm workspaces | Monorepo |
+| tsx | TypeScript execution |
+| Cloudflare R2 | File storage |
+| Wrangler | Deployment |
 
 ## 🚀 Швидкий старт
 
@@ -121,69 +138,66 @@ elearn-platform/
 
 ```bash
 # Клонувати репозиторій
-git clone https://github.com/SRXPAN/Web-IT-learning.git
-cd Web-IT-learning
+git clone https://github.com/your-username/elearn-platform.git
+cd elearn-platform
 
-# Встановити всі залежності (monorepo)
+# Встановити всі залежності
 npm install
 ```
 
-### 2️⃣ Налаштування бази даних
+### 2️⃣ Налаштування Backend
 
 ```bash
-# Створити базу даних PostgreSQL
-createdb elearn_db
-
-# Налаштувати backend .env файл
 cd elearn-backend
 ```
 
-Створіть файл `.env` з наступним вмістом:
+Створіть файл `.env`:
 
 ```env
-# База/сервер
+# Database
 DATABASE_URL="postgresql://postgres:password@localhost:5432/elearn?schema=public"
+
+# Server
 PORT=4000
 CORS_ORIGIN="http://localhost:5173"
+FRONTEND_URL=http://localhost:5173
+NODE_ENV=development
 
 # JWT
-JWT_SECRET="your_super_secret_key_change_in_production"
+JWT_SECRET="your-super-secret-key-min-32-characters"
 
-# Email (Mailtrap або інший SMTP)
+# Email (опціонально)
 MAILTRAP_HOST=smtp.mailtrap.io
 MAILTRAP_PORT=587
 MAILTRAP_USER=your_username
 MAILTRAP_PASS=your_password
 MAIL_FROM="E-Learn <noreply@elearn.com>"
-FRONTEND_URL=http://localhost:5173
 
-# Environment
-NODE_ENV=development
+# R2/S3 Storage (опціонально)
+R2_ACCOUNT_ID=your_account_id
+R2_ACCESS_KEY_ID=your_access_key
+R2_SECRET_ACCESS_KEY=your_secret_key
+R2_BUCKET_NAME=elearn-files
 
-# Rate limits
+# Rate Limiting
 RL_GENERAL_WINDOW_MS=60000
 RL_GENERAL_LIMIT=200
 RL_AUTH_WINDOW_MS=900000
 RL_AUTH_LIMIT=10
 ```
 
-Запустіть міграції та seed:
+Ініціалізація бази даних:
 
 ```bash
-# Згенерувати Prisma client
-npm run prisma:generate
-
-# Запустити міграції
-npm run prisma:migrate
-
-# Заповнити початковими даними (теми, матеріали, тестові користувачі)
-npm run db:seed
+npm run prisma:generate   # Генерація Prisma client
+npm run prisma:migrate    # Застосування міграцій
+npm run db:seed           # Заповнення тестовими даними
 ```
 
-### 3️⃣ Налаштування frontend
+### 3️⃣ Налаштування Frontend
 
 ```bash
-cd ../Web-e-learning
+cd ../elearn-front
 ```
 
 Створіть файл `.env.local`:
@@ -194,311 +208,239 @@ VITE_API_URL=http://localhost:4000
 
 ### 4️⃣ Запуск
 
-**Варіант 1: Запуск всього разом (з кореневої папки)**
+**Варіант 1: Разом (з кореневої папки)**
 
 ```bash
 npm run dev
 ```
 
-**Варіант 2: Запуск окремо**
+**Варіант 2: Окремо**
 
 ```bash
 # Terminal 1 - Backend
 cd elearn-backend
 npm run dev
-# Backend запуститься на http://localhost:4000
+# → http://localhost:4000
 
 # Terminal 2 - Frontend
-cd Web-e-learning
+cd elearn-front
 npm run dev
-# Frontend запуститься на http://localhost:5173
+# → http://localhost:5173
 ```
 
 ### 5️⃣ Тестові облікові записи
 
-Після seed команди будуть доступні наступні акаунти:
-
 ```
 👨‍💼 Admin:
-  Email: admin@example.com
-  Password: Admin123!
+   Email: admin@elearn.local
+   Password: admin123
 
 ✍️ Editor:
-  Email: editor@example.com
-  Password: Editor123!
+   Email: editor@example.com
+   Password: Editor123!
 
 🎓 Student:
-  Email: student@example.com
-  Password: Student123!
+   Email: student@example.com
+   Password: Student123!
 ```
 
 ## 📦 Доступні скрипти
 
-### Кореневі команди
+### Root (Monorepo)
 
-```bash
-npm run dev              # Запуск всіх сервісів
-npm run dev:backend      # Тільки backend
-npm run dev:frontend     # Тільки frontend
-npm run build            # Збірка всіх пакетів
-npm run test             # Запуск тестів
-npm run clean            # Очистити node_modules
-```
+| Команда | Опис |
+|---------|------|
+| `npm run dev` | Запуск всіх сервісів |
+| `npm run dev:backend` | Тільки backend |
+| `npm run dev:frontend` | Тільки frontend |
+| `npm run build` | Збірка всіх пакетів |
+| `npm run test` | Запуск тестів |
+| `npm run clean` | Очистити node_modules |
 
-### Backend команди
+### Backend
 
-```bash
-cd elearn-backend
+| Команда | Опис |
+|---------|------|
+| `npm run dev` | Watch mode |
+| `npm run build` | Production build |
+| `npm start` | Запуск production |
+| `npm run prisma:generate` | Генерація Prisma client |
+| `npm run prisma:migrate` | Нова міграція |
+| `npm run db:seed` | Seed даних |
+| `npm run db:status` | Перевірка стану БД |
+| `npm run db:publish` | Опублікувати Draft записи |
+| `npm run test` | Запуск тестів |
+| `npm run test:coverage` | Coverage звіт |
 
-# Розробка
-npm run dev              # Watch mode
-npm run build            # Production build
-npm start                # Запуск production
+### Frontend
 
-# База даних
-npm run prisma:generate  # Генерація Prisma client
-npm run prisma:migrate   # Нова міграція
-npm run db:seed          # Seed даних (safe)
-npm run seed             # Seed через safe script
-npm run seed:unsafe      # Повний seed (dev only)
-npm run db:status        # Перевірка стану БД
-npm run db:publish       # Опублікувати Draft записи
+| Команда | Опис |
+|---------|------|
+| `npm run dev` | Dev server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview build |
+| `npm run deploy` | Deploy to Cloudflare Pages |
+| `npm run test` | Запуск тестів |
+| `npm run lint` | TypeScript перевірка |
 
-# Експорт/Імпорт контенту
-# 📦 Export: Login as ADMIN → GET /api/admin/content/export → Save as content.json
-# 📥 Import: Put content.json in src/prisma/data/ → npm run db:seed
-```
-
-## 📦 Content Management Workflow
-
-Проект використовує підхід **"Database First"** — контент створюється через Адмінку, а не хардкодиться в seed файлах.
-
-### 🔄 Export/Import System
-
-#### 1️⃣ **Створення контенту**
-Заходите як ADMIN або EDITOR і створюєте теми, матеріали, квізи через веб-інтерфейс (`/admin/dashboard`).
-
-#### 2️⃣ **Експорт (Backup)**
-Коли контент готовий, експортуйте його:
-
-```bash
-# Варіант 1: Через браузер
-# Login as admin → Navigate to:
-GET http://localhost:4000/api/admin/content/export
-
-# Варіант 2: cURL з токеном
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  http://localhost:4000/api/admin/content/export \
-  -o elearn-backend/src/prisma/data/content.json
-```
-
-Файл `content.json` містить **всю ієрархію**:
-- Теми → Підтеми (до 5 рівнів вглибину)
-- Матеріали з локалізованим контентом
-- Квізи з питаннями та варіантами відповідей
-
-#### 3️⃣ **Імпорт (Restore)**
-Якщо потрібно відновити дані або перенести на інший сервер:
-
-```bash
-# 1. Покладіть файл у директорію
-cp /backup/content.json elearn-backend/src/prisma/data/content.json
-
-# 2. Запустіть seed
-cd elearn-backend
-npm run seed        # або npm run db:seed
-```
-
-**Що робить імпорт:**
-- ✅ Використовує `upsert` — оновлює існуючі записи за ID/slug
-- ✅ Зберігає ID з JSON (якщо вони валідні)
-- ✅ Рекурсивно обробляє дочірні теми
-- ✅ Пропускає невалідні записи з warning
-- ✅ Завжди створює Admin користувача (`admin@elearn.local` / `admin123`)
-
-### 📂 Структура файлу
-```json
-[
-  {
-    "id": "clx123...",
-    "slug": "programming-basics",
-    "titleCache": { "EN": "Programming Basics", "UA": "Основи програмування" },
-    "materials": [...],
-    "quizzes": [...],
-    "children": [
-      { /* nested topic */ }
-    ]
-  }
-]
-```
-
-Детальніше: [elearn-backend/src/prisma/data/README.md](elearn-backend/src/prisma/data/README.md)
-
-```bash
-
-# i18n
-npm run i18n:seed        # Seed перекладів
-npm run i18n:seed:normalized # Seed нормалізованих перекладів
-npm run i18n:check       # Перевірка ключів
-
-# Тестування
-npm run test             # Запуск тестів
-npm run test:watch       # Watch mode
-npm run test:coverage    # Coverage звіт
-```
-
-### Frontend команди
-
-```bash
-cd Web-e-learning
-
-npm run dev              # Dev server
-npm run build            # Production build
-npm run preview          # Preview build
-npm run test             # Запуск тестів
-npm run lint             # TypeScript перевірка
-```
-
-## 🧭 Ключові API
-
-- **Content**
-  - `GET /api/topics?lang=UA` — повне дерево тем з підтемами, матеріалами, квізами (локалізовані через кеш)
-  - `GET /api/topics/:slug` — деталі однієї теми з підтемами, матеріалами, квізами
-  - `PUT /api/editor/topics/:topicId/materials/:id/translations` — оновлення усіх мов матеріалу
-- **Auth**
-  - `GET /api/auth/csrf` — отримати CSRF токен
-  - `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`
-- **i18n**
-  - `GET /api/i18n/bundle?lang=UA` — UI переклади
-  - `GET /api/i18n/version` — версія перекладів для кешування
-- **Files**
-  - `POST /api/files/presign-upload` — передпідписане завантаження
-  - `POST /api/files/confirm` — підтвердження файлу
-
-## 🔐 Безпека
-
-- ✅ **JWT автентифікація** - Access + Refresh токени
-- ✅ **CSRF захист** - Double submit cookie pattern
-- ✅ **HTTP-only cookies** - XSS захист
-- ✅ **Rate limiting** - Захист від brute force
-- ✅ **Input validation** - Zod schema validation
-- ✅ **Input sanitization** - XSS фільтрація
-- ✅ **Role-based access** - STUDENT/EDITOR/ADMIN ролі
-- ✅ **Security headers** - Helmet middleware
-- ✅ **Audit logging** - Логування критичних операцій
-
-## 🌍 Мультимовна система контенту
-
-Платформа повністю локалізована на 3 мови: 🇺🇦 UA, 🇵🇱 PL, 🇬🇧 EN. Підтримуються різні заголовки, тексти та URL матеріалів для кожної мови.
-
-### Архітектура
-
-- **Гібридна модель**: нормалізовані таблиці I18nKey/I18nValue + JSON кеш поля `titleCache`, `descCache`, `contentCache`, `urlCache` у Topic/Material/Quiz
-- **Швидкість**: фронтенд отримує вже локалізовані значення з кешу (O(1) доступ без JOIN)
-- **Гнучкість**: можна додавати нові мови без зміни схеми БД; кеш синхронізується скриптами
-- **Fallback**: lang -> EN -> перша наявна мова
-
-### Матеріали з різним контентом/URL на кожну мову
-
-```json
-{
-  "id": "material-1",
-  "type": "pdf",
-  "titleCache": { "UA": "Алгоритми сортування", "EN": "Sorting", "PL": "Sortowanie" },
-  "urlCache": {
-    "UA": "https://cdn/app/sort-ua.pdf",
-    "EN": "https://cdn/app/sort-en.pdf",
-    "PL": "https://cdn/app/sort-pl.pdf"
-  },
-  "contentCache": { "UA": "ua text...", "EN": "en text...", "PL": "pl text..." }
-}
-```
-
-### Frontend використання
-
-- **Редактор (MaterialsTab)**: форми з вкладками UA/EN/PL, збереження всіх полів одним запитом `PUT /api/editor/topics/:topicId/materials/:id/translations`
-- **Відображення (LessonView / TopicView)**: хелпери `getLocalizedContent`, `getMaterialTitle`, `getMaterialUrl` обирають правильну мову з кешу, fallback на EN
-- **Фільтрація**: не фільтруємо за старим полем `lang`; показуємо всі матеріали, контент підтягується з кешу
-
-### Backend використання
-
-- **GET /api/topics?lang=UA** повертає повне дерево тем з підтемами, матеріалами і квізами вже локалізованими
-- **PUT /api/editor/topics/:topicId/materials/:id/translations** — оновлення усіх мов одночасно (title/content/url)
-- **Скрипт sync-cache** — синхронізує нормалізовані переклади в кеш-поля
-
-### Переваги
-
-- Повна незалежність контенту на кожній мові
-- Швидка видача (JSON кеш)
-- SEO: різні URL для різних мов
-- Просте розширення новими мовами
-
-## 📂 Модель даних
+## 🗄️ Модель даних
 
 ### Основні сутності
 
-- **User** — role, xp, streak, аватари, верифікація email
-- **Topic** — ієрархія (parent/children), кеш `titleCache/descCache`, статус Draft/Published
-- **Material** — типи: pdf/video/text/link, мультимовні поля, кеш `titleCache/contentCache/urlCache`, статус
-- **Quiz** — питання/опції з локалізованими текстами, кеш `titleCache`
-- **Progress** — переглянуті матеріали, streak, XP, weak-spots
-- **AuditLog** — всі критичні операції
-- **File** — метадані завантажень, посилання
-- **I18nKey/I18nValue** — нормалізовані переклади (UI + контент), синхронізуються у кеш-поля
+```
+User
+├── id, email, name, password
+├── role: STUDENT | EDITOR | ADMIN
+├── xp, emailVerified, isPremium
+├── avatarFile → File
+└── viewedMaterials[]
+
+Topic
+├── id, slug, name
+├── titleCache, descCache (JSON: {UA, EN, PL})
+├── category: Programming | Databases | ...
+├── status: Draft | Published
+├── parent → Topic (ієрархія)
+├── children[] → Topic[]
+├── materials[] → Material[]
+└── quizzes[] → Quiz[]
+
+Material
+├── id, title, type: pdf | video | link | text
+├── titleCache, contentCache, urlJson (JSON)
+├── status: Draft | Published
+├── file → File
+└── topic → Topic
+
+Quiz
+├── id, title, durationSec
+├── titleCache (JSON)
+├── status: Draft | Published
+├── questions[] → Question[]
+└── topic → Topic
+
+Question
+├── id, text, explanation
+├── textJson, explanationJson (JSON)
+├── difficulty: Easy | Medium | Hard
+└── options[] → Option[]
+
+File
+├── id, key, bucket, originalName
+├── mimeType, size, visibility
+└── confirmed
+```
+
+## 🔒 Безпека
+
+| Функція | Реалізація |
+|---------|------------|
+| Автентифікація | JWT Access + Refresh токени |
+| CSRF захист | Double submit cookie pattern |
+| XSS захист | HTTP-only cookies, DOMPurify |
+| Rate limiting | Express Rate Limit |
+| Валідація | Zod schemas |
+| Security headers | Helmet middleware |
+| RBAC | STUDENT/EDITOR/ADMIN ролі |
+| Audit logging | Логування операцій |
+
+## 🌍 Мультимовна система
+
+Платформа підтримує 3 мови: 🇺🇦 Українська, 🇵🇱 Польська, 🇬🇧 English
+
+### JSON Cache підхід
+
+Локалізований контент зберігається в JSON полях для швидкого доступу:
+
+```json
+{
+  "titleCache": { "UA": "Основи програмування", "EN": "Programming Basics", "PL": "Podstawy programowania" },
+  "contentCache": { "UA": "...", "EN": "...", "PL": "..." },
+  "urlJson": { "UA": "file-ua.pdf", "EN": "file-en.pdf", "PL": "file-pl.pdf" }
+}
+```
+
+### Переваги
+
+- ✅ O(1) доступ до локалізованих даних
+- ✅ Немає JOIN при запитах
+- ✅ Різний контент/URL для кожної мови
+- ✅ Легке додавання нових мов
+- ✅ Fallback: lang → EN → перша наявна
 
 ## 🧪 Тестування
 
 ```bash
-# Backend тести
+# Backend
 cd elearn-backend
-npm run test              # Запуск всіх тестів
+npm run test              # Всі тести
 npm run test:watch        # Watch mode
 npm run test:coverage     # Coverage звіт
 
-# Frontend тести
-cd Web-e-learning
-npm run test              # Запуск тестів
-npm run test:ui           # UI mode
+# Frontend
+cd elearn-front
+npm run test              # Всі тести
 ```
 
-## 📈 Roadmap
+## 📝 API Endpoints
 
-- [ ] WebSocket для real-time статистики
-- [ ] Система сертифікатів
-- [ ] Gamification розширення
-- [ ] Mobile додаток (React Native)
-- [ ] AI-асистент для навчання
-- [ ] Інтеграція з LMS системами
-- [ ] Розширена аналітика з графіками
-- [ ] Соціальні функції (коментарі, обговорення)
+### Auth
+- `GET /api/auth/csrf` — CSRF токен
+- `POST /api/auth/register` — Реєстрація
+- `POST /api/auth/login` — Вхід
+- `POST /api/auth/refresh` — Оновлення токена
+- `POST /api/auth/logout` — Вихід
 
-## 🤝 Contribution
+### Content
+- `GET /api/topics` — Дерево тем
+- `GET /api/topics/:slug` — Деталі теми
+- `GET /api/lessons/:slug` — Урок з матеріалами
+- `GET /api/quiz/:id` — Квіз
+- `POST /api/quiz/:id/submit` — Відправка відповідей
 
-Contributions are welcome! Будь ласка, створіть issue перед великими змінами.
+### Progress
+- `GET /api/progress` — Прогрес користувача
+- `POST /api/progress/view/:materialId` — Позначити переглянутим
+- `GET /api/dashboard` — Dashboard дані
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+### Admin
+- `GET /api/admin/stats` — Статистика системи
+- `GET /api/admin/users` — Список користувачів
+- `GET /api/admin/audit-logs` — Журнал аудиту
+
+### Files
+- `POST /api/files/presign-upload` — Presigned URL
+- `POST /api/files/confirm` — Підтвердження
+
+## 🚀 Deployment
+
+### Frontend (Cloudflare Pages)
+
+```bash
+cd elearn-front
+npm run build
+npm run deploy
+```
+
+### Backend
+
+```bash
+cd elearn-backend
+npm run build
+npm start
+```
 
 ## 📄 Ліцензія
 
-MIT License - дивіться [LICENSE](LICENSE) для деталей
-
-## 📧 Контакти
-
-**Author**: SRXPAN  
-**GitHub**: [@SRXPAN](https://github.com/SRXPAN)  
-**Repository**: [Web-IT-learning](https://github.com/SRXPAN/Web-IT-learning)
+MIT License
 
 ---
 
 ⚠️ **ВАЖЛИВО**: Ніколи не запускайте `npm run db:reset:confirm` на production!
 
-Перед демонстрацією/захистом:
+Перед демонстрацією:
 ```bash
 cd elearn-backend
-npm run db:status    # Перевірити стан системи
-npm run db:publish   # Опублікувати всі Draft записи
+npm run db:status    # Перевірити стан
+npm run db:publish   # Опублікувати Draft записи
 ```
