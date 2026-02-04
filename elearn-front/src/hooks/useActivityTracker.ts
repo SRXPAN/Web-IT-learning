@@ -2,12 +2,6 @@ import { useEffect } from 'react'
 import { useAuth } from '@/auth/AuthContext'
 import { apiPost } from '@/lib/http'
 
-// Helper: Get CSRF token from cookie
-function getCsrfFromCookie() {
-  const match = document.cookie.match(new RegExp('(^| )csrf_token=([^;]+)'))
-  return match ? match[2] : null
-}
-
 export function useActivityTracker() {
   const { user } = useAuth()
 
@@ -18,13 +12,6 @@ export function useActivityTracker() {
     const sendHeartbeat = async () => {
       // Трекаємо тільки якщо вкладка активна
       if (document.visibilityState === 'hidden') return
-
-      // Перевіряємо наявність CSRF токену перед відправкою
-      const csrfToken = getCsrfFromCookie()
-      if (!csrfToken) {
-        // CSRF токен відсутній, пропускаємо пінг (це може статися одразу після логіну)
-        return
-      }
 
       if (!navigator.onLine) {
         return
@@ -39,8 +26,8 @@ export function useActivityTracker() {
       }
     }
 
-    // 1. Відправляємо пінг одразу при заході
-    sendHeartbeat()
+    // 1. Відправляємо пінг одразу при заході (з невеликою затримкою для CSRF)
+    const initialTimeout = setTimeout(sendHeartbeat, 2000)
 
     // 2. Відправляємо пінг кожні 60 секунд
     const interval = setInterval(sendHeartbeat, 60000)
@@ -55,6 +42,7 @@ export function useActivityTracker() {
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
+      clearTimeout(initialTimeout)
       clearInterval(interval)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }

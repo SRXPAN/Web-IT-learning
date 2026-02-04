@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { 
   Flame, Target, Clock, Zap, 
-  Play, FileText, Award, CheckCircle 
+  Play, FileText, CheckCircle 
 } from 'lucide-react'
 
 import { useAuth } from '@/auth/AuthContext'
@@ -472,34 +472,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 7. Achievements (Mini) */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
-                <Award size={18} className="text-purple-500" />
-                {t('dashboard.achievements', 'Achievements')}
-              </h3>
-              <Link to="/profile" className="text-xs text-primary-600 hover:underline">
-                {t('common.view', 'View All')}
-              </Link>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {Array.isArray(data.achievements) && data.achievements.slice(0, 4).map(ach => (
-                <span 
-                  key={ach.id}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${
-                    ach.earned
-                      ? 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800'
-                      : 'bg-neutral-50 text-neutral-400 border-neutral-100 dark:bg-neutral-900 dark:text-neutral-600 dark:border-neutral-800 grayscale opacity-60'
-                  }`}
-                >
-                  {ach.earned ? '🏆' : '🔒'} {ach.name}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* 8. Recent History */}
+          {/* 7. Recent History */}
           <QuizHistory />
 
         </div>
