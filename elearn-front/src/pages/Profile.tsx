@@ -239,10 +239,17 @@ export default function Profile() {
     }
   }
 
+  // All 9 badges matching backend gamification.ts
   const badges = [
-    { id:'b1', title: t('profile.badges', 'Badges'), cond: user.xp >= 10 },
-    { id:'b2', title: t('profile.badge.risingStar', 'Rising Star'), cond: user.xp >= 50 },
-    { id:'b3', title: t('profile.badge.algorithmMaster', 'Algo Master'), cond: user.xp >= 100 },
+    { id: 'first_steps', title: t('badge.firstSteps', 'First Steps'), cond: user.xp >= 10, icon: '⭐' },
+    { id: 'rising_star', title: t('badge.risingStar', 'Rising Star'), cond: user.xp >= 50, icon: '🔥' },
+    { id: 'dedicated_learner', title: t('badge.dedicatedLearner', 'Dedicated Learner'), cond: user.xp >= 100, icon: '📚' },
+    { id: 'bookworm', title: t('badge.bookworm', 'Bookworm'), cond: user.xp >= 200, icon: '🐛' },
+    { id: 'quiz_master', title: t('badge.quizMaster', 'Quiz Master'), cond: user.xp >= 350, icon: '🎯' },
+    { id: 'scholar', title: t('badge.scholar', 'Scholar'), cond: user.xp >= 500, icon: '🎓' },
+    { id: 'expert', title: t('badge.expert', 'Expert'), cond: user.xp >= 750, icon: '🏆' },
+    { id: 'guru', title: t('badge.guru', 'Guru'), cond: user.xp >= 1000, icon: '👑' },
+    { id: 'legend', title: t('badge.legend', 'Legend'), cond: user.xp >= 1500, icon: '🌟' },
   ]
 
   return (
@@ -261,20 +268,26 @@ export default function Profile() {
           
           <div className="border-t border-neutral-100 dark:border-neutral-800 pt-6">
             <h4 className="text-sm font-semibold text-neutral-500 uppercase tracking-wider mb-4">
-              {t('profile.badges', 'Achievements')}
+              {t('profile.badges', 'Achievements')} ({badges.filter(b => b.cond).length}/{badges.length})
             </h4>
-            <div className="flex gap-3 flex-wrap">
+            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-2">
               {badges.map(b => (
-                <span 
+                <div 
                   key={b.id} 
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex flex-col items-center gap-1 p-2 rounded-xl text-center transition-all ${
                     b.cond
-                      ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-800'
-                      : 'bg-neutral-100 text-neutral-400 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:border-neutral-700 grayscale opacity-60'
+                      ? 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800'
+                      : 'bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 grayscale opacity-50'
                   }`}
+                  title={b.title}
                 >
-                  {b.cond ? '🏆' : '🔒'} {b.title}
-                </span>
+                  <span className="text-2xl">{b.cond ? b.icon : '🔒'}</span>
+                  <span className={`text-[10px] font-medium leading-tight line-clamp-2 ${
+                    b.cond ? 'text-amber-800 dark:text-amber-200' : 'text-neutral-400 dark:text-neutral-500'
+                  }`}>
+                    {b.title}
+                  </span>
+                </div>
               ))}
             </div>
           </div>

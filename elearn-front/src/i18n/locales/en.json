@@ -9,6 +9,8 @@
   "common.edit": "Edit",
   "common.create": "Create",
   "common.close": "Close",
+  "common.openInNewTab": "Open in new tab",
+  "common.videoNotSupported": "Your browser does not support video.",
   "common.continue": "Continue",
   "common.back": "Back",
   "common.completed": "Completed",

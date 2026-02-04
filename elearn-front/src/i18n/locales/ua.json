@@ -9,6 +9,8 @@
   "common.edit": "Редагувати",
   "common.create": "Створити",
   "common.close": "Закрити",
+  "common.openInNewTab": "Відкрити в новій вкладці",
+  "common.videoNotSupported": "Ваш браузер не підтримує відео.",
   "common.continue": "Продовжити",
   "common.back": "Назад",
   "common.completed": "Завершено",

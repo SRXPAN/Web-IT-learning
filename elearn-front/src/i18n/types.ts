@@ -21,6 +21,8 @@ export type TranslationKey =
   | 'common.edit'
   | 'common.create'
   | 'common.close'
+  | 'common.openInNewTab'
+  | 'common.videoNotSupported'
   | 'common.continue'
   | 'common.back'
   | 'common.completed'

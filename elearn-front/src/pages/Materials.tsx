@@ -13,6 +13,7 @@ import {
   DashboardView,
   TopicNode,
   Material,
+  ViewMaterialModal,
 } from '@/pages/materialsComponents'
 import { MaterialsHeader } from '@/pages/materialsComponents/MaterialsHeader'
 import { TopicView } from '@/pages/materialsComponents/TopicView'
@@ -34,8 +35,9 @@ export default function Materials() {
   const [query, setQuery] = useState('')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   
-  // Reserved for text material viewer modal in the future
-  const [_selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
+  // Material viewer modal
+  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
+  const [materialModalOpen, setMaterialModalOpen] = useState(false)
   
   // Load topics on mount/lang change (force fresh data)
   useEffect(() => {
@@ -155,37 +157,9 @@ export default function Materials() {
       loadTopics(lang as 'UA' | 'PL' | 'EN')
     }
     
-    // Open material based on type
-    const url = material.url || material.content
-    if (material.type === 'text') {
-      // For text materials, open content in new window/tab
-      if (url) {
-        const newWindow = window.open('', '_blank')
-        if (newWindow) {
-          newWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <meta charset="utf-8">
-                <title>${material.title}</title>
-                <style>
-                  body { font-family: system-ui; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
-                  h1 { color: #333; }
-                </style>
-              </head>
-              <body>
-                <h1>${material.title}</h1>
-                <div>${url}</div>
-              </body>
-            </html>
-          `)
-          newWindow.document.close()
-        }
-      }
-      setSelectedMaterial(material)
-    } else if (url && (material.type === 'link' || material.type === 'pdf' || material.type === 'video')) {
-      window.open(url, '_blank')
-    }
+    // Open material in modal
+    setSelectedMaterial(material)
+    setMaterialModalOpen(true)
   }, [loadTopics, lang])
 
   return (
@@ -258,6 +232,16 @@ export default function Materials() {
           </div>
         </div>
       </div>
+
+      {/* Material View Modal */}
+      <ViewMaterialModal
+        isOpen={materialModalOpen}
+        onClose={() => {
+          setMaterialModalOpen(false)
+          setSelectedMaterial(null)
+        }}
+        material={selectedMaterial}
+      />
     </>
   )
 }
