@@ -40,7 +40,7 @@
 elearn-monorepo/
 ├── packages/
 │   └── shared/                 # Спільні TypeScript типи
-│       └── src/types/          # API контракти, моделі даних
+│       └── src/types/          # API контракти, моделі даних (index.ts)
 │
 ├── elearn-backend/             # Express + Prisma API сервер
 │   └── src/
@@ -56,11 +56,12 @@ elearn-monorepo/
 │       │   ├── i18n.ts         # Переклади
 │       │   ├── dashboard.ts    # Dashboard API
 │       │   └── activity.ts     # Активність
-│       ├── middleware/         # Auth, CSRF, validation
-│       ├── services/           # Бізнес-логіка
+│       ├── middleware/         # Auth, CSRF, validation, rateLimit, errorHandler
+│       ├── services/           # Бізнес-логіка (ai, audit, email, storage, etc.)
 │       ├── schemas/            # Zod валідація
 │       ├── prisma/             # Schema, migrations, seeds
-│       └── utils/              # Утиліти
+│       ├── utils/              # Утиліти (logger, i18n, gamification)
+│       └── config/             # [ДОДАНО] Налаштування (dailyGoals.ts, weakSpots.ts)
 │
 ├── elearn-front/               # React + Vite SPA
 │   └── src/
@@ -72,21 +73,34 @@ elearn-monorepo/
 │       │   ├── Profile.tsx     # Профіль користувача
 │       │   ├── Login.tsx       # Вхід
 │       │   ├── Register.tsx    # Реєстрація
-│       │   └── admin/          # Адмін-панель
-│       │       ├── AdminDashboard.tsx
-│       │       ├── AdminUsers.tsx
-│       │       ├── AdminContent.tsx
-│       │       ├── AdminTopics.tsx
-│       │       ├── AdminFiles.tsx
-│       │       └── AdminAuditLogs.tsx
-│       ├── components/         # UI компоненти
-│       ├── hooks/              # Custom React hooks
+│       │   ├── NotFound.tsx    # [ДОДАНО] Сторінка 404
+│       │   │
+│       │   ├── admin/          # Адмін-панель
+│       │   │   ├── AdminLayout.tsx       # [ДОДАНО] Окремий Layout для адмінки
+│       │   │   ├── AdminDashboard.tsx
+│       │   │   ├── AdminUsers.tsx
+│       │   │   ├── AdminUserDetails.tsx  # [ДОДАНО] Деталі користувача
+│       │   │   ├── AdminContent.tsx
+│       │   │   ├── AdminTopics.tsx
+│       │   │   ├── AdminFiles.tsx
+│       │   │   └── AdminAuditLogs.tsx
+│       │   │
+│       │   └── materialsComponents/      # [ДОДАНО] Складові для Materials.tsx
+│       │       ├── TopicSidebar.tsx      # Навігація по темах
+│       │       ├── DashboardView.tsx     # Внутрішній дашборд матеріалів
+│       │       └── ...                   # Інші модалки та віджети для сторінки
+│       │
+│       ├── components/         # UI компоненти (admin/, dashboard/, загальні)
+│       ├── hooks/              # Custom React hooks (useActivityTracker, useAdmin, useFileUpload)
 │       ├── auth/               # Контекст автентифікації
-│       ├── i18n/               # Інтернаціоналізація
-│       ├── store/              # Zustand state management
-│       └── lib/                # HTTP клієнт, API
+│       ├── i18n/               # Інтернаціоналізація (locales: en, pl, ua)
+│       ├── store/              # Zustand state management (catalog, i18n, theme)
+│       ├── lib/                # HTTP клієнт, API контракти (editorApi, http)
+│       └── utils/              # [ДОДАНО] Допоміжні функції (formatters, storage, colors)
 │
-└── package.json                # Monorepo root (workspaces)
+├── package.json                # Monorepo root (workspaces)
+├── package-lock.json           # Загальні залежності монорепозиторію
+└── tsconfig.json               # Глобальний конфіг TypeScript
 ```
 
 ## 🛠️ Технологічний стек
