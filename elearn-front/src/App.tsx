@@ -7,6 +7,7 @@ import RequireAuth from './components/RequireAuth'
 import { RequireRole } from './components/RequireRole'
 import ErrorBoundary from './components/ErrorBoundary'
 import CookieBanner from './components/CookieBanner'
+import LanguageSelector from './components/LanguageSelector'
 import Toasts from '@/components/Toast'
 
 // Core Pages (All imported eagerly to prevent Suspense/lazy issues)
@@ -165,10 +166,20 @@ export default function App() {
             <div className="flex items-center gap-3">
               {user ? (
                 <>
+                  {/* Language Selector */}
+                  <LanguageSelector />
+                  
                   <div className="hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                     <span className="text-sm font-semibold truncate max-w-[100px]">{user.name}</span>
                     <span className="badge badge-primary text-xs px-2 py-0.5 rounded-full">{user.xp} XP</span>
                   </div>
+                  <NavLink 
+                    to="/profile"
+                    className="hidden sm:flex p-2 text-neutral-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-xl transition-colors"
+                    title={t('nav.profile')}
+                  >
+                    <User size={20} />
+                  </NavLink>
                   <button 
                     onClick={handleLogout}
                     className="p-2 text-neutral-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
@@ -178,14 +189,18 @@ export default function App() {
                   </button>
                 </>
               ) : (
-                <div className="hidden sm:flex gap-3">
-                  <NavLink to="/login" className="btn-ghost text-sm font-semibold">
-                    {t('nav.login')}
-                  </NavLink>
-                  <NavLink to="/register" className="btn btn-sm">
-                    {t('nav.register')}
-                  </NavLink>
-                </div>
+                <>
+                  {/* Language Selector for non-authenticated users */}
+                  <LanguageSelector />
+                  <div className="hidden sm:flex gap-3">
+                    <NavLink to="/login" className="btn-ghost text-sm font-semibold">
+                      {t('nav.login')}
+                    </NavLink>
+                    <NavLink to="/register" className="btn btn-sm">
+                      {t('nav.register')}
+                    </NavLink>
+                  </div>
+                </>
               )}
 
               {/* Mobile Menu Button */}

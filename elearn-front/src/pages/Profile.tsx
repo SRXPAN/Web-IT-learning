@@ -1,23 +1,16 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, Globe, Palette, Sun, Moon, Lock, Camera, Trash2, AlertTriangle, Mail } from 'lucide-react'
+import { Settings, Palette, Sun, Moon, Lock, Camera, Trash2, AlertTriangle, Mail } from 'lucide-react'
 
 import { useAuth } from '@/auth/AuthContext'
 import { useTheme } from '@/store/theme'
 import { useTranslation } from '@/i18n/useTranslation'
 import { apiPost, apiDelete, apiPut } from '@/lib/http'
-import type { Lang } from '@packages/shared'
 
 import PasswordInput from '@/components/PasswordInput'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { LoadingButton } from '@/components/LoadingButton'
 import { SkeletonAvatar } from '@/components/Skeletons'
-
-const LANG_NAMES: Record<Lang, string> = {
-  UA: 'Українська',
-  PL: 'Polski',
-  EN: 'English',
-}
 
 // --- SUB-COMPONENTS ---
 
@@ -102,7 +95,7 @@ function ProfileHeader({ user, onUpload, onDeleteAvatar, uploading }: { user: an
 export default function Profile() {
   const { user, refresh, logout } = useAuth()
   const { theme, toggle } = useTheme()
-  const { t, lang, setLang } = useTranslation()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   
   // States
@@ -302,28 +295,6 @@ export default function Profile() {
           <SectionHeader icon={Settings} title={t('profile.settings', 'Preferences')} />
           
           <div className="space-y-5 sm:space-y-6">
-            {/* Language */}
-            <div>
-              <label className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 sm:mb-3 flex items-center gap-2">
-                <Globe size={16} /> {t('profile.language', 'Language')}
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['UA', 'PL', 'EN'] as Lang[]).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLang(l)}
-                    className={`px-2.5 sm:px-3 py-2.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all border min-h-[40px] sm:min-h-auto ${
-                      lang === l
-                        ? 'bg-primary-600 text-white border-primary-600 shadow-md'
-                        : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700'
-                    }`}
-                  >
-                    {LANG_NAMES[l]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Theme */}
             <div>
               <label className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 sm:mb-3 flex items-center gap-2">
@@ -360,6 +331,8 @@ export default function Profile() {
           <SectionHeader icon={Lock} title={t('profile.action.changePassword', 'Security')} />
           
           <form onSubmit={handleChangePassword} className="space-y-3 sm:space-y-4">
+            {/* Hidden username field for autocomplete */}
+            <input type="text" autoComplete="username" value={user?.email || ''} readOnly className="hidden" />
             <div>
               <label className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">
                 {t('profile.label.currentPassword', 'Current Password')}
@@ -422,6 +395,8 @@ export default function Profile() {
         <SectionHeader icon={Mail} title={t('profile.action.changeEmail', 'Change Email')} />
         
         <form onSubmit={handleChangeEmail} className="space-y-4 w-full">
+          {/* Hidden username field for autocomplete */}
+          <input type="text" autoComplete="username" value={user?.email || ''} readOnly className="hidden" />
           <div>
             <label className="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
               {t('profile.label.newEmail', 'New Email')}
