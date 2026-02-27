@@ -7,6 +7,9 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      minHeight: {
+        'auto': 'auto',
+      },
       colors: {
         // Academic Neo-Minimalism palette
         primary: {
