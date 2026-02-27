@@ -32,8 +32,29 @@ export default function Register() {
       return
     }
     
+    // Password complexity requirements
     if (password.length < 8) {
       setErr(t('auth.passwordMinLength', 'Password must be at least 8 characters'))
+      return
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      setErr('Password must contain at least one uppercase letter')
+      return
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      setErr('Password must contain at least one lowercase letter')
+      return
+    }
+    
+    if (!/[0-9]/.test(password)) {
+      setErr('Password must contain at least one digit')
+      return
+    }
+    
+    if (!/[\W_]/.test(password)) {
+      setErr('Password must contain at least one special character')
       return
     }
 
@@ -120,11 +141,14 @@ export default function Register() {
                   onChange={e => setEmail(e.target.value)} 
                   type="email"
                   className="w-full rounded-xl border px-3 py-3 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all outline-none"
-                  placeholder={t('auth.placeholder.email', 'name@example.com')}
+                  placeholder={t('auth.placeholder.email', 'name@gmail.com')}
                   required
                   disabled={loading}
                   autoComplete="email"
                 />
+                <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  {t('auth.emailMustBeGmail', 'Email must end with @gmail.com')}
+                </p>
               </div>
               
               {/* Password */}

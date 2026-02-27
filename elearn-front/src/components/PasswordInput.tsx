@@ -10,16 +10,13 @@ interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
   autoComplete?: 'current-password' | 'new-password' | 'off'
 }
 
-/** * Calculate password strength (0-5)
- * Simple heuristic based on rules
- */
 function getPasswordStrength(password: string): number {
   let score = 0
   if (password.length >= 8) score++
   if (/[A-Z]/.test(password)) score++
   if (/[a-z]/.test(password)) score++
   if (/\d/.test(password)) score++
-  if (/[!@#$%^&*]/.test(password)) score++
+  if (/[\W_]/.test(password)) score++ // Match backend validation: any non-word char or underscore
   return score
 }
 
@@ -55,7 +52,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
       { id: 'upper', label: t('password.rule.upper', 'Uppercase (A-Z)'), test: (p: string) => /[A-Z]/.test(p) },
       { id: 'lower', label: t('password.rule.lower', 'Lowercase (a-z)'), test: (p: string) => /[a-z]/.test(p) },
       { id: 'number', label: t('password.rule.number', 'Number (0-9)'), test: (p: string) => /\d/.test(p) },
-      { id: 'special', label: t('password.rule.special', 'Special char (!@#$)'), test: (p: string) => /[!@#$%^&*]/.test(p) },
+      { id: 'special', label: t('password.rule.special', 'Special char (!@#$_)'), test: (p: string) => /[\W_]/.test(p) },
     ]
 
     return (

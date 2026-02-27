@@ -7,12 +7,20 @@ import { commonSchemas } from './common.schema.js'
 
 /**
  * Register schema
+ * Note: Only @gmail.com emails are allowed for registration
  */
 export const registerSchema = z.object({
   email: commonSchemas.email,
   password: commonSchemas.password,
   name: commonSchemas.name,
 })
+.refine(
+  (data) => data.email.toLowerCase().endsWith('@gmail.com'),
+  {
+    message: 'Email must end with @gmail.com',
+    path: ['email'],
+  }
+)
 
 export type RegisterInput = z.infer<typeof registerSchema>
 
