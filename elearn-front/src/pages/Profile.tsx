@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, Palette, Sun, Moon, Lock, Camera, Trash2, AlertTriangle, Mail } from 'lucide-react'
+import { Settings, Palette, Sun, Moon, Lock, Camera, Trash2, AlertTriangle, User, CheckCircle, AlertCircle } from 'lucide-react'
 
 import { useAuth } from '@/auth/AuthContext'
 import { useTheme } from '@/store/theme'
@@ -101,6 +101,10 @@ export default function Profile() {
   // States
   const [avatarLoading, setAvatarLoading] = useState(false)
   
+  // Name form state
+  const [nameForm, setNameForm] = useState(user?.name || '')
+  const [nameState, setNameState] = useState({ loading: false, error: null as string | null, success: false })
+  
   // Forms
   const [passwordForm, setPasswordForm] = useState({ current: '', new: '', confirm: '' })
   const [passwordState, setPasswordState] = useState({ loading: false, error: null as string | null, success: false })
@@ -108,6 +112,9 @@ export default function Profile() {
   // Email form state
   const [emailForm, setEmailForm] = useState({ email: '', password: '' })
   const [emailState, setEmailState] = useState({ loading: false, error: null as string | null, success: false })
+  
+  // Email verification state
+  const [verificationState, setVerificationState] = useState({ loading: false, error: null as string | null, success: false })
   
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -176,6 +183,37 @@ export default function Profile() {
       await refresh()
     } finally {
       setAvatarLoading(false)
+    }
+  }
+
+  const handleChangeName = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setNameState({ loading: true, error: null, success: false })
+    
+    if (nameForm.trim().length < 2) {
+      setNameState({ loading: false, error: 'Name must be at least 2 characters', success: false })
+      return
+    }
+
+    try {
+      await apiPut('/auth/name', { newName: nameForm })
+      setNameState({ loading: false, error: null, success: true })
+      await refresh()
+      setTimeout(() => setNameState(s => ({ ...s, success: false })), 3000)
+    } catch (err: any) {
+      setNameState({ loading: false, error: err.message || 'Failed', success: false })
+    }
+  }
+
+  const handleResendVerification = async () => {
+    setVerificationState({ loading: true, error: null, success: false })
+    
+    try {
+      await apiPost('/auth/resend-verification', {})
+      setVerificationState({ loading: false, error: null, success: true })
+      setTimeout(() => setVerificationState(s => ({ ...s, success: false })), 5000)
+    } catch (err: any) {
+      setVerificationState({ loading: false, error: err.message || 'Failed to send verification email', success: false })
     }
   }
 
@@ -287,15 +325,161 @@ export default function Profile() {
         </div>
       </section>
 
-      {/* 2. Settings Grid - Better mobile layout */}
-      <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+      {/* 2. Settings Grid - Two Column Layout */}
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-6 items-start">
         
-        {/* Appearance */}
-        <section className="card h-full">
-          <SectionHeader icon={Settings} title={t('profile.settings', 'Preferences')} />
+        {/* LEFT COLUMN */}
+        <div className="space-y-4 sm:space-y-6">
           
-          <div className="space-y-5 sm:space-y-6">
-            {/* Theme */}
+          {/* Personal Info Card */}
+          <section className="card">
+            <SectionHeader icon={User} title="Personal Info" />
+            
+            {/* Change Name Form */}
+            <form onSubmit={handleChangeName} className="space-y-4 mb-6">
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                  {t('profile.name', 'Name')}
+                </label>
+                <input
+                  type="text"
+                  value={nameForm}
+                  onChange={e => setNameForm(e.target.value)}
+                  placeholder="Enter your name"
+                  className="w-full rounded-xl border px-3 py-2.5 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all outline-none text-sm"
+                  required
+                  minLength={2}
+                />
+              </div>
+              
+              {nameState.error && (
+                <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 p-2.5 rounded-lg">{nameState.error}</p>
+              )}
+              {nameState.success && (
+                <p className="text-xs text-green-500 bg-green-50 dark:bg-green-900/20 p-2.5 rounded-lg">Name updated successfully!</p>
+              )}
+
+              <LoadingButton 
+                type="submit" 
+                loading={nameState.loading}
+                className="w-full min-h-[44px] sm:min-h-[40px]"
+                disabled={!nameForm || nameForm === user?.name}
+              >
+                {t('common.save', 'Save Name')}
+              </LoadingButton>
+            </form>
+            
+            {/* Email Verification Alert */}
+            <div className="border-t border-neutral-100 dark:border-neutral-800 pt-6 mb-6">
+              {!(user as any)?.emailVerified ? (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" size={20} />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-yellow-900 dark:text-yellow-200 text-sm mb-1">
+                        Email Not Verified
+                      </h4>
+                      <p className="text-xs text-yellow-800 dark:text-yellow-300 mb-3">
+                        Please verify your email address to change it or access all features.
+                      </p>
+                      
+                      {verificationState.success ? (
+                        <p className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-2 rounded-lg">
+                          Verification email sent! Check your inbox.
+                        </p>
+                      ) : (
+                        <LoadingButton
+                          onClick={handleResendVerification}
+                          loading={verificationState.loading}
+                          className="bg-yellow-600 hover:bg-yellow-700 text-white text-xs px-4 py-2 rounded-lg"
+                        >
+                          Send Verification Email
+                        </LoadingButton>
+                      )}
+                      
+                      {verificationState.error && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-2">{verificationState.error}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="text-green-600 dark:text-green-400 shrink-0" size={20} />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-green-900 dark:text-green-200 text-sm">
+                        Email Verified
+                      </h4>
+                      <p className="text-xs text-green-800 dark:text-green-300">
+                        Your email address has been verified.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Change Email Form - Only if verified */}
+            {(user as any)?.emailVerified && (
+              <div className="border-t border-neutral-100 dark:border-neutral-800 pt-6">
+                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-4">
+                  {t('profile.action.changeEmail', 'Change Email')}
+                </h4>
+                <form onSubmit={handleChangeEmail} className="space-y-4">
+                  <input type="text" autoComplete="username" value={user?.email || ''} readOnly className="hidden" />
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                      {t('profile.label.newEmail', 'New Email')}
+                    </label>
+                    <input
+                      type="email"
+                      value={emailForm.email}
+                      onChange={e => setEmailForm(s => ({...s, email: e.target.value}))}
+                      placeholder={t('profile.placeholder.newEmail', 'Enter new email')}
+                      className="w-full rounded-xl border px-3 py-2.5 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all outline-none text-sm"
+                      required
+                    />
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">{t('auth.emailMustBeGmail', 'Email must end with @gmail.com')}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                      {t('profile.label.currentPassword', 'Current Password')}
+                    </label>
+                    <PasswordInput
+                      value={emailForm.password}
+                      onChange={e => setEmailForm(s => ({...s, password: e.target.value}))}
+                      placeholder={t('profile.label.currentPassword', 'Current Password')}
+                      autoComplete="current-password"
+                      required
+                    />
+                  </div>
+                  
+                  {emailState.error && (
+                    <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 p-2.5 rounded-lg">{emailState.error}</p>
+                  )}
+                  {emailState.success && (
+                    <p className="text-xs text-green-500 bg-green-50 dark:bg-green-900/20 p-2.5 rounded-lg">{t('profile.success.emailChanged', 'Email changed!')}</p>
+                  )}
+
+                  <LoadingButton 
+                    type="submit" 
+                    loading={emailState.loading}
+                    className="w-full min-h-[44px] sm:min-h-[40px]"
+                    disabled={!emailForm.email || !emailForm.password}
+                  >
+                    {t('profile.action.changeEmail', 'Change Email')}
+                  </LoadingButton>
+                </form>
+              </div>
+            )}
+          </section>
+          
+          {/* Preferences Card */}
+          <section className="card">
+            <SectionHeader icon={Settings} title={t('profile.settings', 'Preferences')} />
+          
             <div>
               <label className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 sm:mb-3 flex items-center gap-2">
                 <Palette size={16} /> {t('profile.theme', 'Theme')}
@@ -323,12 +507,15 @@ export default function Profile() {
                 </button>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
+        
+        {/* RIGHT COLUMN */}
+        <div className="space-y-4 sm:space-y-6">
 
-        {/* Security */}
-        <section className="card h-full">
-          <SectionHeader icon={Lock} title={t('profile.action.changePassword', 'Security')} />
+          {/* Security Card */}
+          <section className="card">
+            <SectionHeader icon={Lock} title={t('profile.action.changePassword', 'Security')} />
           
           <form onSubmit={handleChangePassword} className="space-y-3 sm:space-y-4">
             {/* Hidden username field for autocomplete */}
@@ -387,64 +574,10 @@ export default function Profile() {
               {t('common.save', 'Update Password')}
             </LoadingButton>
           </form>
-        </section>
-      </div>
-
-      {/* 2.5 Email Change Section - Better mobile layout */}
-      <section className="card">
-        <SectionHeader icon={Mail} title={t('profile.action.changeEmail', 'Change Email')} />
-        
-        <form onSubmit={handleChangeEmail} className="space-y-4 w-full">
-          {/* Hidden username field for autocomplete */}
-          <input type="text" autoComplete="username" value={user?.email || ''} readOnly className="hidden" />
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-              {t('profile.label.newEmail', 'New Email')}
-            </label>
-            <input
-              type="email"
-              value={emailForm.email}
-              onChange={e => setEmailForm(s => ({...s, email: e.target.value}))}
-              placeholder={t('profile.placeholder.newEmail', 'Enter new email')}
-              className="w-full rounded-xl border px-3 py-2.5 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all outline-none text-sm"
-              required
-            />
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">{t('auth.emailMustBeGmail', 'Email must end with @gmail.com')}</p>
-          </div>
+          </section>
           
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-              {t('profile.label.currentPassword', 'Current Password')}
-            </label>
-            <PasswordInput
-              value={emailForm.password}
-              onChange={e => setEmailForm(s => ({...s, password: e.target.value}))}
-              placeholder={t('profile.label.currentPassword', 'Current Password')}
-              autoComplete="current-password"
-              required
-            />
-          </div>
-          
-          {emailState.error && (
-            <p className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 p-2.5 rounded-lg">{emailState.error}</p>
-          )}
-          {emailState.success && (
-            <p className="text-xs text-green-500 bg-green-50 dark:bg-green-900/20 p-2.5 rounded-lg">{t('profile.success.emailChanged', 'Email changed!')}</p>
-          )}
-
-          <LoadingButton 
-            type="submit" 
-            loading={emailState.loading}
-            className="w-full min-h-[44px] sm:min-h-[40px]"
-            disabled={!emailForm.email || !emailForm.password}
-          >
-            {t('profile.action.changeEmail', 'Change Email')}
-          </LoadingButton>
-        </form>
-      </section>
-
-      {/* 3. Danger Zone - Better mobile layout */}
-      <section className="card border-red-100 dark:border-red-900/30 overflow-hidden">
+          {/* Danger Zone Card */}
+          <section className="card border-red-100 dark:border-red-900/30 overflow-hidden">
         <div className="bg-red-50 dark:bg-red-900/10 -m-6 mb-6 p-4 px-6 border-b border-red-100 dark:border-red-900/30 flex items-center gap-3">
           <AlertTriangle className="text-red-600 dark:text-red-400 flex-shrink-0" size={20} />
           <h3 className="font-bold text-red-900 dark:text-red-200 text-sm sm:text-base">
@@ -463,7 +596,9 @@ export default function Profile() {
             {t('profile.action.deleteAccount', 'Delete Account')}
           </button>
         </div>
-      </section>
+          </section>
+        </div>
+      </div>
 
       <ConfirmDialog
         isOpen={showDeleteDialog}

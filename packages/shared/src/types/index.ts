@@ -29,6 +29,7 @@ export interface User {
   role: Role
   xp: number
   avatar?: string | null
+  emailVerified?: boolean
 }
 
 export interface AuthUser extends User {}
