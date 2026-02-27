@@ -347,6 +347,7 @@ export default function Profile() {
                   onChange={e => setNameForm(e.target.value)}
                   placeholder="Enter your name"
                   className="w-full rounded-xl border px-3 py-2.5 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all outline-none text-sm"
+                  autoComplete="name"
                   required
                   minLength={2}
                 />
@@ -438,6 +439,7 @@ export default function Profile() {
                       onChange={e => setEmailForm(s => ({...s, email: e.target.value}))}
                       placeholder={t('profile.placeholder.newEmail', 'Enter new email')}
                       className="w-full rounded-xl border px-3 py-2.5 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all outline-none text-sm"
+                      autoComplete="email"
                       required
                     />
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">{t('auth.emailMustBeGmail', 'Email must end with @gmail.com')}</p>
